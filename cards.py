@@ -90,19 +90,25 @@ def main(argv):
         pages_total = 0
 
         for row in data:
-            cards += card.replace('{{content}}',
-                                  content_from_template(row, template))
+            count = int(row.get('@count', 1))
 
-            cards_on_page += 1
-            cards_on_all_pages += 1
+            if count <= 0:
+                count = 1
 
-            if cards_on_page == max_cards_per_page:
-                pages += page.replace('{{cards}}', cards)
+            for i in range(count):
+                cards += card.replace('{{content}}',
+                                      content_from_template(row, template))
 
-                pages_total += 1
+                cards_on_page += 1
+                cards_on_all_pages += 1
 
-                cards_on_page = 0
-                cards = ''
+                if cards_on_page == max_cards_per_page:
+                    pages += page.replace('{{cards}}', cards)
+
+                    pages_total += 1
+
+                    cards_on_page = 0
+                    cards = ''
 
         if cards_on_page > 0:
             pages += page.replace('{{cards}}', cards)
@@ -113,7 +119,7 @@ def main(argv):
 
         with open('generated/index.html', 'w') as result:
             if not title or len(title) == 0:
-                title = 'cards.py: {0} cards, {1} pages'.format(
+                title = 'cards.py: {0} card(s), {1} page(s)'.format(
                     cards_on_all_pages,
                     pages_total)
 
