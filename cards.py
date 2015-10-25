@@ -92,7 +92,7 @@ def main(argv):
         for row in data:
             count = int(row.get('@count', 1))
 
-            if count <= 0:
+            if count < 0:
                 count = 1
 
             for i in range(count):
