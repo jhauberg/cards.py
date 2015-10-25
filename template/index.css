@@ -20,15 +20,15 @@ html, body {
   text-align: center;
   overflow: hidden;
 
-	/* Show a border for each card until reference cut lines are added
-	   to the pages */
+  /* Show a border for each card until reference cut lines are added
+     to the pages */
   outline: 1px solid black;
 }
 
 .page {
   /* A4 */
   width: 21cm;
-  height: 29.7cm;
+  max-height: 29.7cm;
 
   /* Put some separation between pages. Purely for show. */
   margin: 1cm auto;
@@ -64,8 +64,7 @@ html, body {
   }
 
   .page {
-    /* Chrome - When printing: enable printing of backgrounds.
-		            Set margins to Minimum, and disable Headers & Footers */
+    /* Chrome - When printing: enable printing of backgrounds. Set margins to Minimum, and disable Headers & Footers */
     /* Safari - When printing: enable printing of backgrounds. */
 
     /* Slightly less than actual width to ensure cards are laid out as expected
