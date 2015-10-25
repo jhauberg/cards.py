@@ -1,0 +1,96 @@
+html, body {
+  margin: 0;
+  padding: 0;
+
+  background-color: #eee;
+}
+
+* {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.card {
+  /* Standard poker card */
+  width: 2.5in;
+  height: 3.5in;
+
+  /* Typically, text should be centered and clipped if too large */
+  text-align: center;
+  overflow: hidden;
+
+	/* Show a border for each card until reference cut lines are added
+	   to the pages */
+  outline: 1px solid black;
+}
+
+.page {
+  /* A4 */
+  width: 21cm;
+  height: 29.7cm;
+
+  /* Put some separation between pages. Purely for show. */
+  margin: 1cm auto;
+
+  /* Paddings that precisely allow 3x3 cards to be laid out on a single A4 page */
+  padding-top: 1.52cm;
+  padding-bottom: 1.52cm;
+  /* Side paddings set to .01 less than what they actually should be to prevent
+  any rounding issues causing cards to not be laid out as expected */
+  padding-left: 0.97cm;
+  padding-right: 0.97cm;
+
+  background: #fff;
+  box-shadow: 0 4px 5px rgba(75, 75, 75, 0.2);
+
+  display: flex;
+  flex-wrap: wrap;
+}
+
+@page {
+  size: A4 portrait;
+
+  /* Margins should match the paddings defined by .page */
+  margin-left: 0.97cm;
+  margin-top: 1.52cm;
+  margin-right: 0.97cm;
+  margin-bottom: 1.52cm;
+}
+
+@media print {
+  html, body {
+    background-color: #fff;
+  }
+
+  .page {
+    /* Chrome - When printing: enable printing of backgrounds.
+		            Set margins to Minimum, and disable Headers & Footers */
+    /* Safari - When printing: enable printing of backgrounds. */
+
+    /* Slightly less than actual width to ensure cards are laid out as expected
+    after any margins have been applied by the browser */
+    width: 19.5cm !important;
+    height: initial !important;
+
+    padding: 0 !important;
+
+    /* Approximated margins to ensure cards are laid out as expected
+    after any margins have been applied by the browser */
+    margin-left: 0.5cm !important;
+    margin-top: 1.0cm !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+
+    background: initial !important;
+    box-shadow: none !important;
+
+    /* Force page breaks after each .page element of the document */
+    page-break-after: always;
+  }
+
+  /* Except for the last .page element to avoid a blank ending page */
+  .page:last-child {
+    page-break-after: auto;
+  }
+}
