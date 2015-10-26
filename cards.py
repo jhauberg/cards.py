@@ -57,6 +57,13 @@ def main(argv):
                         help='The description of the generated cards',
                         required=False)
 
+    parser.add_argument('-C', '--disable-cut-lines',
+                        dest='disable_cut_lines',
+                        action='store_true',
+                        default=False,
+                        help='Disable cut guides on the margins of the pages',
+                        required=False)
+
     args = vars(parser.parse_args())
 
     data = args['filename']
@@ -64,14 +71,21 @@ def main(argv):
     title = args['title']
     description = args['description']
 
+    disable_cut_lines = bool(args['disable_cut_lines'])
+
     with open(data) as f:
         data = csv.DictReader(f)
 
         with open(template) as t:
-            template = t.read()
+            template = t.read().strip()
 
         with open('template/page.html') as p:
             page = p.read()
+
+            if disable_cut_lines:
+                page = page.replace('{{style}}', 'style="display: none"')
+            else:
+                page = page.replace('{{style}}', '')
 
         with open('template/card.html') as c:
             card = c.read()
