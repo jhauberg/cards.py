@@ -16,19 +16,14 @@ html, body {
   width: 2.5in;
   height: 3.5in;
 
-  /* Typically, text should be centered and clipped if too large */
-  text-align: center;
+  /* Content should be clipped if too large */
   overflow: hidden;
-
-  /* Show a border for each card until reference cut lines are added
-     to the pages */
-  outline: 1px solid black;
 }
 
 .page {
-  /* A4 */
+  /* A4 portrait */
   width: 21cm;
-  max-height: 29.7cm;
+  height: 29.7cm;
 
   /* Put some separation between pages. Purely for show. */
   margin: 1cm auto;
@@ -44,8 +39,138 @@ html, body {
   background: #fff;
   box-shadow: 0 4px 5px rgba(75, 75, 75, 0.2);
 
+  /* Lay out cards horizontally */
   display: flex;
   flex-wrap: wrap;
+
+  /* Ensure all cards are aligned towards the top; not the center */
+  align-content: start;
+}
+
+.page-cut-lines {
+  width: 7.5in;
+  height: 10.5in;
+
+  position: absolute;
+}
+
+.page-cut-line {
+  width: 5mm;
+  height: 5mm;
+
+  position: absolute;
+}
+
+#page-cut-line-top-left-horizontal {
+  border-bottom: 0.6mm dashed black;
+
+  top: -4.6mm;
+  left: -6mm;
+}
+
+#page-cut-line-top-right-horizontal {
+  border-bottom: 0.6mm dashed black;
+
+  top: -4.6mm;
+  left: 100.5%;
+}
+
+#page-cut-line-bottom-left-horizontal {
+  border-top: 0.6mm dashed black;
+
+  top: 99.85%;
+  left: -6mm;
+}
+
+#page-cut-line-bottom-right-horizontal {
+  border-top: 0.6mm dashed black;
+
+  top: 99.85%;
+  left: 100.5%;
+}
+
+#page-cut-line-top-left-vertical {
+  border-right: 0.6mm dashed black;
+
+  top: -6mm;
+  left: -4.6mm;
+}
+
+#page-cut-line-top-right-vertical {
+  border-left: 0.6mm dashed black;
+
+  top: -6mm;
+  left: 99.8%;
+}
+
+#page-cut-line-bottom-left-vertical {
+  border-right: 0.6mm dashed black;
+
+  top: 100.5%;
+  left: -4.6mm;
+}
+
+#page-cut-line-bottom-right-vertical {
+  border-left: 0.6mm dashed black;
+
+  top: 100.5%;
+  left: 99.8%;
+}
+
+#page-cut-line-top-middle-left {
+  border-left: 0.6mm dashed black;
+
+  top: -6mm;
+  left: 33.2%;
+}
+
+#page-cut-line-top-middle-right {
+  border-left: 0.6mm dashed black;
+
+  top: -6mm;
+  left: 66.55%;
+}
+
+#page-cut-line-bottom-middle-left {
+  border-left: 0.6mm dashed black;
+
+  top: 100.5%;
+  left: 33.2%;
+}
+
+#page-cut-line-bottom-middle-right {
+  border-left: 0.6mm dashed black;
+
+  top: 100.5%;
+  left: 66.55%;
+}
+
+#page-cut-line-left-middle-top {
+  border-top: 0.6mm dashed black;
+
+  top: 33.2%;
+  left: -6mm;
+}
+
+#page-cut-line-left-middle-bottom {
+  border-top: 0.6mm dashed black;
+
+  top: 66.55%;
+  left: -6mm;
+}
+
+#page-cut-line-right-middle-top {
+  border-top: 0.6mm dashed black;
+
+  top: 33.2%;
+  left: 100.5%;
+}
+
+#page-cut-line-right-middle-bottom {
+  border-top: 0.6mm dashed black;
+
+  top: 66.55%;
+  left: 100.5%;
 }
 
 @page {
@@ -76,8 +201,8 @@ html, body {
 
     /* Approximated margins to ensure cards are laid out as expected
     after any margins have been applied by the browser */
-    margin-left: 0.5cm !important;
-    margin-top: 1.0cm !important;
+    margin-left: 0.6cm !important;
+    margin-top: 0.6cm !important;
     margin-right: 0 !important;
     margin-bottom: 0 !important;
 
