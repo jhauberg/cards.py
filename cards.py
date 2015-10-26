@@ -79,6 +79,11 @@ def main(argv):
         with open(template) as t:
             template = t.read().strip()
 
+        if len(template) == 0:
+            print('The provided template appears to be empty. No cards will be generated.')
+
+            return
+
         with open('template/page.html') as p:
             page = p.read()
 
