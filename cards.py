@@ -92,16 +92,16 @@ def content_from_template(data, template):
 
 def main(argv):
     parser = argparse.ArgumentParser(
-        description='Generate printable sheets of cards')
+        description='Generate printable sheets of cards.')
 
     parser.add_argument('-f', '--filename',
                         dest='filename',
-                        help='The path to a CSV file containing card data',
+                        help='A path to a CSV file containing card data',
                         required=True)
 
     parser.add_argument('-t', '--template',
                         dest='template',
-                        help='The path to a card template',
+                        help='A path to a card template',
                         required=True)
 
     parser.add_argument('-T', '--title',
@@ -115,11 +115,20 @@ def main(argv):
                         help='The description of the generated cards',
                         required=False)
 
+    parser.add_argument('-V', '--version-identifier',
+                        dest='version_identifier',
+                        default='',
+                        help='A version identifier that is put on each '
+                             'generated card. Requires that the template '
+                             'provides a {{version}} field.',
+                        required=False)
+
     parser.add_argument('-C', '--disable-cut-lines',
                         dest='disable_cut_lines',
                         action='store_true',
                         default=False,
-                        help='Disable cut guides on the margins of the pages',
+                        help='Disable cut guides on the margins of the '
+                             'generated pages',
                         required=False)
 
     args = vars(parser.parse_args())
@@ -131,6 +140,7 @@ def main(argv):
     # optional arguments
     title = args['title']
     description = args['description']
+    version_identifier = args['version_identifier']
     disable_cut_lines = bool(args['disable_cut_lines'])
 
     with open(data_path) as f:
@@ -199,8 +209,12 @@ def main(argv):
                     # provided throuh --template, we already have it available
                     template = default_template
 
+                card_content = content_from_template(row, template)
+                card_content = card_content.replace(
+                    '{{version}}', version_identifier)
+
                 cards += card.replace(
-                    '{{content}}', content_from_template(row, template))
+                    '{{content}}', card_content)
 
                 cards_on_page += 1
                 cards_on_all_pages += 1
