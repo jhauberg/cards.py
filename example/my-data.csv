@@ -1,5 +1,9 @@
 @count,rank,title,text,@template
-2,1,King,King of the Castle,my-card-template.html
-3,2,Queen,Queen of the King,my-card-template.html
-5,3,Jack,Jack of the Queen,my-card-template.html
-4,3,Knight,Knight of the Table,my-slightly-different-card-template.html
+2,1,King,King of the Castle,templates/my-card-template.html
+3,2,Queen,Queen of the King,templates/my-card-template.html
+1,2,Test Missing Template,Should use default,
+4,3,Knight,Knight of the Table,templates/my-slightly-different-card-template.html
+1,1,Test,Users gain +1 <img src="images/thumb-up.svg" width="16" height="16">,templates/my-card-template.html
+1,1,Test,Users gain +1 {{images/thumb-up.svg:16x16}},templates/my-card-template.html
+1,1,Test,Users gain +1 {{images/thumb-up.png}},templates/my-card-template.html
+1,3,Test,Users gain +1 {{images/thumb-up.svg:16x16}} and +2 {{images/thumb-up.svg:16x16}},templates/my-card-template.html

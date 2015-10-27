@@ -3,6 +3,7 @@ import sys
 import argparse
 import csv
 import errno
+import re
 import shutil
 
 
@@ -19,6 +20,56 @@ def create_missing_directories_if_necessary(path):
             raise
 
 
+def replace_image_fields_with_image_tags(string):
+    """
+    Recursively finds all {{image:size}} fields and returns a string replaced
+    with HTML compliant <img> tags.
+    """
+    for match in re.finditer('{{(.*?)}}', string, re.DOTALL):
+        image_path = match.group(1)
+
+        if len(image_path) > 0:
+            # determine whether a size has been explicitly specified; e.g.
+            # images/name-of-image.svg:16x16
+            size_index = image_path.rfind(':')
+
+            explicit_width = None
+            explicit_height = None
+
+            if size_index is not -1:
+                size = image_path[size_index + 1:]
+                size = size.split('x')
+
+                if len(size) > 1:
+                    explicit_width = int(size[0])
+                    explicit_height = int(size[1])
+
+                    if explicit_width < 0:
+                        explicit_width = None
+
+                    if explicit_height < 0:
+                        explicit_height = None
+
+                if (explicit_width is not None
+                   and explicit_height is not None):
+                        image_tag = '<img src="{0}" width="{1}" height="{2}">'
+                        image_tag = image_tag.format(image_path[:size_index],
+                                                     explicit_width,
+                                                     explicit_height)
+            else:
+                image_tag = '<img src="{0}">'.format(image_path)
+
+            string = string[:match.start()] + image_tag + string[match.end():]
+
+            # since the string we're finding matches on has just been changed,
+            # we have to recursively look for more fields if there are any
+            string = replace_image_fields_with_image_tags(string)
+
+            break
+
+    return string
+
+
 def content_from_template(data, template):
     """
     Returns the contents of the template with all template fields replaced by
@@ -29,7 +80,12 @@ def content_from_template(data, template):
     for field in data:
         if not field.startswith('@'):
             # ignore special variable columns
-            content = content.replace('{{%s}}' % str(field), data[field])
+            field_value = str(data[field])
+            # replace any special image fields with html compliant <img> tags
+            field_value = replace_image_fields_with_image_tags(field_value)
+
+            # finally populate the template field with the resulting value
+            content = content.replace('{{%s}}' % str(field), field_value)
 
     return content
 
@@ -127,7 +183,8 @@ def main(argv):
                 # the template specified from the --template option)
                 template_path = row.get('@template', default_template_path)
 
-                if template_path is not default_template_path:
+                if (len(template_path) > 0
+                   and template_path is not default_template_path):
                     if not os.path.isabs(template_path):
                         # if the template path is not an absolute path, assume
                         # that it's located relative to where the data is
@@ -142,8 +199,8 @@ def main(argv):
                     # provided throuh --template, we already have it available
                     template = default_template
 
-                cards += card.replace('{{content}}',
-                                      content_from_template(row, template))
+                cards += card.replace(
+                    '{{content}}', content_from_template(row, template))
 
                 cards_on_page += 1
                 cards_on_all_pages += 1
