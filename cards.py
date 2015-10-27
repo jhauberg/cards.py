@@ -27,7 +27,9 @@ def content_from_template(data, template):
     content = template
 
     for field in data:
-        content = content.replace('{{%s}}' % str(field), data[field])
+        if not field.startswith('@'):
+            # ignore special variable columns
+            content = content.replace('{{%s}}' % str(field), data[field])
 
     return content
 
