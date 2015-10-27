@@ -66,21 +66,24 @@ def main(argv):
 
     args = vars(parser.parse_args())
 
-    data = args['filename']
-    template = args['template']
+    # required arguments
+    data_path = args['filename']
+    default_template_path = args['template']
+
+    # optional arguments
     title = args['title']
     description = args['description']
-
     disable_cut_lines = bool(args['disable_cut_lines'])
 
-    with open(data) as f:
+    with open(data_path) as f:
         data = csv.DictReader(f)
 
-        with open(template) as t:
-            template = t.read().strip()
+        with open(default_template_path) as t:
+            default_template = t.read().strip()
 
-        if len(template) == 0:
-            print('The provided template appears to be empty. No cards will be generated.')
+        if len(default_template) == 0:
+            print('The provided template appears to be empty. '
+                  'No cards will be generated.')
 
             return
 
@@ -109,12 +112,34 @@ def main(argv):
         pages_total = 0
 
         for row in data:
+            # determine how many instances of this card to generate (defaults
+            # to a single instance if not specified)
             count = int(row.get('@count', 1))
 
             if count < 0:
-                count = 1
+                # if a negative count is specified, treat it as none
+                count = 0
 
             for i in range(count):
+                # determine which template to use for this card (defaults to
+                # the template specified from the --template option)
+                template_path = row.get('@template', default_template_path)
+
+                if template_path is not default_template_path:
+                    if not os.path.isabs(template_path):
+                        # if the template path is not an absolute path, assume
+                        # that it's located relative to where the data is
+                        template_path = os.path.join(
+                            os.path.dirname(data_path),
+                            template_path)
+
+                    with open(template_path) as t:
+                        template = t.read().strip()
+                else:
+                    # if the template path points to the same template as
+                    # provided throuh --template, we already have it available
+                    template = default_template
+
                 cards += card.replace('{{content}}',
                                       content_from_template(row, template))
 

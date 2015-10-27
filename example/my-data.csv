@@ -1,4 +1,5 @@
-@count,rank,title,text
-2,1,King,King of the Castle
-3,2,Queen,Queen of the King
-5,3,Jack,Jack of the Queen
+@count,rank,title,text,@template
+2,1,King,King of the Castle,my-card-template.html
+3,2,Queen,Queen of the King,my-card-template.html
+5,3,Jack,Jack of the Queen,my-card-template.html
+4,3,Knight,Knight of the Table,my-slightly-different-card-template.html
