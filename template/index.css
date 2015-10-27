@@ -194,7 +194,7 @@ html, body {
 
     /* Slightly less than actual width to ensure cards are laid out as expected
     after any margins have been applied by the browser */
-    width: 19.5cm !important;
+    width: 19.05cm !important;
     height: initial !important;
 
     padding: 0 !important;
@@ -202,7 +202,7 @@ html, body {
     /* Approximated margins to ensure cards are laid out as expected
     after any margins have been applied by the browser */
     margin-left: 0.6cm !important;
-    margin-top: 0.6cm !important;
+    margin-top: 1cm !important;
     margin-right: 0 !important;
     margin-bottom: 0 !important;
 
