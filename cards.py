@@ -50,8 +50,8 @@ def replace_image_fields_with_image_tags(string):
                     if explicit_height < 0:
                         explicit_height = None
 
-                if (explicit_width is not None
-                   and explicit_height is not None):
+                if (explicit_width is not None and
+                   explicit_height is not None):
                         image_tag = '<img src="{0}" width="{1}" height="{2}">'
                         image_tag = image_tag.format(image_path[:size_index],
                                                      explicit_width,
@@ -218,8 +218,8 @@ def main(argv):
                 # the template specified from the --template option)
                 template_path = row.get('@template', default_template_path)
 
-                if (len(template_path) > 0
-                   and template_path is not default_template_path):
+                if (template_path is not default_template_path and
+                   len(template_path) > 0):
                     if not os.path.isabs(template_path):
                         # if the template path is not an absolute path, assume
                         # that it's located relative to where the data is
@@ -235,6 +235,8 @@ def main(argv):
                     template = default_template
 
                 card_content = content_from_template(row, template)
+                card_content = card_content.replace(
+                    '{{card_index}}', str(cards_on_all_pages + 1))
                 card_content = card_content.replace(
                     '{{version}}', version_identifier)
 
@@ -264,6 +266,8 @@ def main(argv):
                 title = 'cards.py: {0} card(s), {1} page(s)'.format(
                     cards_on_all_pages,
                     pages_total)
+
+            pages = pages.replace('{{cards_total}}', str(cards_on_all_pages))
 
             index = index.replace('{{title}}', title)
             index = index.replace('{{description}}', description)
