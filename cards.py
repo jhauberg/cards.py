@@ -79,14 +79,23 @@ def content_from_template(data, template):
     content = template
 
     for field in data:
+        # ignore special variable columns
         if not field.startswith('@'):
-            # ignore special variable columns
             field_value = str(data[field])
             # replace any special image fields with html compliant <img> tags
             field_value = replace_image_fields_with_image_tags(field_value)
 
-            # finally populate the template field with the resulting value
-            content = content.replace('{{%s}}' % str(field), field_value)
+            # template fields are always represented by wrapping {{ }}'s'
+            template_field = re.escape('{{%s}}' % str(field))
+
+            # find any occurences of the field, using a case-insensitive
+            # comparison, to ensure that e.g. {{name}} is populated with the
+            # value from column "Name", even though the casing might differ
+            search = re.compile(template_field, re.IGNORECASE)
+
+            # finally populate any found occurences of the template field with
+            # the resulting value from the data
+            content = search.sub(field_value, content)
 
     return content
 
@@ -321,11 +330,9 @@ def main(argv):
 
         shutil.copyfile('template/index.css', 'generated/index.css')
 
-        print('Generated {0} {1} on {2} {3}. '
-              'See \'generated/index.html\'.'
-              .format(
-                cards_on_all_pages, cards_or_card,
-                pages_total, pages_or_page))
+        print('Generated {0} {1} on {2} {3}. See \'generated/index.html\'.'
+              .format(cards_on_all_pages, cards_or_card,
+                      pages_total, pages_or_page))
 
         if sys.platform.startswith('darwin'):
             subprocess.call(('open', generated_path))
