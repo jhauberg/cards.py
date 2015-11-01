@@ -6,6 +6,7 @@ import errno
 import re
 import shutil
 import subprocess
+import itertools
 
 
 def create_missing_directories_if_necessary(path):
@@ -180,6 +181,10 @@ def colorize_error(error):
     return apply_red_color + error + apply_normal_color
 
 
+def lower_first_row(rows):
+    return itertools.chain([next(rows).lower()], rows)
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
         description='Generates printable sheets of cards.')
@@ -251,7 +256,7 @@ def main(argv):
     is_verbose = bool(args['verbose'])
 
     with open(data_path) as f:
-        data = csv.DictReader(f)
+        data = csv.DictReader(lower_first_row(f))
 
         if (default_template_path is not None and
            len(default_template_path) > 0):
