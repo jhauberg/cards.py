@@ -21,11 +21,36 @@ def create_missing_directories_if_necessary(path):
             raise
 
 
+def copy_images_to_output_directory(image_paths, root_path, output_path):
+    for image_path in image_paths:
+        # copy each relatively specified image (if an image is specified
+        # using an absolute path, assume that it should not be copied)
+        if not os.path.isabs(image_path):
+            # if the image path is not an absolute path, assume
+            # that it's located relative to where the data is
+            relative_source_path = os.path.join(
+                os.path.dirname(root_path), image_path)
+
+            relative_destination_path = os.path.join(
+                output_path, image_path)
+
+            # make sure any missing directories are created as needed
+            create_missing_directories_if_necessary(
+                os.path.dirname(relative_destination_path))
+
+            if os.path.isfile(relative_source_path):
+                # only copy if the file actually exists
+                shutil.copyfile(
+                    relative_source_path, relative_destination_path)
+
+
 def fill_template_image_fields(template):
     """
     Recursively finds all {{image:size}} fields and returns a string replaced
     with HTML compliant <img> tags.
     """
+    image_paths = []
+
     for match in re.finditer('{{(.*?)}}', template, re.DOTALL):
         image_path = match.group(1)
 
@@ -70,14 +95,20 @@ def fill_template_image_fields(template):
             else:
                 image_tag = '<img src="{0}">'.format(image_path)
 
+            image_paths.append(image_path)
+
             # since the string we're finding matches on has just been changed,
             # we have to recursively look for more fields if there are any
-            template = fill_template_image_fields(
+            content = fill_template_image_fields(
                 template[:match.start()] + image_tag + template[match.end():])
+
+            template = content[0]
+
+            image_paths.extend(content[1])
 
             break
 
-    return template
+    return (template, image_paths)
 
 
 def fill_template_field(field_name, field_value, in_template):
@@ -98,13 +129,20 @@ def fill_template(template, data):
     Returns the contents of the template with all template fields replaced by
     any matching fields in the provided data.
     """
+    image_paths = []
+
     for field in data:
         # ignore special variable columns
         if not field.startswith('@'):
             # fetch the content for the field (may also be templated)
             template_content = str(data[field])
+
             # replace any image fields with HTML compliant <img> tags
-            template_content = fill_template_image_fields(template_content)
+            content = fill_template_image_fields(template_content)
+
+            template_content = content[0]
+
+            image_paths.extend(content[1])
 
             # fill content into the provided template
             template = fill_template_field(
@@ -112,7 +150,7 @@ def fill_template(template, data):
                 field_value=template_content,
                 in_template=template)
 
-    return template
+    return (template, image_paths)
 
 
 def colorize_help_description(help_description, required):
@@ -258,6 +296,8 @@ def main(argv):
 
         pages_total = 0
 
+        image_paths = []
+
         for row in data:
             # determine how many instances of this card to generate (defaults
             # to a single instance if not specified)
@@ -296,7 +336,11 @@ def main(argv):
                     template = default_template
 
                 if template is not None:
-                    card_content = fill_template(template, data=row)
+                    content = fill_template(template, data=row)
+
+                    card_content = content[0]
+
+                    image_paths.extend(content[1])
 
                     card_content = fill_template_field(
                         field_name='card_index',
@@ -339,14 +383,14 @@ def main(argv):
         if output_path is None:
             output_path = ''
 
-        generated_path = os.path.join(output_path, 'generated')
+        output_path = os.path.join(output_path, 'generated')
 
-        create_missing_directories_if_necessary(generated_path)
+        create_missing_directories_if_necessary(output_path)
 
         pages_or_page = 'pages' if pages_total > 1 else 'page'
         cards_or_card = 'cards' if cards_on_all_pages > 1 else 'card'
 
-        with open(os.path.join(generated_path, 'index.html'), 'w') as result:
+        with open(os.path.join(output_path, 'index.html'), 'w') as result:
             if not title or len(title) == 0:
                 title = 'cards.py: {0} {1} on {2} {3}'.format(
                     cards_on_all_pages, cards_or_card,
@@ -363,21 +407,27 @@ def main(argv):
 
             result.write(index)
 
+        # ensure there are no duplicate image paths, since that would cause
+        # unnecessary copy operations
+        image_paths = list(set(image_paths))
+
+        copy_images_to_output_directory(image_paths, data_path, output_path)
+
         shutil.copyfile(
             'template/index.css',
-            os.path.join(generated_path, 'index.css'))
+            os.path.join(output_path, 'index.css'))
 
         print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
               .format(cards_on_all_pages, cards_or_card,
                       pages_total, pages_or_page,
-                      generated_path))
+                      output_path))
 
         if sys.platform.startswith('darwin'):
-            subprocess.call(('open', generated_path))
+            subprocess.call(('open', output_path))
         elif os.name == 'nt':
-            subprocess.call(('start', generated_path), shell=True)
+            subprocess.call(('start', output_path), shell=True)
         elif os.name == 'posix':
-            subprocess.call(('xdg-open', generated_path))
+            subprocess.call(('xdg-open', output_path))
 
 if __name__ == "__main__":
     main(sys.argv)
