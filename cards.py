@@ -38,25 +38,35 @@ def fill_template_image_fields(template):
             explicit_height = None
 
             if size_index is not -1:
-                size = image_path[size_index + 1:]
-                size = size.split('x')
+                # get the size specifications (removing any whitespace)
+                size = image_path[size_index + 1:].strip()
+                # get each size specification separately (removing blanks)
+                size = filter(None, size.split('x'))
 
-                if len(size) > 1:
+                if len(size) > 0:
                     explicit_width = int(size[0])
-                    explicit_height = int(size[1])
 
                     if explicit_width < 0:
                         explicit_width = None
 
+                if len(size) > 1:
+                    explicit_height = int(size[1])
+
                     if explicit_height < 0:
                         explicit_height = None
+                else:
+                    # default to a square image using the width specification
+                    explicit_height = explicit_width
 
-                if (explicit_width is not None and
-                   explicit_height is not None):
-                        image_tag = '<img src="{0}" width="{1}" height="{2}">'
-                        image_tag = image_tag.format(image_path[:size_index],
-                                                     explicit_width,
-                                                     explicit_height)
+                # get rid of the size specification to have a clean image path
+                image_path = image_path[:size_index]
+
+            if (explicit_width is not None and
+               explicit_height is not None):
+                    image_tag = '<img src="{0}" width="{1}" height="{2}">'
+                    image_tag = image_tag.format(image_path,
+                                                 explicit_width,
+                                                 explicit_height)
             else:
                 image_tag = '<img src="{0}">'.format(image_path)
 
