@@ -21,12 +21,12 @@ def create_missing_directories_if_necessary(path):
             raise
 
 
-def replace_image_fields_with_image_tags(string):
+def fill_template_image_fields(template):
     """
     Recursively finds all {{image:size}} fields and returns a string replaced
     with HTML compliant <img> tags.
     """
-    for match in re.finditer('{{(.*?)}}', string, re.DOTALL):
+    for match in re.finditer('{{(.*?)}}', template, re.DOTALL):
         image_path = match.group(1)
 
         if len(image_path) > 0:
@@ -60,44 +60,48 @@ def replace_image_fields_with_image_tags(string):
             else:
                 image_tag = '<img src="{0}">'.format(image_path)
 
-            string = string[:match.start()] + image_tag + string[match.end():]
-
             # since the string we're finding matches on has just been changed,
             # we have to recursively look for more fields if there are any
-            string = replace_image_fields_with_image_tags(string)
+            template = fill_template_image_fields(
+                template[:match.start()] + image_tag + template[match.end():])
 
             break
 
-    return string
+    return template
 
 
-def content_from_template(data, template):
+def fill_template_field(field_name, field_value, in_template):
+    # template fields are always represented by wrapping {{ }}'s'
+    template_field = re.escape('{{%s}}' % str(field_name))
+
+    # find any occurences of the field, using a case-insensitive
+    # comparison, to ensure that e.g. {{name}} is populated with the
+    # value from column "Name", even though the casing might differ
+    search = re.compile(template_field, re.IGNORECASE)
+
+    # finally replace any found occurences of the template field with its value
+    return search.sub(field_value, in_template)
+
+
+def fill_template(template, data):
     """
     Returns the contents of the template with all template fields replaced by
     any matching fields in the provided data.
     """
-    content = template
-
     for field in data:
         # ignore special variable columns
         if not field.startswith('@'):
-            field_value = str(data[field])
-            # replace any special image fields with html compliant <img> tags
-            field_value = replace_image_fields_with_image_tags(field_value)
+            template_content = str(data[field])
 
-            # template fields are always represented by wrapping {{ }}'s'
-            template_field = re.escape('{{%s}}' % str(field))
+            # replace any special image fields with HTML compliant <img> tags
+            template_content = fill_template_image_fields(template_content)
 
-            # find any occurences of the field, using a case-insensitive
-            # comparison, to ensure that e.g. {{name}} is populated with the
-            # value from column "Name", even though the casing might differ
-            search = re.compile(template_field, re.IGNORECASE)
+            template = fill_template_field(
+                field_name=str(field),
+                field_value=template_content,
+                in_template=template)
 
-            # finally populate any found occurences of the template field with
-            # the resulting value from the data
-            content = search.sub(field_value, content)
-
-    return content
+    return template
 
 
 def colorize_help_description(help_description, required):
@@ -129,7 +133,7 @@ def colorize_error(error):
 
 def main(argv):
     parser = argparse.ArgumentParser(
-        description='Generate printable sheets of cards.')
+        description='Generates printable sheets of cards.')
 
     parser.add_argument('-f', '--filename', dest='filename', type=str,
                         required=True,
@@ -273,11 +277,17 @@ def main(argv):
                     template = default_template
 
                 if template is not None:
-                    card_content = content_from_template(row, template)
-                    card_content = card_content.replace(
-                        '{{card_index}}', str(cards_on_all_pages + 1))
-                    card_content = card_content.replace(
-                        '{{version}}', version_identifier)
+                    card_content = fill_template(template, data=row)
+
+                    card_content = fill_template_field(
+                        field_name='card_index',
+                        field_value=str(cards_on_all_pages + 1),
+                        in_template=card_content)
+
+                    card_content = fill_template_field(
+                        field_name='version',
+                        field_value=version_identifier,
+                        in_template=card_content)
                 else:
                     card_content = """
                                    <b>Error</b>: a template was not provided
@@ -318,7 +328,10 @@ def main(argv):
                     cards_on_all_pages, cards_or_card,
                     pages_total, pages_or_page)
 
-            pages = pages.replace('{{cards_total}}', str(cards_on_all_pages))
+            pages = fill_template_field(
+                field_name='cards_total',
+                field_value=str(cards_on_all_pages),
+                in_template=pages)
 
             index = index.replace('{{title}}', title)
             index = index.replace('{{description}}', description)
