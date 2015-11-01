@@ -101,11 +101,12 @@ def fill_template(template, data):
     for field in data:
         # ignore special variable columns
         if not field.startswith('@'):
+            # fetch the content for the field (may also be templated)
             template_content = str(data[field])
-
-            # replace any special image fields with HTML compliant <img> tags
+            # replace any image fields with HTML compliant <img> tags
             template_content = fill_template_image_fields(template_content)
 
+            # fill content into the provided template
             template = fill_template_field(
                 field_name=str(field),
                 field_value=template_content,
@@ -145,11 +146,18 @@ def main(argv):
     parser = argparse.ArgumentParser(
         description='Generates printable sheets of cards.')
 
-    parser.add_argument('-f', '--filename', dest='filename', type=str,
+    parser.add_argument('-f', '--input-filename', dest='input_path', type=str,
                         required=True,
                         help=colorize_help_description(
                             'A path to a CSV file containing card data',
                             required=True))
+
+    parser.add_argument('-o', '--output-folder', dest='output_path', type=str,
+                        required=False,
+                        help=colorize_help_description(
+                            'A path to a directory in which the pages will be '
+                            'generated',
+                            required=False))
 
     parser.add_argument('-t', '--template', dest='template', type=str,
                         required=False,
@@ -193,9 +201,10 @@ def main(argv):
     args = vars(parser.parse_args())
 
     # required arguments
-    data_path = args['filename']
+    data_path = args['input_path']
 
     # optional arguments
+    output_path = args['output_path']
     default_template_path = args['template']
     title = args['title']
     description = args['description']
@@ -327,12 +336,17 @@ def main(argv):
 
             pages_total += 1
 
-        create_missing_directories_if_necessary('generated')
+        if output_path is None:
+            output_path = ''
+
+        generated_path = os.path.join(output_path, 'generated')
+
+        create_missing_directories_if_necessary(generated_path)
 
         pages_or_page = 'pages' if pages_total > 1 else 'page'
         cards_or_card = 'cards' if cards_on_all_pages > 1 else 'card'
 
-        with open('generated/index.html', 'w') as result:
+        with open(os.path.join(generated_path, 'index.html'), 'w') as result:
             if not title or len(title) == 0:
                 title = 'cards.py: {0} {1} on {2} {3}'.format(
                     cards_on_all_pages, cards_or_card,
@@ -347,15 +361,16 @@ def main(argv):
             index = index.replace('{{description}}', description)
             index = index.replace('{{pages}}', pages)
 
-            generated_path = os.path.abspath(result.name)
-
             result.write(index)
 
-        shutil.copyfile('template/index.css', 'generated/index.css')
+        shutil.copyfile(
+            'template/index.css',
+            os.path.join(generated_path, 'index.css'))
 
-        print('Generated {0} {1} on {2} {3}. See \'generated/index.html\'.'
+        print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
               .format(cards_on_all_pages, cards_or_card,
-                      pages_total, pages_or_page))
+                      pages_total, pages_or_page,
+                      generated_path))
 
         if sys.platform.startswith('darwin'):
             subprocess.call(('open', generated_path))
