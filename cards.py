@@ -8,6 +8,9 @@ import shutil
 import subprocess
 import itertools
 
+__version_info__ = ('0', '1', '0')
+__version__ = '.'.join(__version_info__)
+
 
 def create_missing_directories_if_necessary(path):
     """
@@ -23,6 +26,10 @@ def create_missing_directories_if_necessary(path):
 
 
 def copy_images_to_output_directory(image_paths, root_path, output_path):
+    """
+    Copies all provided images to the specified output path, keeping the
+    directory structure intact for each image.
+    """
     for image_path in image_paths:
         # copy each relatively specified image (if an image is specified
         # using an absolute path, assume that it should not be copied)
@@ -113,6 +120,10 @@ def fill_template_image_fields(template):
 
 
 def fill_template_field(field_name, field_value, in_template):
+    """
+    Fills in the provided value in the provided template for all occurences
+    of a given template field.
+    """
     # template fields are always represented by wrapping {{ }}'s'
     template_field = re.escape('{{%s}}' % str(field_name))
 
@@ -239,6 +250,12 @@ def main(argv):
                         required=False, default=False, action='store_true',
                         help=colorize_help_description(
                             'Show more information',
+                            required=False))
+
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s ' + __version__,
+                        help=colorize_help_description(
+                            'Show the program\'s version, then exit',
                             required=False))
 
     args = vars(parser.parse_args())
@@ -373,6 +390,7 @@ def main(argv):
                 cards_on_all_pages += 1
 
                 if cards_on_page == max_cards_per_page:
+                    # add another page full of cards
                     pages += page.replace('{{cards}}', cards)
 
                     pages_total += 1
@@ -381,6 +399,7 @@ def main(argv):
                     cards = ''
 
         if cards_on_page > 0:
+            # in case there's still cards remaining, fill those into a new page
             pages += page.replace('{{cards}}', cards)
 
             pages_total += 1
@@ -412,8 +431,8 @@ def main(argv):
 
             result.write(index)
 
-        # ensure there are no duplicate image paths, since that would cause
-        # unnecessary copy operations
+        # ensure there are no duplicate image paths, since that would just
+        # cause unnecessary copy operations
         image_paths = list(set(image_paths))
 
         copy_images_to_output_directory(image_paths, data_path, output_path)
