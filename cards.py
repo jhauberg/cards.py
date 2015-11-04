@@ -25,7 +25,8 @@ def create_missing_directories_if_necessary(path):
             raise
 
 
-def copy_images_to_output_directory(image_paths, root_path, output_path):
+def copy_images_to_output_directory(image_paths, root_path, output_path,
+                                    verbosely=False):
     """
     Copies all provided images to the specified output path, keeping the
     directory structure intact for each image.
@@ -50,6 +51,12 @@ def copy_images_to_output_directory(image_paths, root_path, output_path):
                 # only copy if the file actually exists
                 shutil.copyfile(
                     relative_source_path, relative_destination_path)
+            else:
+                if verbosely:
+                    print(colorize_error(
+                        '[!] A card contains an image reference that '
+                        'does not exist: \'{0}\''
+                        .format(relative_source_path)))
 
 
 def fill_template_image_fields(template):
@@ -196,10 +203,7 @@ def lower_first_row(rows):
     return itertools.chain([next(rows).lower()], rows)
 
 
-def main(argv):
-    parser = argparse.ArgumentParser(
-        description='Generates printable sheets of cards.')
-
+def setup_arguments(parser):
     parser.add_argument('-f', '--input-filename', dest='input_path', type=str,
                         required=True,
                         help=colorize_help_description(
@@ -257,6 +261,13 @@ def main(argv):
                         help=colorize_help_description(
                             'Show the program\'s version, then exit',
                             required=False))
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(
+        description='Generates printable sheets of cards.')
+
+    setup_arguments(parser)
 
     args = vars(parser.parse_args())
 
@@ -445,7 +456,8 @@ def main(argv):
         # cause unnecessary copy operations
         image_paths = list(set(image_paths))
 
-        copy_images_to_output_directory(image_paths, data_path, output_path)
+        copy_images_to_output_directory(image_paths, data_path, output_path,
+                                        verbosely=True)
 
         shutil.copyfile(
             'template/index.css',
