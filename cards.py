@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '1', '0')
+__version_info__ = ('0', '1', '1')
 __version__ = '.'.join(__version_info__)
 
 
@@ -335,6 +335,8 @@ def main(argv):
                 template_path = row.get('@template', default_template_path)
                 template = None
 
+                card_index = cards_on_all_pages + 1
+
                 if (template_path is not default_template_path and
                    len(template_path) > 0):
                     if not os.path.isabs(template_path):
@@ -348,40 +350,48 @@ def main(argv):
                         with open(template_path) as t:
                             template = t.read().strip()
                     except IOError:
+                        template = """
+                                   <b>Error (at card #{{card_index}})</b>:
+                                   the template that was provided for this card
+                                   could not be opened:<br /><br />
+                                   <b>%s</b>
+                                   """ % template_path
+
                         if is_verbose:
                             print(colorize_error(
-                                '[!] A card provided a template that could not'
-                                ' be opened: \'{0}\''.format(template_path)))
+                                '[!] The card at #{0} provided a template that'
+                                ' could not be opened: \'{1}\''
+                                .format(card_index, template_path)))
                 else:
                     # if the template path points to the same template as
                     # provided throuh --template, we already have it available
                     template = default_template
 
-                if template is not None:
-                    content = fill_template(template, data=row)
+                if template is None:
+                    template = """
+                               <b>Error (at card #{{card_index}})</b>:
+                               a template was not provided for this card.
+                               <br /><br />
 
-                    card_content = content[0]
+                               Provide one using the <b>--template</b>
+                               argument, or through a <b>@template</b> column.
+                               """
 
-                    image_paths.extend(content[1])
+                content = fill_template(template, data=row)
 
-                    card_content = fill_template_field(
-                        field_name='card_index',
-                        field_value=str(cards_on_all_pages + 1),
-                        in_template=card_content)
+                card_content = content[0]
 
-                    card_content = fill_template_field(
-                        field_name='version',
-                        field_value=version_identifier,
-                        in_template=card_content)
-                else:
-                    card_content = """
-                                   <b>Error</b>: a template was not provided
-                                   for this card.<br /><br />
+                image_paths.extend(content[1])
 
-                                   Provide one using the <b>--template</b>
-                                   argument, or through a <b>@template</b>
-                                   column.
-                                   """
+                card_content = fill_template_field(
+                    field_name='card_index',
+                    field_value=str(card_index),
+                    in_template=card_content)
+
+                card_content = fill_template_field(
+                    field_name='version',
+                    field_value=version_identifier,
+                    in_template=card_content)
 
                 cards += card.replace(
                     '{{content}}', card_content)
@@ -425,9 +435,9 @@ def main(argv):
                 field_value=str(cards_on_all_pages),
                 in_template=pages)
 
+            index = index.replace('{{pages}}', pages)
             index = index.replace('{{title}}', title)
             index = index.replace('{{description}}', description)
-            index = index.replace('{{pages}}', pages)
 
             result.write(index)
 
