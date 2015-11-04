@@ -449,6 +449,7 @@ def main(argv):
             index = index.replace('{{pages}}', pages)
             index = index.replace('{{title}}', title)
             index = index.replace('{{description}}', description)
+            index = index.replace('{{copyright}}', '')
 
             result.write(index)
 

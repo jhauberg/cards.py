@@ -47,11 +47,53 @@ html, body {
   align-content: start;
 }
 
-.page-cut-lines {
+.page-content {
+  /* Exactly the size of 3 cards laid out horizontally */
   width: 7.5in;
+  /* Exactly the size of 3 cards laid out vertically */
   height: 10.5in;
 
   position: absolute;
+}
+
+.footer {
+  height: 0.8cm;
+  width: 100%;
+
+  /* Should appear at below the content */
+  top: 100%;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.footer-item {
+  /* Split up each footer item in 3 columns */
+  width: 33.3%;
+
+  padding-top: 1mm;
+  padding-left: 3mm;
+  padding-right: 3mm;
+  padding-bottom: 0;
+
+  position: absolute;
+}
+
+#footer-title {
+  text-align: left;
+}
+
+#footer-description {
+  text-align: center;
+
+  left: 33.3%;
+}
+
+#footer-copyright {
+  text-align: right;
+
+  right: 0;
 }
 
 .page-cut-line {
@@ -178,8 +220,8 @@ html, body {
 
   /* Margins should match the paddings defined by .page */
   margin-left: 0.97cm;
-  margin-top: 1.52cm;
   margin-right: 0.97cm;
+  margin-top: 1.52cm;
   margin-bottom: 1.52cm;
 }
 
@@ -202,7 +244,7 @@ html, body {
     /* Approximated margins to ensure cards are laid out as expected
     after any margins have been applied by the browser */
     margin-left: 0.6cm !important;
-    margin-top: 1cm !important;
+    margin-top: 0.6cm !important;
     margin-right: 0 !important;
     margin-bottom: 0 !important;
 
