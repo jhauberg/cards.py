@@ -8,8 +8,58 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '1', '1')
+__version_info__ = ('0', '2', '0')
 __version__ = '.'.join(__version_info__)
+
+
+class Metadata(object):
+    """
+    Provides metadata properties for the generated pages.
+    """
+    def __init__(self, title, description, version, copyright):
+        self.title = title
+        self.description = description
+        self.version = version
+        self.copyright = copyright
+
+    @staticmethod
+    def from_data_paths(data_paths):
+        """
+        Return a Metadata instance which reads any discovered metadata from
+        the provided data paths.
+        """
+        title = ''
+        description = ''
+        version = ''
+        copyright = ''
+
+        # for now, just read from the first metadata provider
+        data_path = data_paths[0]
+        data_path_components = os.path.splitext(data_path)
+
+        metadata_path = data_path_components[0] + '.meta'
+
+        if len(data_path_components) > 1:
+            metadata_path += data_path_components[1]
+
+        if not os.path.isfile(metadata_path):
+            if is_verbose:
+                print(colorize_warning(
+                    '[!] No metadata was found. You can provide it at: \'{0}\''
+                    .format(metadata_path)))
+        else:
+            with open(metadata_path) as mf:
+                metadata = csv.DictReader(lower_first_row(mf))
+
+                for metadata_row in metadata:
+                    title = metadata_row.get('@title')
+                    description = metadata_row.get('@description')
+                    version = metadata_row.get('@version')
+                    copyright = metadata_row.get('@copyright')
+
+                    break
+
+        return Metadata(title, description, version, copyright)
 
 
 def create_missing_directories_if_necessary(path):
@@ -54,8 +104,8 @@ def copy_images_to_output_directory(image_paths, root_path, output_path,
             else:
                 if verbosely:
                     print(colorize_error(
-                        '[!] A card contains an image reference that '
-                        'does not exist: \'{0}\''
+                        '[!] One or more cards contain an image reference that'
+                        ' does not exist: \'{0}\''
                         .format(relative_source_path)))
 
 
@@ -204,8 +254,8 @@ def lower_first_row(rows):
 
 
 def setup_arguments(parser):
-    parser.add_argument('-f', '--input-filename', dest='input_path', type=str,
-                        required=True,
+    parser.add_argument('-f', '--input-filename', dest='input_paths', type=str,
+                        required=True, nargs='*',
                         help=colorize_help_description(
                             'A path to a CSV file containing card data',
                             required=True))
@@ -252,7 +302,7 @@ def main(argv):
     args = vars(parser.parse_args())
 
     # required arguments
-    data_path = args['input_path']
+    data_paths = args['input_paths']
 
     # optional arguments
     output_path = args['output_path']
@@ -260,227 +310,204 @@ def main(argv):
     disable_cut_guides = bool(args['disable_cut_guides'])
     is_verbose = bool(args['verbose'])
 
-    title = ''
-    description = ''
-    version_identifier = ''
-    copyright = ''
+    if default_template_path is not None and len(default_template_path) > 0:
+        with open(default_template_path) as t:
+            default_template = t.read().strip()
 
-    with open(data_path) as f:
-        data_path_components = os.path.splitext(data_path)
+        if is_verbose and len(default_template) == 0:
+            print(colorize_warning(
+                '[!] The provided template appears to be empty. '
+                'Blank cards may occur.'))
+    else:
+        default_template = None
 
-        metadata_path = data_path_components[0] + '.meta'
+        if is_verbose:
+            print(colorize_warning(
+                '[!] A default template was not provided. '
+                'Blank cards may occur.'))
 
-        if len(data_path_components) > 1:
-            metadata_path += data_path_components[1]
+    with open('template/page.html') as p:
+        page = p.read()
 
-        if os.path.isfile(metadata_path):
-            with open(metadata_path) as mf:
-                metadata = csv.DictReader(lower_first_row(mf))
-
-                for metadata_row in metadata:
-                    title = metadata_row.get('@title')
-                    description = metadata_row.get('@description')
-                    version_identifier = metadata_row.get('@version')
-                    copyright = metadata_row.get('@copyright')
-
-                    break
+        if disable_cut_guides:
+            cut_guides_display = 'style="display: none"'
         else:
-            if is_verbose:
-                print(colorize_warning(
-                    '[!] No metadata was found. You can provide it at: \'{0}\''
-                    .format(metadata_path)))
+            cut_guides_display = 'style="display: block"'
 
-        data = csv.DictReader(lower_first_row(f))
+        page = page.replace('{{cut_guides_style}}', cut_guides_display)
 
-        if (default_template_path is not None and
-           len(default_template_path) > 0):
-            with open(default_template_path) as t:
-                default_template = t.read().strip()
+    with open('template/card.html') as c:
+        card = c.read()
 
-            if is_verbose and len(default_template) == 0:
-                print(colorize_warning(
-                    '[!] The provided template appears to be empty. '
-                    'Blank cards may occur.'))
-        else:
-            default_template = None
+    with open('template/index.html') as i:
+        index = i.read()
 
-            if is_verbose:
-                print(colorize_warning(
-                    '[!] A default template was not provided. '
-                    'Blank cards may occur.'))
+    metadata = Metadata.from_data_paths(data_paths)
 
-        with open('template/page.html') as p:
-            page = p.read()
+    cards = ''
+    pages = ''
 
-            if disable_cut_guides:
-                cut_guides_display = 'style="display: none"'
-            else:
-                cut_guides_display = 'style="display: block"'
+    cards_on_page = 0
+    cards_on_all_pages = 0
 
-            page = page.replace('{{cut_guides_style}}', cut_guides_display)
+    max_cards_per_page = 9
 
-        with open('template/card.html') as c:
-            card = c.read()
+    pages_total = 0
 
-        with open('template/index.html') as i:
-            index = i.read()
+    image_paths = []
 
-        cards = ''
-        pages = ''
+    for data_path in data_paths:
+        with open(data_path) as f:
+            data = csv.DictReader(lower_first_row(f))
 
-        cards_on_page = 0
-        cards_on_all_pages = 0
+            for row in data:
+                # determine how many instances of this card to generate
+                # (defaults to a single instance if not specified)
+                count = int(row.get('@count', 1))
 
-        max_cards_per_page = 9
+                if count < 0:
+                    # if a negative count is specified, treat it as none
+                    count = 0
 
-        pages_total = 0
+                for i in range(count):
+                    # determine which template to use for this card (defaults
+                    # to the template specified from the --template option)
+                    template_path = row.get('@template', default_template_path)
+                    template = None
 
-        image_paths = []
+                    card_index = cards_on_all_pages + 1
 
-        for row in data:
-            # determine how many instances of this card to generate (defaults
-            # to a single instance if not specified)
-            count = int(row.get('@count', 1))
+                    if (template_path is not default_template_path and
+                       len(template_path) > 0):
+                        if not os.path.isabs(template_path):
+                            # if the template path is not an absolute path,
+                            # assume that it's located relative to the data
+                            template_path = os.path.join(
+                                os.path.dirname(data_path),
+                                template_path)
 
-            if count < 0:
-                # if a negative count is specified, treat it as none
-                count = 0
+                        try:
+                            with open(template_path) as t:
+                                template = t.read().strip()
+                        except IOError:
+                            template = """
+                                       <b>Error (at card #{{card_index}})</b>:
+                                       the template that was provided for this
+                                       card could not be opened:<br /><br />
+                                       <b>%s</b>
+                                       """ % template_path
 
-            for i in range(count):
-                # determine which template to use for this card (defaults to
-                # the template specified from the --template option)
-                template_path = row.get('@template', default_template_path)
-                template = None
+                            if is_verbose:
+                                print(colorize_error(
+                                    '[!] The card at #{0} provided a template '
+                                    'that could not be opened: \'{1}\''
+                                    .format(card_index, template_path)))
+                    else:
+                        # if the template path points to the same template as
+                        # provided through --template, we already have it
+                        template = default_template
 
-                card_index = cards_on_all_pages + 1
-
-                if (template_path is not default_template_path and
-                   len(template_path) > 0):
-                    if not os.path.isabs(template_path):
-                        # if the template path is not an absolute path, assume
-                        # that it's located relative to where the data is
-                        template_path = os.path.join(
-                            os.path.dirname(data_path),
-                            template_path)
-
-                    try:
-                        with open(template_path) as t:
-                            template = t.read().strip()
-                    except IOError:
+                    if template is None:
                         template = """
                                    <b>Error (at card #{{card_index}})</b>:
-                                   the template that was provided for this card
-                                   could not be opened:<br /><br />
-                                   <b>%s</b>
-                                   """ % template_path
+                                   a template was not provided for this card.
+                                   <br /><br />
 
-                        if is_verbose:
-                            print(colorize_error(
-                                '[!] The card at #{0} provided a template that'
-                                ' could not be opened: \'{1}\''
-                                .format(card_index, template_path)))
-                else:
-                    # if the template path points to the same template as
-                    # provided throuh --template, we already have it available
-                    template = default_template
+                                   Provide one using the <b>--template</b>
+                                   argument, or through a <b>@template</b>
+                                   column.
+                                   """
 
-                if template is None:
-                    template = """
-                               <b>Error (at card #{{card_index}})</b>:
-                               a template was not provided for this card.
-                               <br /><br />
+                    content = fill_template(template, data=row)
 
-                               Provide one using the <b>--template</b>
-                               argument, or through a <b>@template</b> column.
-                               """
+                    card_content = content[0]
 
-                content = fill_template(template, data=row)
+                    image_paths.extend(content[1])
 
-                card_content = content[0]
+                    card_content = fill_template_field(
+                        field_name='card_index',
+                        field_value=str(card_index),
+                        in_template=card_content)
 
-                image_paths.extend(content[1])
+                    card_content = fill_template_field(
+                        field_name='version',
+                        field_value=metadata.version,
+                        in_template=card_content)
 
-                card_content = fill_template_field(
-                    field_name='card_index',
-                    field_value=str(card_index),
-                    in_template=card_content)
+                    cards += card.replace(
+                        '{{content}}', card_content)
 
-                card_content = fill_template_field(
-                    field_name='version',
-                    field_value=version_identifier,
-                    in_template=card_content)
+                    cards_on_page += 1
+                    cards_on_all_pages += 1
 
-                cards += card.replace(
-                    '{{content}}', card_content)
+                    if cards_on_page == max_cards_per_page:
+                        # add another page full of cards
+                        pages += page.replace('{{cards}}', cards)
 
-                cards_on_page += 1
-                cards_on_all_pages += 1
+                        pages_total += 1
 
-                if cards_on_page == max_cards_per_page:
-                    # add another page full of cards
-                    pages += page.replace('{{cards}}', cards)
+                        cards_on_page = 0
+                        cards = ''
 
-                    pages_total += 1
+    if cards_on_page > 0:
+        # in case there's still cards remaining, fill those into a new page
+        pages += page.replace('{{cards}}', cards)
 
-                    cards_on_page = 0
-                    cards = ''
+        pages_total += 1
 
-        if cards_on_page > 0:
-            # in case there's still cards remaining, fill those into a new page
-            pages += page.replace('{{cards}}', cards)
+    if output_path is None:
+        # output to current working directory unless otherwise specified
+        output_path = ''
 
-            pages_total += 1
+    output_path = os.path.join(output_path, 'generated')
 
-        if output_path is None:
-            output_path = ''
+    create_missing_directories_if_necessary(output_path)
 
-        output_path = os.path.join(output_path, 'generated')
+    pages_or_page = 'pages' if pages_total > 1 else 'page'
+    cards_or_card = 'cards' if cards_on_all_pages > 1 else 'card'
 
-        create_missing_directories_if_necessary(output_path)
+    with open(os.path.join(output_path, 'index.html'), 'w') as result:
+        title = metadata.title
 
-        pages_or_page = 'pages' if pages_total > 1 else 'page'
-        cards_or_card = 'cards' if cards_on_all_pages > 1 else 'card'
+        if not title or len(title) == 0:
+            title = 'cards.py: {0} {1} on {2} {3}'.format(
+                cards_on_all_pages, cards_or_card,
+                pages_total, pages_or_page)
 
-        with open(os.path.join(output_path, 'index.html'), 'w') as result:
-            if not title or len(title) == 0:
-                title = 'cards.py: {0} {1} on {2} {3}'.format(
-                    cards_on_all_pages, cards_or_card,
-                    pages_total, pages_or_page)
+        pages = fill_template_field(
+            field_name='cards_total',
+            field_value=str(cards_on_all_pages),
+            in_template=pages)
 
-            pages = fill_template_field(
-                field_name='cards_total',
-                field_value=str(cards_on_all_pages),
-                in_template=pages)
+        index = index.replace('{{pages}}', pages)
+        index = index.replace('{{title}}', title)
+        index = index.replace('{{description}}', metadata.description)
+        index = index.replace('{{copyright}}', metadata.copyright)
 
-            index = index.replace('{{pages}}', pages)
-            index = index.replace('{{title}}', title)
-            index = index.replace('{{description}}', description)
-            index = index.replace('{{copyright}}', copyright)
+        result.write(index)
 
-            result.write(index)
+    # ensure there are no duplicate image paths, since that would just
+    # cause unnecessary copy operations
+    image_paths = list(set(image_paths))
 
-        # ensure there are no duplicate image paths, since that would just
-        # cause unnecessary copy operations
-        image_paths = list(set(image_paths))
+    copy_images_to_output_directory(image_paths, data_path, output_path,
+                                    verbosely=True)
 
-        copy_images_to_output_directory(image_paths, data_path, output_path,
-                                        verbosely=True)
+    shutil.copyfile(
+        'template/index.css',
+        os.path.join(output_path, 'index.css'))
 
-        shutil.copyfile(
-            'template/index.css',
-            os.path.join(output_path, 'index.css'))
+    print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
+          .format(cards_on_all_pages, cards_or_card,
+                  pages_total, pages_or_page,
+                  output_path))
 
-        print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
-              .format(cards_on_all_pages, cards_or_card,
-                      pages_total, pages_or_page,
-                      output_path))
-
-        if sys.platform.startswith('darwin'):
-            subprocess.call(('open', output_path))
-        elif os.name == 'nt':
-            subprocess.call(('start', output_path), shell=True)
-        elif os.name == 'posix':
-            subprocess.call(('xdg-open', output_path))
+    if sys.platform.startswith('darwin'):
+        subprocess.call(('open', output_path))
+    elif os.name == 'nt':
+        subprocess.call(('start', output_path), shell=True)
+    elif os.name == 'posix':
+        subprocess.call(('xdg-open', output_path))
 
 if __name__ == "__main__":
     main(sys.argv)
