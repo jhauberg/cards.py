@@ -1,5 +1,17 @@
 # coding=utf-8
 
+"""
+Cards.py generates print-ready pages full of cards for your game.
+
+https://github.com/jhauberg/cards.py
+
+Copyright 2015 Jacob Hauberg Hansen.
+License: MIT (see LICENSE)
+"""
+
+__version_info__ = ('0', '2', '3')
+__version__ = '.'.join(__version_info__)
+
 import os
 import sys
 import argparse
@@ -9,9 +21,6 @@ import re
 import shutil
 import subprocess
 import itertools
-
-__version_info__ = ('0', '2', '2')
-__version__ = '.'.join(__version_info__)
 
 
 class Metadata(object):
@@ -25,40 +34,31 @@ class Metadata(object):
         self.copyright = copyright
 
     @staticmethod
-    def from_data_paths(data_paths):
+    def from_file(path):
         """
-        Return a Metadata instance which reads any discovered metadata from
-        the provided data paths.
+        Reads the specified file containing metadata into a Metadata object
+        and returns it.
         """
         title = ''
         description = ''
         version = ''
         copyright = ''
 
-        # for now, just read from the first metadata provider
-        data_path = data_paths[0]
-        data_path_components = os.path.splitext(data_path)
+        if path is not None and len(path) > 0:
+            if not os.path.isfile(path):
+                if is_verbose:
+                    warn('No metadata was found at: \'{0}\''.format(path))
+            else:
+                with open(path) as mf:
+                    metadata = csv.DictReader(lower_first_row(mf))
 
-        metadata_path = data_path_components[0] + '.meta'
+                    for row in metadata:
+                        title = row.get('@title')
+                        description = row.get('@description')
+                        version = row.get('@version')
+                        copyright = row.get('@copyright')
 
-        if len(data_path_components) > 1:
-            metadata_path += data_path_components[1]
-
-        if not os.path.isfile(metadata_path):
-            if is_verbose:
-                warn('No metadata was found. '
-                     'You can provide it at: \'{0}\''.format(metadata_path))
-        else:
-            with open(metadata_path) as mf:
-                metadata = csv.DictReader(lower_first_row(mf))
-
-                for metadata_row in metadata:
-                    title = metadata_row.get('@title')
-                    description = metadata_row.get('@description')
-                    version = metadata_row.get('@version')
-                    copyright = metadata_row.get('@copyright')
-
-                    break
+                        break
 
         return Metadata(title, description, version, copyright)
 
@@ -247,6 +247,10 @@ def setup_arguments(parser):
                         help='A path to a directory in which the pages will '
                              'be generated')
 
+    parser.add_argument('-m', '--metadata-filename', dest='metadata_path',
+                        required=False, type=str,
+                        help='A path to a CSV file containing metadata')
+
     parser.add_argument('-t', '--template', dest='template', type=str,
                         required=False,
                         help='A path to a card template')
@@ -278,6 +282,7 @@ def main(argv):
 
     # optional arguments
     output_path = args['output_path']
+    metadata_path = args['metadata_path']
     default_template_path = args['template']
     disable_cut_guides = bool(args['disable_cut_guides'])
     is_verbose = bool(args['verbose'])
@@ -312,7 +317,7 @@ def main(argv):
     with open('template/index.html') as i:
         index = i.read()
 
-    metadata = Metadata.from_data_paths(data_paths)
+    metadata = Metadata.from_file(metadata_path)
 
     cards = ''
     pages = ''
