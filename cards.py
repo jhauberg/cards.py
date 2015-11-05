@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '2', '1')
+__version_info__ = ('0', '2', '2')
 __version__ = '.'.join(__version_info__)
 
 
@@ -44,9 +44,8 @@ class Metadata(object):
 
         if not os.path.isfile(metadata_path):
             if is_verbose:
-                print(colorize_warning(
-                    '[!] No metadata was found. You can provide it at: \'{0}\''
-                    .format(metadata_path)))
+                warn('No metadata was found. '
+                     'You can provide it at: \'{0}\''.format(metadata_path))
         else:
             with open(metadata_path) as mf:
                 metadata = csv.DictReader(lower_first_row(mf))
@@ -60,6 +59,22 @@ class Metadata(object):
                     break
 
         return Metadata(title, description, version, copyright)
+
+
+def warn(message, as_error=False):
+    apply_red_color = '\x1B[31m'
+    apply_yellow_color = '\x1B[33m'
+    apply_normal_color = '\033[0m'
+
+    apply_color = apply_yellow_color if not as_error else apply_red_color
+
+    print(apply_color +
+          '[!] ' + message +
+          apply_normal_color)
+
+
+def lower_first_row(rows):
+    return itertools.chain([next(rows).lower()], rows)
 
 
 def create_missing_directories_if_necessary(path):
@@ -102,11 +117,9 @@ def copy_images_to_output_directory(image_paths, root_path, output_path,
                 shutil.copyfile(
                     relative_source_path, relative_destination_path)
             else:
-                if verbosely:
-                    print(colorize_error(
-                        '[!] One or more cards contain an image reference that'
-                        ' does not exist: \'{0}\''
-                        .format(relative_source_path)))
+                warn('One or more cards contain an image reference that does '
+                     'not exist: \'{0}\''.format(relative_source_path),
+                     as_error=True)
 
 
 def fill_template_image_fields(template):
@@ -222,75 +235,32 @@ def fill_template(template, data):
     return (template, image_paths)
 
 
-def colorize_help_description(help_description, required):
-    apply_red_color = '\x1B[31m'
-    apply_yellow_color = '\x1B[33m'
-    apply_normal_color = '\033[0m'
-
-    if required:
-        help_description = apply_red_color + help_description
-    else:
-        help_description = apply_yellow_color + help_description
-
-    return help_description + apply_normal_color
-
-
-def colorize_warning(warning):
-    apply_yellow_color = '\x1B[33m'
-    apply_normal_color = '\033[0m'
-
-    return apply_yellow_color + warning + apply_normal_color
-
-
-def colorize_error(error):
-    apply_red_color = '\x1B[31m'
-    apply_normal_color = '\033[0m'
-
-    return apply_red_color + error + apply_normal_color
-
-
-def lower_first_row(rows):
-    return itertools.chain([next(rows).lower()], rows)
-
-
 def setup_arguments(parser):
     parser.add_argument('-f', '--input-filename', dest='input_paths', type=str,
                         required=True, nargs='*',
-                        help=colorize_help_description(
-                            'A path to a CSV file containing card data',
-                            required=True))
+                        help='A path to a CSV file containing card data')
 
     parser.add_argument('-o', '--output-folder', dest='output_path', type=str,
                         required=False,
-                        help=colorize_help_description(
-                            'A path to a directory in which the pages will be '
-                            'generated',
-                            required=False))
+                        help='A path to a directory in which the pages will '
+                             'be generated')
 
     parser.add_argument('-t', '--template', dest='template', type=str,
                         required=False,
-                        help=colorize_help_description(
-                            'A path to a card template',
-                            required=False))
+                        help='A path to a card template')
 
     parser.add_argument('--disable-cut-guides', dest='disable_cut_guides',
                         required=False, default=False, action='store_true',
-                        help=colorize_help_description(
-                            'Disable cut guides on the margins of the '
-                            'generated pages',
-                            required=False))
+                        help='Disable cut guides on the margins of the '
+                             'generated pages')
 
     parser.add_argument('--verbose', dest='verbose',
                         required=False, default=False, action='store_true',
-                        help=colorize_help_description(
-                            'Show more information',
-                            required=False))
+                        help='Show more information')
 
     parser.add_argument('--version', action='version',
                         version='%(prog)s ' + __version__,
-                        help=colorize_help_description(
-                            'Show the program\'s version, then exit',
-                            required=False))
+                        help='Show the program\'s version, then exit')
 
 
 def main(argv):
@@ -315,16 +285,14 @@ def main(argv):
             default_template = t.read().strip()
 
         if is_verbose and len(default_template) == 0:
-            print(colorize_warning(
-                '[!] The provided template appears to be empty. '
-                'Blank cards may occur.'))
+            warn('The provided template appears to be empty. '
+                 'Blank cards may occur.')
     else:
         default_template = None
 
         if is_verbose:
-            print(colorize_warning(
-                '[!] A default template was not provided. '
-                'Blank cards may occur.'))
+            warn('A default template was not provided. '
+                 'Blank cards may occur.')
 
     with open('template/page.html') as p:
         page = p.read()
@@ -355,6 +323,27 @@ def main(argv):
     pages_total = 0
 
     image_paths = []
+
+    # error format/template string for the output on cards specifying a
+    # template that was not found, or could not be opened
+    template_not_opened = """
+                          <b>Error (at card #{{card_index}})</b>:
+                          the template that was provided for this
+                          card could not be opened:<br /><br />
+                          <b>%s</b>
+                          """
+
+    # error format/template string for the output on cards when a default
+    # template has not been specified, and the card hasn't specified one either
+    template_not_provided = """
+                            <b>Error (at card #{{card_index}})</b>:
+                            a template was not provided for this card.
+                            <br /><br />
+
+                            Provide one using the <b>--template</b>
+                            argument, or through a <b>@template</b>
+                            column.
+                            """
 
     for data_path in data_paths:
         with open(data_path) as f:
@@ -390,32 +379,19 @@ def main(argv):
                             with open(template_path) as t:
                                 template = t.read().strip()
                         except IOError:
-                            template = """
-                                       <b>Error (at card #{{card_index}})</b>:
-                                       the template that was provided for this
-                                       card could not be opened:<br /><br />
-                                       <b>%s</b>
-                                       """ % template_path
+                            template = template_not_opened % template_path
 
-                            print(colorize_error(
-                                '[!] The card at #{0} provided a template '
-                                'that could not be opened: \'{1}\''
-                                .format(card_index, template_path)))
+                            warn('The card at #{0} provided a template that '
+                                 'could not be opened: \'{1}\''
+                                 .format(card_index, template_path),
+                                 as_error=True)
                     else:
                         # if the template path points to the same template as
                         # provided through --template, we already have it
                         template = default_template
 
                     if template is None:
-                        template = """
-                                   <b>Error (at card #{{card_index}})</b>:
-                                   a template was not provided for this card.
-                                   <br /><br />
-
-                                   Provide one using the <b>--template</b>
-                                   argument, or through a <b>@template</b>
-                                   column.
-                                   """
+                        template = template_not_provided
 
                     content = fill_template(template, data=row)
 
