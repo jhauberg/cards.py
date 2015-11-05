@@ -34,7 +34,7 @@ class Metadata(object):
         self.copyright = copyright
 
     @staticmethod
-    def from_file(path):
+    def from_file(path, verbosely=False):
         """
         Reads the specified file containing metadata into a Metadata object
         and returns it.
@@ -46,7 +46,7 @@ class Metadata(object):
 
         if path is not None and len(path) > 0:
             if not os.path.isfile(path):
-                if is_verbose:
+                if verbosely:
                     warn('No metadata was found at: \'{0}\''.format(path))
             else:
                 with open(path) as mf:
@@ -317,7 +317,37 @@ def main(argv):
     with open('template/index.html') as i:
         index = i.read()
 
-    metadata = Metadata.from_file(metadata_path)
+    first_potential_metadata_path = None
+
+    if metadata_path is None:
+        # attempt looking for a file named like 'my-data.meta.csv' for each
+        # provided data path until a file is found
+        found = False
+
+        for data_path in data_paths:
+            data_path_components = os.path.splitext(data_path)
+
+            potential_metadata_path = data_path_components[0] + '.meta'
+
+            if len(data_path_components) > 1:
+                potential_metadata_path += data_path_components[1]
+
+            if first_potential_metadata_path is None:
+                first_potential_metadata_path = potential_metadata_path
+
+            if os.path.isfile(potential_metadata_path):
+                metadata_path = potential_metadata_path
+                found = True
+
+                break
+
+        if not found:
+            if is_verbose:
+                warn('No metadata was found. '
+                     'You can provide it at e.g.: \'{0}\''
+                     .format(first_potential_metadata_path))
+
+    metadata = Metadata.from_file(metadata_path, verbosely=is_verbose)
 
     cards = ''
     pages = ''
