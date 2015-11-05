@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '2', '0')
+__version_info__ = ('0', '2', '1')
 __version__ = '.'.join(__version_info__)
 
 
@@ -397,11 +397,10 @@ def main(argv):
                                        <b>%s</b>
                                        """ % template_path
 
-                            if is_verbose:
-                                print(colorize_error(
-                                    '[!] The card at #{0} provided a template '
-                                    'that could not be opened: \'{1}\''
-                                    .format(card_index, template_path)))
+                            print(colorize_error(
+                                '[!] The card at #{0} provided a template '
+                                'that could not be opened: \'{1}\''
+                                .format(card_index, template_path)))
                     else:
                         # if the template path points to the same template as
                         # provided through --template, we already have it
