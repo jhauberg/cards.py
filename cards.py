@@ -179,12 +179,10 @@ def fill_template_image_fields(template):
 
             # since the string we're finding matches on has just been changed,
             # we have to recursively look for more fields if there are any
-            content = fill_template_image_fields(
+            template, filled_image_paths = fill_template_image_fields(
                 template[:match.start()] + image_tag + template[match.end():])
 
-            template = content[0]
-
-            image_paths.extend(content[1])
+            image_paths.extend(filled_image_paths)
 
             break
 
@@ -222,11 +220,10 @@ def fill_template(template, data):
             template_content = str(data[field])
 
             # replace any image fields with HTML compliant <img> tags
-            content = fill_template_image_fields(template_content)
+            template_content, filled_image_paths = fill_template_image_fields(
+                template_content)
 
-            template_content = content[0]
-
-            image_paths.extend(content[1])
+            image_paths.extend(filled_image_paths)
 
             # fill content into the provided template
             template = fill_template_field(
@@ -442,11 +439,10 @@ def main(argv):
                     if template is None:
                         template = template_not_provided
 
-                    content = fill_template(template, data=row)
+                    card_content, discovered_image_paths = fill_template(
+                        template, data=row)
 
-                    card_content = content[0]
-
-                    image_paths.extend(content[1])
+                    image_paths.extend(discovered_image_paths)
 
                     card_content = fill_template_field(
                         field_name='card_index',
