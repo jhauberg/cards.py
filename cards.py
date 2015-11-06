@@ -439,10 +439,8 @@ def main(argv):
                     # determine which template to use for this card (defaults
                     # to the template specified from the --template option)
                     template_path = row.get('@template', default_template_path)
-                    template_path_back = row.get('@template-back')
 
                     template = None
-                    back = None
 
                     card_index = cards_total + 1
 
@@ -473,24 +471,6 @@ def main(argv):
                     if template is None:
                         template = template_not_provided
 
-                    if (template_path_back is not None and
-                       len(template_path_back) > 0):
-                        if not os.path.isabs(template_path_back):
-                            template_path_back = os.path.join(
-                                os.path.dirname(data_path),
-                                template_path_back)
-
-                        try:
-                            with open(template_path_back) as tb:
-                                back = tb.read().strip()
-                        except IOError:
-                            warn('The card at #{0} provided a template-back '
-                                 'that could not be opened: \'{1}\''
-                                 .format(card_index, template_path_back),
-                                 as_error=True)
-                    else:
-                        back = ''
-
                     card_content, discovered_image_paths = fill_template(
                         template, data=row)
 
@@ -512,8 +492,47 @@ def main(argv):
                     cards_total += 1
 
                     if not disable_backs:
+                        template_path_back = row.get('@template-back')
+                        template_back = None
+
+                        if (template_path_back is not None and
+                           len(template_path_back) > 0):
+                            if not os.path.isabs(template_path_back):
+                                template_path_back = os.path.join(
+                                    os.path.dirname(data_path),
+                                    template_path_back)
+
+                            try:
+                                with open(template_path_back) as tb:
+                                    template_back = tb.read().strip()
+                            except IOError:
+                                template_back = ''
+
+                                warn('The card at #{0} provided a back '
+                                     'template that could not be opened: '
+                                     '\'{1}\''
+                                     .format(card_index, template_path_back),
+                                     as_error=True)
+                        else:
+                            template_back = ''
+
+                        back_content, discovered_image_paths = fill_template(
+                            template_back, data=row)
+
+                        image_paths.extend(discovered_image_paths)
+
+                        back_content = fill_template_field(
+                            field_name='card_index',
+                            field_value=str(card_index),
+                            in_template=back_content)
+
+                        back_content = fill_template_field(
+                            field_name='version',
+                            field_value=metadata.version,
+                            in_template=back_content)
+
                         # prepend this card back to the current line of backs
-                        backs_line = card.replace('{{content}}', back) + backs_line
+                        backs_line = card.replace('{{content}}', back_content) + backs_line
 
                         # card backs are prepended rather than appended to
                         # ensure correct layout when printing doublesided
