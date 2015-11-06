@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '2', '3')
+__version_info__ = ('0', '3', '0')
 __version__ = '.'.join(__version_info__)
 
 
@@ -320,6 +320,9 @@ def main(argv):
     disable_cut_guides = bool(args['disable_cut_guides'])
     is_verbose = bool(args['verbose'])
 
+    # default to not generate backsides
+    disable_backs = True
+
     if default_template_path is not None and len(default_template_path) > 0:
         with open(default_template_path) as t:
             default_template = t.read().strip()
@@ -367,7 +370,13 @@ def main(argv):
     metadata = Metadata.from_file(metadata_path, verbosely=is_verbose)
 
     cards = ''
+    backs = ''
+    backs_line = ''
     pages = ''
+
+    # empty backs may be necessary to fill in empty spots on a page
+    # to ensure that the layout remains correct
+    empty_back = card.replace('{{content}}', '')
 
     max_cards_per_page = 9
 
@@ -402,6 +411,14 @@ def main(argv):
         with open(data_path) as f:
             data = csv.DictReader(lower_first_row(f))
 
+            if '@template-back' in data.fieldnames:
+                # assume backsides should be generated
+                disable_backs = False
+
+                if is_verbose:
+                    warn('Assuming backsides should be generated since '
+                         '\'@template-back\' appears in the data.')
+
             for row in data:
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
@@ -415,7 +432,10 @@ def main(argv):
                     # determine which template to use for this card (defaults
                     # to the template specified from the --template option)
                     template_path = row.get('@template', default_template_path)
+                    template_path_back = row.get('@template-back')
+
                     template = None
+                    back = None
 
                     card_index = cards_total + 1
 
@@ -446,6 +466,24 @@ def main(argv):
                     if template is None:
                         template = template_not_provided
 
+                    if (template_path_back is not None and
+                       len(template_path_back) > 0):
+                        if not os.path.isabs(template_path_back):
+                            template_path_back = os.path.join(
+                                os.path.dirname(data_path),
+                                template_path_back)
+
+                        try:
+                            with open(template_path_back) as tb:
+                                back = tb.read().strip()
+                        except IOError:
+                            warn('The card at #{0} provided a template-back '
+                                 'that could not be opened: \'{1}\''
+                                 .format(card_index, template_path_back),
+                                 as_error=True)
+                    else:
+                        back = ''
+
                     card_content, discovered_image_paths = fill_template(
                         template, data=row)
 
@@ -466,18 +504,52 @@ def main(argv):
                     cards_on_page += 1
                     cards_total += 1
 
+                    if not disable_backs:
+                        # prepend this card back to the current line of backs
+                        backs_line = card.replace('{{content}}', back) + backs_line
+
+                        # card backs are prepended rather than appended to
+                        # ensure correct layout when printing doublesided
+
+                        if cards_on_page % 3 is 0:
+                            # a line has been filled- append the 3 card backs
+                            # to the page in the right order
+                            backs += backs_line
+                            backs_line = ''
+
                     if cards_on_page == max_cards_per_page:
                         # add another page full of cards
                         pages += page.replace('{{cards}}', cards)
                         pages_total += 1
 
+                        if not disable_backs:
+                            # and one full of backs
+                            pages += page.replace('{{cards}}', backs)
+                            pages_total += 1
+
+                            backs = ''
+
                         cards_on_page = 0
+
                         cards = ''
 
     if cards_on_page > 0:
         # in case there's still cards remaining, fill those into a new page
         pages += page.replace('{{cards}}', cards)
         pages_total += 1
+
+        if not disable_backs:
+            if cards_on_page % 3 is not 0:
+                # less than 3 cards were added to the current line, so
+                # we have to add an additional blank filler card to ensure
+                # correct layout
+                backs_line = empty_back + backs_line
+
+            backs += backs_line
+
+            # fill another page with the backs
+            pages += page.replace('{{cards}}', backs)
+            pages_total += 1
 
     if output_path is None:
         # output to current working directory unless otherwise specified
