@@ -293,6 +293,10 @@ def setup_arguments(parser):
                         help='Disable cut guides on the margins of the '
                              'generated pages')
 
+    parser.add_argument('--disable-backs', dest='disable_backs',
+                        required=False, default=False, action='store_true',
+                        help='Disable generating card backs')
+
     parser.add_argument('--verbose', dest='verbose',
                         required=False, default=False, action='store_true',
                         help='Show more information')
@@ -318,10 +322,8 @@ def main(argv):
     metadata_path = args['metadata_path']
     default_template_path = args['template']
     disable_cut_guides = bool(args['disable_cut_guides'])
+    disable_backs = bool(args['disable_backs'])
     is_verbose = bool(args['verbose'])
-
-    # default to not generate backsides
-    disable_backs = True
 
     if default_template_path is not None and len(default_template_path) > 0:
         with open(default_template_path) as t:
@@ -411,13 +413,14 @@ def main(argv):
         with open(data_path) as f:
             data = csv.DictReader(lower_first_row(f))
 
-            if '@template-back' in data.fieldnames:
-                # assume backsides should be generated
-                disable_backs = False
-
+            if not disable_backs and '@template-back' in data.fieldnames:
                 if is_verbose:
-                    warn('Assuming backsides should be generated since '
-                         '\'@template-back\' appears in the data.')
+                    warn('Assuming card backs should be generated since '
+                         '\'@template-back\' appears in the data. '
+                         'You can disable card backs by specifying the '
+                         '--disable-backs argument.')
+            else:
+                disable_backs = True
 
             for row in data:
                 # determine how many instances of this card to generate
