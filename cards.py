@@ -391,15 +391,18 @@ def main(argv):
     # error format/template string for the output on cards specifying a
     # template that was not found, or could not be opened
     template_not_opened = """
+                          <div style=\"padding: 4mm\">
                           <b>Error (at card #{{card_index}})</b>:
                           the template that was provided for this
                           card could not be opened:<br /><br />
                           <b>%s</b>
+                          </div>
                           """
 
     # error format/template string for the output on cards when a default
     # template has not been specified, and the card hasn't specified one either
     template_not_provided = """
+                            <div style=\"padding: 4mm\">
                             <b>Error (at card #{{card_index}})</b>:
                             a template was not provided for this card.
                             <br /><br />
@@ -407,6 +410,7 @@ def main(argv):
                             Provide one using the <b>--template</b>
                             argument, or through a <b>@template</b>
                             column.
+                            </div>
                             """
 
     for data_path in data_paths:
