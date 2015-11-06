@@ -9,9 +9,6 @@ Copyright 2015 Jacob Hauberg Hansen.
 License: MIT (see LICENSE)
 """
 
-__version_info__ = ('0', '2', '3')
-__version__ = '.'.join(__version_info__)
-
 import os
 import sys
 import argparse
@@ -21,6 +18,9 @@ import re
 import shutil
 import subprocess
 import itertools
+
+__version_info__ = ('0', '2', '3')
+__version__ = '.'.join(__version_info__)
 
 
 class Metadata(object):
@@ -269,6 +269,34 @@ def setup_arguments(parser):
                         help='Show the program\'s version, then exit')
 
 
+def find_metadata_path(data_paths):
+    found_metadata_path = None
+    first_potential_metadata_path = None
+
+    # attempt looking for a file named like 'my-data.meta.csv' for each
+    # provided data path until a file is found
+    for data_path in data_paths:
+        data_path_components = os.path.splitext(data_path)
+
+        potential_metadata_path = data_path_components[0] + '.meta'
+
+        if len(data_path_components) > 1:
+            potential_metadata_path += data_path_components[1]
+
+        if first_potential_metadata_path is None:
+            first_potential_metadata_path = potential_metadata_path
+
+        if os.path.isfile(potential_metadata_path):
+            # we found one
+            found_metadata_path = potential_metadata_path
+
+            break
+
+    return ((True, found_metadata_path) if
+            found_metadata_path is not None else
+            (False, first_potential_metadata_path))
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
         description='Generates printable sheets of cards.')
@@ -317,35 +345,19 @@ def main(argv):
     with open('template/index.html') as i:
         index = i.read()
 
-    first_potential_metadata_path = None
-
     if metadata_path is None:
-        # attempt looking for a file named like 'my-data.meta.csv' for each
-        # provided data path until a file is found
-        found = False
+        # no metadata has been explicitly specified, so try looking for it
+        # where the data is located
+        found, potential_metadata_path = find_metadata_path(data_paths)
 
-        for data_path in data_paths:
-            data_path_components = os.path.splitext(data_path)
-
-            potential_metadata_path = data_path_components[0] + '.meta'
-
-            if len(data_path_components) > 1:
-                potential_metadata_path += data_path_components[1]
-
-            if first_potential_metadata_path is None:
-                first_potential_metadata_path = potential_metadata_path
-
-            if os.path.isfile(potential_metadata_path):
+        if potential_metadata_path is not None:
+            if not found:
+                if is_verbose:
+                    warn('No metadata was found. '
+                         'You can provide it at e.g.: \'{0}\''
+                         .format(potential_metadata_path))
+            else:
                 metadata_path = potential_metadata_path
-                found = True
-
-                break
-
-        if not found:
-            if is_verbose:
-                warn('No metadata was found. '
-                     'You can provide it at e.g.: \'{0}\''
-                     .format(first_potential_metadata_path))
 
     metadata = Metadata.from_file(metadata_path, verbosely=is_verbose)
 
