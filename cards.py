@@ -1,7 +1,7 @@
 # coding=utf-8
 
 """
-Cards.py generates print-ready pages full of cards for your game.
+Generates print-ready cards for your tabletop game.
 
 https://github.com/jhauberg/cards.py
 
@@ -24,9 +24,8 @@ __version__ = '.'.join(__version_info__)
 
 
 class Metadata(object):
-    """
-    Provides metadata properties for the generated pages.
-    """
+    """ Provides metadata properties for the generated pages. """
+
     def __init__(self, title, description, version, copyright):
         self.title = title
         self.description = description
@@ -35,10 +34,10 @@ class Metadata(object):
 
     @staticmethod
     def from_file(path, verbosely=False):
+        """ Reads the specified file containing metadata into a Metadata object
+            and returns it.
         """
-        Reads the specified file containing metadata into a Metadata object
-        and returns it.
-        """
+
         title = ''
         description = ''
         version = ''
@@ -63,6 +62,38 @@ class Metadata(object):
         return Metadata(title, description, version, copyright)
 
 
+def find_metadata_path(data_paths):
+    """ If found, returns the first discovered path to a metadata file,
+        otherwise, returns the first potential path to where it looked for one.
+    """
+
+    found_metadata_path = None
+    first_potential_metadata_path = None
+
+    # attempt looking for a file named like 'my-data.meta.csv' for each
+    # provided data path until a file is found
+    for data_path in data_paths:
+        data_path_components = os.path.splitext(data_path)
+
+        potential_metadata_path = data_path_components[0] + '.meta'
+
+        if len(data_path_components) > 1:
+            potential_metadata_path += data_path_components[1]
+
+        if first_potential_metadata_path is None:
+            first_potential_metadata_path = potential_metadata_path
+
+        if os.path.isfile(potential_metadata_path):
+            # we found one
+            found_metadata_path = potential_metadata_path
+
+            break
+
+    return ((True, found_metadata_path) if
+            found_metadata_path is not None else
+            (False, first_potential_metadata_path))
+
+
 def warn(message, as_error=False):
     apply_red_color = '\x1B[31m'
     apply_yellow_color = '\x1B[33m'
@@ -76,13 +107,14 @@ def warn(message, as_error=False):
 
 
 def lower_first_row(rows):
+    """ Returns rows where the first row is all lower-case """
+
     return itertools.chain([next(rows).lower()], rows)
 
 
 def create_missing_directories_if_necessary(path):
-    """
-    Mimics the command 'mkdir -p'.
-    """
+    """ Mimics the command 'mkdir -p'. """
+
     try:
         os.makedirs(path)
     except OSError as exc:
@@ -94,10 +126,10 @@ def create_missing_directories_if_necessary(path):
 
 def copy_images_to_output_directory(image_paths, root_path, output_path,
                                     verbosely=False):
+    """ Copies all provided images to the specified output path, keeping the
+        directory structure intact for each image.
     """
-    Copies all provided images to the specified output path, keeping the
-    directory structure intact for each image.
-    """
+
     for image_path in image_paths:
         # copy each relatively specified image (if an image is specified
         # using an absolute path, assume that it should not be copied)
@@ -125,10 +157,10 @@ def copy_images_to_output_directory(image_paths, root_path, output_path,
 
 
 def fill_template_image_fields(template):
+    """ Recursively finds all {{image:size}} fields and returns a string
+        replaced with HTML compliant <img> tags.
     """
-    Recursively finds all {{image:size}} fields and returns a string replaced
-    with HTML compliant <img> tags.
-    """
+
     image_paths = []
 
     for match in re.finditer('{{(.*?)}}', template, re.DOTALL):
@@ -190,10 +222,10 @@ def fill_template_image_fields(template):
 
 
 def fill_template_field(field_name, field_value, in_template):
+    """ Fills in the provided value in the provided template for all occurences
+        of a given template field.
     """
-    Fills in the provided value in the provided template for all occurences
-    of a given template field.
-    """
+
     # template fields are always represented by wrapping {{ }}'s'
     template_field = re.escape('{{%s}}' % str(field_name))
 
@@ -207,10 +239,10 @@ def fill_template_field(field_name, field_value, in_template):
 
 
 def fill_template(template, data):
+    """ Returns the contents of the template with all template fields replaced
+        by any matching fields in the provided data.
     """
-    Returns the contents of the template with all template fields replaced by
-    any matching fields in the provided data.
-    """
+
     image_paths = []
 
     for field in data:
@@ -235,10 +267,14 @@ def fill_template(template, data):
 
 
 def setup_arguments(parser):
+    """ Sets up optional and required program arguments """
+
+    # required arguments
     parser.add_argument('-f', '--input-filename', dest='input_paths', type=str,
                         required=True, nargs='*',
                         help='A path to a CSV file containing card data')
 
+    # optional arguments
     parser.add_argument('-o', '--output-folder', dest='output_path', type=str,
                         required=False,
                         help='A path to a directory in which the pages will '
@@ -266,37 +302,9 @@ def setup_arguments(parser):
                         help='Show the program\'s version, then exit')
 
 
-def find_metadata_path(data_paths):
-    found_metadata_path = None
-    first_potential_metadata_path = None
-
-    # attempt looking for a file named like 'my-data.meta.csv' for each
-    # provided data path until a file is found
-    for data_path in data_paths:
-        data_path_components = os.path.splitext(data_path)
-
-        potential_metadata_path = data_path_components[0] + '.meta'
-
-        if len(data_path_components) > 1:
-            potential_metadata_path += data_path_components[1]
-
-        if first_potential_metadata_path is None:
-            first_potential_metadata_path = potential_metadata_path
-
-        if os.path.isfile(potential_metadata_path):
-            # we found one
-            found_metadata_path = potential_metadata_path
-
-            break
-
-    return ((True, found_metadata_path) if
-            found_metadata_path is not None else
-            (False, first_potential_metadata_path))
-
-
 def main(argv):
     parser = argparse.ArgumentParser(
-        description='Generates printable sheets of cards.')
+        description='Generates print-ready cards for your tabletop game.')
 
     setup_arguments(parser)
 
@@ -361,11 +369,10 @@ def main(argv):
     cards = ''
     pages = ''
 
-    cards_on_page = 0
-    cards_on_all_pages = 0
-
     max_cards_per_page = 9
 
+    cards_on_page = 0
+    cards_total = 0
     pages_total = 0
 
     image_paths = []
@@ -401,7 +408,7 @@ def main(argv):
                 count = int(row.get('@count', 1))
 
                 if count < 0:
-                    # if a negative count is specified, treat it as none
+                    # if a negative count is specified, treat it as 0
                     count = 0
 
                 for i in range(count):
@@ -410,7 +417,7 @@ def main(argv):
                     template_path = row.get('@template', default_template_path)
                     template = None
 
-                    card_index = cards_on_all_pages + 1
+                    card_index = cards_total + 1
 
                     if (template_path is not default_template_path and
                        len(template_path) > 0):
@@ -454,16 +461,14 @@ def main(argv):
                         field_value=metadata.version,
                         in_template=card_content)
 
-                    cards += card.replace(
-                        '{{content}}', card_content)
+                    cards += card.replace('{{content}}', card_content)
 
                     cards_on_page += 1
-                    cards_on_all_pages += 1
+                    cards_total += 1
 
                     if cards_on_page == max_cards_per_page:
                         # add another page full of cards
                         pages += page.replace('{{cards}}', cards)
-
                         pages_total += 1
 
                         cards_on_page = 0
@@ -472,31 +477,34 @@ def main(argv):
     if cards_on_page > 0:
         # in case there's still cards remaining, fill those into a new page
         pages += page.replace('{{cards}}', cards)
-
         pages_total += 1
 
     if output_path is None:
         # output to current working directory unless otherwise specified
         output_path = ''
 
+    # construct the final output path
     output_path = os.path.join(output_path, 'generated')
 
+    # ensure all directories exist or created if missing
     create_missing_directories_if_necessary(output_path)
 
+    # get the grammar right
     pages_or_page = 'pages' if pages_total > 1 else 'page'
-    cards_or_card = 'cards' if cards_on_all_pages > 1 else 'card'
+    cards_or_card = 'cards' if cards_total > 1 else 'card'
 
+    # begin writing pages to the output file (overwriting any existing file)
     with open(os.path.join(output_path, 'index.html'), 'w') as result:
         title = metadata.title
 
         if not title or len(title) == 0:
             title = 'cards.py: {0} {1} on {2} {3}'.format(
-                cards_on_all_pages, cards_or_card,
+                cards_total, cards_or_card,
                 pages_total, pages_or_page)
 
         pages = fill_template_field(
             field_name='cards_total',
-            field_value=str(cards_on_all_pages),
+            field_value=str(cards_total),
             in_template=pages)
 
         index = index.replace('{{pages}}', pages)
@@ -506,19 +514,21 @@ def main(argv):
 
         result.write(index)
 
+    # make sure to copy the css file to the output directory
+    shutil.copyfile('template/index.css',
+                    os.path.join(output_path, 'index.css'))
+
     # ensure there are no duplicate image paths, since that would just
     # cause unnecessary copy operations
     image_paths = list(set(image_paths))
 
+    # additionally, copy all referenced images to the output directory as well
+    # (making sure to keep their original directory structure)
     copy_images_to_output_directory(image_paths, data_path, output_path,
                                     verbosely=True)
 
-    shutil.copyfile(
-        'template/index.css',
-        os.path.join(output_path, 'index.css'))
-
     print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
-          .format(cards_on_all_pages, cards_or_card,
+          .format(cards_total, cards_or_card,
                   pages_total, pages_or_page,
                   output_path))
 
