@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '3', '0')
+__version_info__ = ('0', '3', '1')
 __version__ = '.'.join(__version_info__)
 
 
@@ -506,7 +506,7 @@ def main(argv):
                                 with open(template_path_back) as tb:
                                     template_back = tb.read().strip()
                             except IOError:
-                                template_back = ''
+                                template_back = template_not_opened % template_path_back
 
                                 warn('The card at #{0} provided a back '
                                      'template that could not be opened: '
