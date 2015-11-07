@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '3', '2')
+__version_info__ = ('0', '3', '3')
 __version__ = '.'.join(__version_info__)
 
 
@@ -373,14 +373,10 @@ def main(argv):
             default_template = t.read().strip()
 
         if is_verbose and len(default_template) == 0:
-            warn('The provided template appears to be empty. '
+            warn('The provided default template appears to be empty. '
                  'Blank cards may occur.')
     else:
         default_template = None
-
-        if is_verbose:
-            warn('A default template was not provided. '
-                 'Blank cards may occur.')
 
     with open('template/page.html') as p:
         page = p.read()
@@ -413,23 +409,6 @@ def main(argv):
                 metadata_path = potential_metadata_path
 
     metadata = Metadata.from_file(metadata_path, verbosely=is_verbose)
-
-    cards = ''
-    backs = ''
-    backs_line = ''
-    pages = ''
-
-    # empty backs may be necessary to fill in empty spots on a page
-    # to ensure that the layout remains correct
-    empty_back = card.replace('{{content}}', '')
-
-    MAX_CARDS_PER_PAGE = 9
-
-    cards_on_page = 0
-    cards_total = 0
-    pages_total = 0
-
-    image_paths = []
 
     # error format/template string for the output on cards specifying a
     # template that was not found, or could not be opened
@@ -469,9 +448,40 @@ def main(argv):
                             </div>
                             """
 
+    # 3x3 cards is the ideal fit for an A4 page
+    MAX_CARDS_PER_PAGE = 9
+
+    # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
+    cards = ''
+    # buffer that is filled reversely to support double-sided printing
+    backs_line = ''
+    # buffer that will contain at most MAX_CARDS_PER_PAGE amount of card backs
+    backs = ''
+    # buffer for all generated pages
+    pages = ''
+
+    # empty backs may be necessary to fill in empty spots on a page
+    # to ensure that the layout remains correct
+    empty_back = card.replace('{{content}}', '')
+
+    # incremented each time a card is generated, but reset to 0 for each page
+    cards_on_page = 0
+    # incremented each time a card is generated
+    cards_total = 0
+    # incremented each time a page is generated
+    pages_total = 0
+
+    # list of all the image paths discovered during card generation
+    image_paths = []
+
     for data_path in data_paths:
         with open(data_path) as f:
             data = csv.DictReader(lower_first_row(f))
+
+            if default_template is None and '@template' not in data.fieldnames:
+                if is_verbose:
+                    warn('A default template was not provided. '
+                         'Error cards may occur.')
 
             if not disable_backs and '@template-back' in data.fieldnames:
                 if is_verbose:
@@ -502,11 +512,12 @@ def main(argv):
                     template_path = row.get('@template', default_template_path)
 
                     if template_path is not default_template_path:
-                        template, not_found = template_from_path(template_path,
-                                                                 relative_to=data_path)
+                        template, not_found = template_from_path(
+                            template_path, relative_to=data_path)
 
                         if not_found:
-                            template = template_not_opened % (row_index, template_path)
+                            template = template_not_opened % (row_index,
+                                                              template_path)
 
                             warn('The card at #{0} (row {1}) provided a '
                                  'template that could not be opened: \'{2}\''
@@ -518,9 +529,10 @@ def main(argv):
                     if template is None:
                         template = template_not_provided % row_index
 
-                    card_content, discovered_image_paths = content_from_row(row, card_index, template, metadata)
+                    card_content, found_image_paths = content_from_row(
+                        row, card_index, template, metadata)
 
-                    image_paths.extend(discovered_image_paths)
+                    image_paths.extend(found_image_paths)
 
                     cards += card.replace('{{content}}', card_content)
 
@@ -532,23 +544,25 @@ def main(argv):
                         template_back = None
 
                         if template_path_back is not None:
-                            template_back, not_found = template_from_path(template_path_back,
-                                                                     relative_to=data_path)
+                            template_back, not_found = template_from_path(
+                                template_path_back, relative_to=data_path)
 
                             if not_found:
                                 template_back = template_not_opened % (row_index, template_path_back)
 
-                                warn('The card at #{0} (row {1}) provided a back '
-                                     'template that could not be opened: \'{2}\''
-                                     .format(card_index, row_index, template_path_back),
+                                warn('The card at #{0} (row {1}) provided a '
+                                     'back template that could not be opened: '
+                                     '\'{2}\''.format(card_index, row_index,
+                                                      template_path_back),
                                      as_error=True)
 
                         if template_back is None:
                             template_back = template_back_not_provided % row_index
 
-                        back_content, discovered_image_paths = content_from_row(row, card_index, template_back, metadata)
+                        back_content, found_image_paths = content_from_row(
+                            row, card_index, template_back, metadata)
 
-                        image_paths.extend(discovered_image_paths)
+                        image_paths.extend(found_image_paths)
 
                         # prepend this card back to the current line of backs
                         backs_line = card.replace('{{content}}', back_content) + backs_line
@@ -560,6 +574,8 @@ def main(argv):
                             # a line has been filled- append the 3 card backs
                             # to the page in the right order
                             backs += backs_line
+
+                            # reset to prepare for the next line
                             backs_line = ''
 
                     if cards_on_page == MAX_CARDS_PER_PAGE:
@@ -572,10 +588,11 @@ def main(argv):
                             pages += page.replace('{{cards}}', backs)
                             pages_total += 1
 
+                            # reset to prepare for the next page
                             backs = ''
 
+                        # reset to prepare for the next page
                         cards_on_page = 0
-
                         cards = ''
 
     if cards_on_page > 0:
