@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '3', '3')
+__version_info__ = ('0', '3', '4')
 __version__ = '.'.join(__version_info__)
 
 
@@ -492,10 +492,11 @@ def main(argv):
             else:
                 disable_backs = True
 
-            row_index = 0
+            row_index = 1
 
             for row in data:
-                # since the column names count as a row, the first row == 1
+                # since the column names counts as a row, and most editors
+                # do not use a zero-based row index, the first row == 2
                 row_index = row_index + 1
 
                 # determine how many instances of this card to generate
@@ -548,7 +549,8 @@ def main(argv):
                                 template_path_back, relative_to=data_path)
 
                             if not_found:
-                                template_back = template_not_opened % (row_index, template_path_back)
+                                template_back = template_not_opened % (
+                                    row_index, template_path_back)
 
                                 warn('The card at #{0} (row {1}) provided a '
                                      'back template that could not be opened: '
@@ -557,7 +559,8 @@ def main(argv):
                                      as_error=True)
 
                         if template_back is None:
-                            template_back = template_back_not_provided % row_index
+                            template_back = template_back_not_provided % (
+                                row_index)
 
                         back_content, found_image_paths = content_from_row(
                             row, card_index, template_back, metadata)
