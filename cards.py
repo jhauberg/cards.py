@@ -266,6 +266,32 @@ def fill_template(template, data):
     return (template, image_paths)
 
 
+def template_from_path(template_path, relative_to=None):
+    """ Attempts returning the template contents of the given path.
+        If specified, path is made relative to another path.
+    """
+
+    template = None
+    template_not_found = False
+
+    if template_path is not None and len(template_path) > 0:
+        if not os.path.isabs(template_path):
+            # if the template path is not an absolute path,
+            # assume that it's located relative to the data
+            if relative_to is not None:
+                template_path = os.path.join(
+                    os.path.dirname(relative_to),
+                    template_path)
+
+        try:
+            with open(template_path) as t:
+                template = t.read().strip()
+        except IOError:
+            template_not_found = True
+
+    return (template, template_not_found)
+
+
 def setup_arguments(parser):
     """ Sets up optional and required program arguments """
 
@@ -304,6 +330,23 @@ def setup_arguments(parser):
     parser.add_argument('--version', action='version',
                         version='%(prog)s ' + __version__,
                         help='Show the program\'s version, then exit')
+
+
+def content_from_row(row, index, template, metadata):
+    content, discovered_image_paths = fill_template(
+        template, data=row)
+
+    content = fill_template_field(
+        field_name='card_index',
+        field_value=str(index),
+        in_template=content)
+
+    content = fill_template_field(
+        field_name='version',
+        field_value=metadata.version,
+        in_template=content)
+
+    return (content, discovered_image_paths)
 
 
 def main(argv):
@@ -380,7 +423,7 @@ def main(argv):
     # to ensure that the layout remains correct
     empty_back = card.replace('{{content}}', '')
 
-    max_cards_per_page = 9
+    MAX_CARDS_PER_PAGE = 9
 
     cards_on_page = 0
     cards_total = 0
@@ -413,6 +456,19 @@ def main(argv):
                             </div>
                             """
 
+    # error format/template string for the output on cards when a default
+    # template has not been specified, and the card hasn't specified one either
+    template_back_not_provided = """
+                            <div style=\"word-wrap: break-word; padding: 4mm\">
+                            <b>Error (at card #{{card_index}}, row %d)</b>:
+                            a back template was not provided for this card.
+                            <br /><br />
+
+                            Provide one through the <b>@template-back</b>
+                            column.
+                            </div>
+                            """
+
     for data_path in data_paths:
         with open(data_path) as f:
             data = csv.DictReader(lower_first_row(f))
@@ -435,61 +491,36 @@ def main(argv):
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
                 count = int(row.get('@count', 1))
-
-                if count < 0:
-                    # if a negative count is specified, treat it as 0
-                    count = 0
+                # if a negative count is specified, treat it as 0
+                count = count if count > 0 else 0
 
                 for i in range(count):
+                    card_index = cards_total + 1
+
                     # determine which template to use for this card (defaults
                     # to the template specified from the --template option)
                     template_path = row.get('@template', default_template_path)
 
-                    template = None
+                    if template_path is not default_template_path:
+                        template, not_found = template_from_path(template_path,
+                                                                 relative_to=data_path)
 
-                    card_index = cards_total + 1
-
-                    if (template_path is not default_template_path and
-                       len(template_path) > 0):
-                        if not os.path.isabs(template_path):
-                            # if the template path is not an absolute path,
-                            # assume that it's located relative to the data
-                            template_path = os.path.join(
-                                os.path.dirname(data_path),
-                                template_path)
-
-                        try:
-                            with open(template_path) as t:
-                                template = t.read().strip()
-                        except IOError:
+                        if not_found:
                             template = template_not_opened % (row_index, template_path)
 
-                            warn('The card at #{0} (row {1}) provided a template that '
-                                 'could not be opened: \'{2}\''
+                            warn('The card at #{0} (row {1}) provided a '
+                                 'template that could not be opened: \'{2}\''
                                  .format(card_index, row_index, template_path),
                                  as_error=True)
                     else:
-                        # if the template path points to the same template as
-                        # provided through --template, we already have it
                         template = default_template
 
                     if template is None:
                         template = template_not_provided % row_index
 
-                    card_content, discovered_image_paths = fill_template(
-                        template, data=row)
+                    card_content, discovered_image_paths = content_from_row(row, card_index, template, metadata)
 
                     image_paths.extend(discovered_image_paths)
-
-                    card_content = fill_template_field(
-                        field_name='card_index',
-                        field_value=str(card_index),
-                        in_template=card_content)
-
-                    card_content = fill_template_field(
-                        field_name='version',
-                        field_value=metadata.version,
-                        in_template=card_content)
 
                     cards += card.replace('{{content}}', card_content)
 
@@ -500,41 +531,24 @@ def main(argv):
                         template_path_back = row.get('@template-back')
                         template_back = None
 
-                        if (template_path_back is not None and
-                           len(template_path_back) > 0):
-                            if not os.path.isabs(template_path_back):
-                                template_path_back = os.path.join(
-                                    os.path.dirname(data_path),
-                                    template_path_back)
+                        if template_path_back is not None:
+                            template_back, not_found = template_from_path(template_path_back,
+                                                                     relative_to=data_path)
 
-                            try:
-                                with open(template_path_back) as tb:
-                                    template_back = tb.read().strip()
-                            except IOError:
+                            if not_found:
                                 template_back = template_not_opened % (row_index, template_path_back)
 
                                 warn('The card at #{0} (row {1}) provided a back '
-                                     'template that could not be opened: '
-                                     '\'{2}\''
+                                     'template that could not be opened: \'{2}\''
                                      .format(card_index, row_index, template_path_back),
                                      as_error=True)
-                        else:
-                            template_back = ''
 
-                        back_content, discovered_image_paths = fill_template(
-                            template_back, data=row)
+                        if template_back is None:
+                            template_back = template_back_not_provided % row_index
+
+                        back_content, discovered_image_paths = content_from_row(row, card_index, template_back, metadata)
 
                         image_paths.extend(discovered_image_paths)
-
-                        back_content = fill_template_field(
-                            field_name='card_index',
-                            field_value=str(card_index),
-                            in_template=back_content)
-
-                        back_content = fill_template_field(
-                            field_name='version',
-                            field_value=metadata.version,
-                            in_template=back_content)
 
                         # prepend this card back to the current line of backs
                         backs_line = card.replace('{{content}}', back_content) + backs_line
@@ -548,7 +562,7 @@ def main(argv):
                             backs += backs_line
                             backs_line = ''
 
-                    if cards_on_page == max_cards_per_page:
+                    if cards_on_page == MAX_CARDS_PER_PAGE:
                         # add another page full of cards
                         pages += page.replace('{{cards}}', cards)
                         pages_total += 1
