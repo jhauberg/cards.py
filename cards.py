@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '3', '1')
+__version_info__ = ('0', '3', '2')
 __version__ = '.'.join(__version_info__)
 
 
@@ -391,8 +391,8 @@ def main(argv):
     # error format/template string for the output on cards specifying a
     # template that was not found, or could not be opened
     template_not_opened = """
-                          <div style=\"padding: 4mm\">
-                          <b>Error (at card #{{card_index}})</b>:
+                          <div style=\"word-wrap: break-word; padding: 4mm\">
+                          <b>Error (at card #{{card_index}}, row %d)</b>:
                           the template that was provided for this
                           card could not be opened:<br /><br />
                           <b>%s</b>
@@ -402,8 +402,8 @@ def main(argv):
     # error format/template string for the output on cards when a default
     # template has not been specified, and the card hasn't specified one either
     template_not_provided = """
-                            <div style=\"padding: 4mm\">
-                            <b>Error (at card #{{card_index}})</b>:
+                            <div style=\"word-wrap: break-word; padding: 4mm\">
+                            <b>Error (at card #{{card_index}}, row %d)</b>:
                             a template was not provided for this card.
                             <br /><br />
 
@@ -426,7 +426,12 @@ def main(argv):
             else:
                 disable_backs = True
 
+            row_index = 0
+
             for row in data:
+                # since the column names count as a row, the first row == 1
+                row_index = row_index + 1
+
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
                 count = int(row.get('@count', 1))
@@ -457,11 +462,11 @@ def main(argv):
                             with open(template_path) as t:
                                 template = t.read().strip()
                         except IOError:
-                            template = template_not_opened % template_path
+                            template = template_not_opened % (row_index, template_path)
 
-                            warn('The card at #{0} provided a template that '
-                                 'could not be opened: \'{1}\''
-                                 .format(card_index, template_path),
+                            warn('The card at #{0} (row {1}) provided a template that '
+                                 'could not be opened: \'{2}\''
+                                 .format(card_index, row_index, template_path),
                                  as_error=True)
                     else:
                         # if the template path points to the same template as
@@ -469,7 +474,7 @@ def main(argv):
                         template = default_template
 
                     if template is None:
-                        template = template_not_provided
+                        template = template_not_provided % row_index
 
                     card_content, discovered_image_paths = fill_template(
                         template, data=row)
@@ -506,12 +511,12 @@ def main(argv):
                                 with open(template_path_back) as tb:
                                     template_back = tb.read().strip()
                             except IOError:
-                                template_back = template_not_opened % template_path_back
+                                template_back = template_not_opened % (row_index, template_path_back)
 
-                                warn('The card at #{0} provided a back '
+                                warn('The card at #{0} (row {1}) provided a back '
                                      'template that could not be opened: '
-                                     '\'{1}\''
-                                     .format(card_index, template_path_back),
+                                     '\'{2}\''
+                                     .format(card_index, row_index, template_path_back),
                                      as_error=True)
                         else:
                             template_back = ''
