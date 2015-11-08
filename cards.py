@@ -526,11 +526,15 @@ def main(argv):
                     # to the template specified from the --template option)
                     template_path = row.get('@template', default_template_path)
 
+                    encountered_error = False
+
                     if template_path is not default_template_path:
                         template, not_found = template_from_path(
                             template_path, relative_to=data_path)
 
                         if not_found:
+                            encountered_error = True
+
                             template = template_not_opened % (row_index,
                                                               template_path)
 
@@ -544,6 +548,8 @@ def main(argv):
                         template = default_template
 
                     if template is None:
+                        encountered_error = True
+
                         template = template_not_provided % row_index
 
                         warn('The card at #{0} (row {1}) did not provide a '
@@ -554,11 +560,13 @@ def main(argv):
                     card_content, found_image_paths, missing_fields = content_from_row(
                         row, card_index, template, metadata)
 
-                    if len(missing_fields) > 0 and is_verbose:
-                        warn('The template for the card at #{0} (row {1}) did '
-                             'not contain the fields: {2}'
-                             .format(card_index, row_index, missing_fields),
-                             in_context=context)
+                    if not encountered_error and len(missing_fields) > 0:
+                        if is_verbose:
+                            warn('The template for the card at #{0} (row {1}) '
+                                 'did not contain the fields: {2}'
+                                 .format(card_index, row_index,
+                                         missing_fields),
+                                 in_context=context)
 
                     image_paths.extend(found_image_paths)
 
