@@ -240,7 +240,7 @@ def fill_template_field(field_name, field_value, in_template):
     search = re.compile(template_field, re.IGNORECASE)
 
     # finally replace any found occurences of the template field with its value
-    return search.sub(field_value, in_template)
+    return search.subn(field_value, in_template)
 
 
 def fill_template(template, data):
@@ -249,6 +249,7 @@ def fill_template(template, data):
     """
 
     image_paths = []
+    missing_fields = []
 
     for field in data:
         # ignore special variable columns
@@ -263,12 +264,15 @@ def fill_template(template, data):
             image_paths.extend(filled_image_paths)
 
             # fill content into the provided template
-            template = fill_template_field(
+            template, occurences = fill_template_field(
                 field_name=str(field),
                 field_value=template_content,
                 in_template=template)
 
-    return (template, image_paths)
+            if occurences is 0:
+                missing_fields.append(field)
+
+    return (template, image_paths, missing_fields)
 
 
 def template_from_path(template_path, relative_to=None):
@@ -295,6 +299,23 @@ def template_from_path(template_path, relative_to=None):
             template_not_found = True
 
     return (template, template_not_found)
+
+
+def content_from_row(row, index, template, metadata):
+    content, discovered_image_paths, missing_fields = fill_template(
+        template, data=row)
+
+    content, occurences = fill_template_field(
+        field_name='card_index',
+        field_value=str(index),
+        in_template=content)
+
+    content, occurences = fill_template_field(
+        field_name='version',
+        field_value=metadata.version,
+        in_template=content)
+
+    return (content, discovered_image_paths, missing_fields)
 
 
 def setup_arguments(parser):
@@ -335,23 +356,6 @@ def setup_arguments(parser):
     parser.add_argument('--version', action='version',
                         version='%(prog)s ' + __version__,
                         help='Show the program\'s version, then exit')
-
-
-def content_from_row(row, index, template, metadata):
-    content, discovered_image_paths = fill_template(
-        template, data=row)
-
-    content = fill_template_field(
-        field_name='card_index',
-        field_value=str(index),
-        in_template=content)
-
-    content = fill_template_field(
-        field_name='version',
-        field_value=metadata.version,
-        in_template=content)
-
-    return (content, discovered_image_paths)
 
 
 def main(argv):
@@ -547,8 +551,14 @@ def main(argv):
                              in_context=context,
                              as_error=True)
 
-                    card_content, found_image_paths = content_from_row(
+                    card_content, found_image_paths, missing_fields = content_from_row(
                         row, card_index, template, metadata)
+
+                    if len(missing_fields) > 0 and is_verbose:
+                        warn('The template for the card at #{0} (row {1}) did '
+                             'not contain the fields: {2}'
+                             .format(card_index, row_index, missing_fields),
+                             in_context=context)
 
                     image_paths.extend(found_image_paths)
 
@@ -580,7 +590,7 @@ def main(argv):
                             template_back = template_back_not_provided % (
                                 row_index)
 
-                        back_content, found_image_paths = content_from_row(
+                        back_content, found_image_paths, missing_fields = content_from_row(
                             row, card_index, template_back, metadata)
 
                         image_paths.extend(found_image_paths)
@@ -657,7 +667,7 @@ def main(argv):
                 cards_total, cards_or_card,
                 pages_total, pages_or_page)
 
-        pages = fill_template_field(
+        pages, occurences = fill_template_field(
             field_name='cards_total',
             field_value=str(cards_total),
             in_template=pages)
