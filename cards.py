@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '3', '4')
+__version_info__ = ('0', '3', '5')
 __version__ = '.'.join(__version_info__)
 
 
@@ -414,10 +414,9 @@ def main(argv):
     # template that was not found, or could not be opened
     template_not_opened = """
                           <div style=\"word-wrap: break-word; padding: 4mm\">
-                          <b>Error (at card #{{card_index}}, row %d)</b>:
-                          the template that was provided for this
-                          card could not be opened:<br /><br />
-                          <b>%s</b>
+                          <b>Error (at card #{{card_index}}, row %d)</b>:<br />
+                          <br />The template that was provided for this card
+                          could not be opened:<br /><br /><b>%s</b>
                           </div>
                           """
 
@@ -426,12 +425,11 @@ def main(argv):
     template_not_provided = """
                             <div style=\"word-wrap: break-word; padding: 4mm\">
                             <b>Error (at card #{{card_index}}, row %d)</b>:
-                            a template was not provided for this card.
-                            <br /><br />
-
-                            Provide one using the <b>--template</b>
-                            argument, or through a <b>@template</b>
-                            column.
+                            <br /><br />A template was not provided for
+                            this card.
+                            <br /><br />Provide one through the
+                            <b>@template</b> column, or by using the
+                            <b>--template</b> argument.
                             </div>
                             """
 
@@ -440,11 +438,10 @@ def main(argv):
     template_back_not_provided = """
                             <div style=\"word-wrap: break-word; padding: 4mm\">
                             <b>Error (at card #{{card_index}}, row %d)</b>:
-                            a back template was not provided for this card.
-                            <br /><br />
-
-                            Provide one through the <b>@template-back</b>
-                            column.
+                            <br /><br />A back template was not provided for
+                            this card.
+                            <br /><br />Provide one through the
+                            <b>@template-back</b>column.
                             </div>
                             """
 
@@ -480,8 +477,8 @@ def main(argv):
 
             if default_template is None and '@template' not in data.fieldnames:
                 if is_verbose:
-                    warn('A default template was not provided. '
-                         'Error cards may occur.')
+                    warn('A default template was not provided for \'{0}\'. '
+                         .format(data_path))
 
             if not disable_backs and '@template-back' in data.fieldnames:
                 if is_verbose:
