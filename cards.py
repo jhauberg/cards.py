@@ -94,16 +94,21 @@ def find_metadata_path(data_paths):
             (False, first_potential_metadata_path))
 
 
-def warn(message, as_error=False):
+def warn(message, in_context=None, as_error=False):
     apply_red_color = '\x1B[31m'
     apply_yellow_color = '\x1B[33m'
     apply_normal_color = '\033[0m'
 
     apply_color = apply_yellow_color if not as_error else apply_red_color
 
-    print(apply_color +
-          '[!] ' + message +
-          apply_normal_color)
+    message_content = '[' + ('!' if as_error else '-') + ']'
+
+    if in_context is not None:
+        message_content = '{0} [{1}]'.format(message_content, str(in_context))
+
+    message_content = message_content + ' ' + message
+
+    print(apply_color + message_content + apply_normal_color)
 
 
 def lower_first_row(rows):
@@ -472,21 +477,29 @@ def main(argv):
     image_paths = []
 
     for data_path in data_paths:
+        context = os.path.basename(data_path)
+
         with open(data_path) as f:
             data = csv.DictReader(lower_first_row(f))
 
             if default_template is None and '@template' not in data.fieldnames:
                 if is_verbose:
-                    warn('A default template was not provided for \'{0}\'. '
-                         .format(data_path))
+                    warn('A default template was not provided.',
+                         in_context=context)
 
             if not disable_backs and '@template-back' in data.fieldnames:
                 if is_verbose:
-                    warn('Assuming card backs should be generated since '
-                         '\'@template-back\' appears in the data. '
+                    warn('Assuming card backs should be generated '
+                         'since \'@template-back\' appears in the data. '
                          'You can disable card backs by specifying the '
-                         '--disable-backs argument.')
+                         '--disable-backs argument.',
+                         in_context=context)
             else:
+                if is_verbose:
+                    warn('Card backs will not be generated since '
+                         '\'@template-back\' does not appear in the data. ',
+                         in_context=context)
+
                 disable_backs = True
 
             row_index = 1
@@ -518,14 +531,21 @@ def main(argv):
                                                               template_path)
 
                             warn('The card at #{0} (row {1}) provided a '
-                                 'template that could not be opened: \'{2}\''
-                                 .format(card_index, row_index, template_path),
+                                 'template that could not be opened: '
+                                 '\'{2}\''.format(card_index, row_index,
+                                                  template_path),
+                                 in_context=context,
                                  as_error=True)
                     else:
                         template = default_template
 
                     if template is None:
                         template = template_not_provided % row_index
+
+                        warn('The card at #{0} (row {1}) did not provide a '
+                             'template.'.format(card_index, row_index),
+                             in_context=context,
+                             as_error=True)
 
                     card_content, found_image_paths = content_from_row(
                         row, card_index, template, metadata)
@@ -553,6 +573,7 @@ def main(argv):
                                      'back template that could not be opened: '
                                      '\'{2}\''.format(card_index, row_index,
                                                       template_path_back),
+                                     in_context=context,
                                      as_error=True)
 
                         if template_back is None:
