@@ -95,8 +95,8 @@ def find_metadata_path(data_paths):
 
 
 def warn(message, in_context=None, as_error=False):
-    apply_red_color = '\x1B[31m'
-    apply_yellow_color = '\x1B[33m'
+    apply_red_color = '\033[31m'
+    apply_yellow_color = '\033[33m'
     apply_normal_color = '\033[0m'
 
     apply_color = apply_yellow_color if not as_error else apply_red_color
@@ -157,7 +157,7 @@ def copy_images_to_output_directory(image_paths, root_path, output_path,
                     relative_source_path, relative_destination_path)
             else:
                 warn('One or more cards contain an image reference that does '
-                     'not exist: \'{0}\''.format(relative_source_path),
+                     'not exist: \033[4;31m\'{0}\'\033[0m'.format(relative_source_path),
                      as_error=True)
 
 
@@ -402,11 +402,11 @@ def main(argv):
         if potential_metadata_path is not None:
             if not found:
                 if is_verbose:
-                    warn('No metadata was found. You can provide it at e.g.: \'{0}\''.format(
-                        potential_metadata_path))
+                    warn('No metadata was found. You can provide it at e.g.: '
+                         '\033[4;33m\'{0}\'\033[0m'.format(potential_metadata_path))
             else:
-                warn('Using metadata found at: \'{0}\''.format(
-                    potential_metadata_path))
+                warn('Using metadata found at: '
+                     '\033[4;33m\'{0}\'\033[0m'.format(potential_metadata_path))
 
                 metadata_path = potential_metadata_path
 
@@ -526,7 +526,8 @@ def main(argv):
                             template = template_not_opened % (row_index, template_path)
 
                             warn('The card at #{0} (row {1}) provided a template that could not '
-                                 'be opened: \'{2}\''.format(card_index, row_index, template_path),
+                                 'be opened: \033[4;31m\'{2}\'\033[0m'.format(
+                                    card_index, row_index, template_path),
                                  in_context=context,
                                  as_error=True)
                     else:
@@ -571,7 +572,7 @@ def main(argv):
                                                                        template_path_back)
 
                                 warn('The card at #{0} (row {1}) provided a back template that '
-                                     'could not be opened: \'{2}\''.format(
+                                     'could not be opened: \033[4;31m\'{2}\'\033[0m'.format(
                                         card_index, row_index, template_path_back),
                                      in_context=context,
                                      as_error=True)
