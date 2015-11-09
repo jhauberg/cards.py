@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '3', '5')
+__version_info__ = ('0', '3', '6')
 __version__ = '.'.join(__version_info__)
 
 
@@ -298,13 +298,18 @@ def template_from_path(template_path, relative_to=None):
     return (template, template_not_found)
 
 
-def content_from_row(row, index, template, metadata):
+def content_from_row(row, row_index, card_index, template, metadata):
     content, discovered_image_paths, missing_fields = fill_template(
         template, data=row)
 
     content, occurences = fill_template_field(
+        field_name='card_row',
+        field_value=str(row_index),
+        in_template=content)
+
+    content, occurences = fill_template_field(
         field_name='card_index',
-        field_value=str(index),
+        field_value=str(card_index),
         in_template=content)
 
     content, occurences = fill_template_field(
@@ -412,36 +417,20 @@ def main(argv):
 
     metadata = Metadata.from_file(metadata_path, verbosely=is_verbose)
 
-    # error format/template string for the output on cards specifying a
-    # template that was not found, or could not be opened
-    template_not_opened = """
-                          <div style=\"word-wrap: break-word; padding: 4mm\">
-                          <b>Error (at card #{{card_index}}, row %d)</b>:<br /><br />
-                          The template that was provided for this card could not be opened:
-                          <br /><br /><b>%s</b>
-                          </div>
-                          """
+    # error template for the output on cards specifying a template that was not found,
+    # or could not be opened
+    with open('template/error/could_not_open.html') as e:
+        template_not_opened = e.read()
 
-    # error format/template string for the output on cards when a default
-    # template has not been specified, and the card hasn't specified one either
-    template_not_provided = """
-                            <div style=\"word-wrap: break-word; padding: 4mm\">
-                            <b>Error (at card #{{card_index}}, row %d)</b>:<br /><br />
-                            A template was not provided for this card.<br /><br />
-                            Provide one through the <b>@template</b> column, or by using the
-                            <b>--template</b> argument.
-                            </div>
-                            """
+    # error template for the output on cards when a default template has not been specified,
+    # and the card hasn't specified one either
+    with open('template/error/not_provided.html') as e:
+        template_not_provided = e.read()
 
-    # error format/template string for the output on cards when a default
-    # template has not been specified, and the card hasn't specified one either
-    template_back_not_provided = """
-                            <div style=\"word-wrap: break-word; padding: 4mm\">
-                            <b>Error (at card #{{card_index}}, row %d)</b>:<br /><br />
-                            A back template was not provided for this card.<br /><br />
-                            Provide one through the <b>@template-back</b> column.
-                            </div>
-                            """
+    # error template for the output on cards when a template back has not been specified,
+    # and backs are not disabled
+    with open('template/error/back_not_provided.html') as e:
+        template_back_not_provided = e.read()
 
     # 3x3 cards is the ideal fit for an A4 page
     MAX_CARDS_PER_PAGE = 9
@@ -514,39 +503,34 @@ def main(argv):
                     # to the template specified from the --template option)
                     template_path = row.get('@template', default_template_path)
 
-                    encountered_error = False
-
                     if template_path is not default_template_path:
                         template, not_found = template_from_path(
                             template_path, relative_to=data_path)
 
                         if not_found:
-                            encountered_error = True
-
-                            template = template_not_opened % (row_index, template_path)
+                            template = template_not_opened
 
                             warn('The card at #{0} (row {1}) provided a template that could not '
                                  'be opened: \033[4;31m\'{2}\'\033[0m'.format(
-                                    card_index, row_index, template_path),
+                                     card_index, row_index, template_path),
                                  in_context=context,
                                  as_error=True)
                     else:
                         template = default_template
 
                     if template is None:
-                        encountered_error = True
+                        template = template_not_provided
 
-                        template = template_not_provided % row_index
-
-                        warn('The card at #{0} (row {1}) did not provide a template.'.format(
-                                card_index, row_index),
+                        warn('The card at #{0} (row {1}) did not provide a template.'
+                             .format(card_index, row_index),
                              in_context=context,
                              as_error=True)
 
                     card_content, found_image_paths, missing_fields = content_from_row(
-                        row, card_index, template, metadata)
+                        row, row_index, card_index, template, metadata)
 
-                    if not encountered_error and len(missing_fields) > 0:
+                    if len(missing_fields) > 0 and (template is not template_not_provided and
+                                                    template is not template_not_opened):
                         if is_verbose:
                             warn('The template for the card at #{0} (row {1}) did not contain '
                                  'the fields: {2}'.format(card_index, row_index, missing_fields),
@@ -568,20 +552,19 @@ def main(argv):
                                 template_path_back, relative_to=data_path)
 
                             if not_found:
-                                template_back = template_not_opened % (row_index,
-                                                                       template_path_back)
+                                template_back = template_not_opened
 
                                 warn('The card at #{0} (row {1}) provided a back template that '
                                      'could not be opened: \033[4;31m\'{2}\'\033[0m'.format(
-                                        card_index, row_index, template_path_back),
+                                         card_index, row_index, template_path_back),
                                      in_context=context,
                                      as_error=True)
 
                         if template_back is None:
-                            template_back = template_back_not_provided % row_index
+                            template_back = template_back_not_provided
 
                         back_content, found_image_paths, missing_fields = content_from_row(
-                            row, card_index, template_back, metadata)
+                            row, row_index, card_index, template_back, metadata)
 
                         image_paths.extend(found_image_paths)
 
