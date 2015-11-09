@@ -263,7 +263,7 @@ def fill_template(template, data):
             # fill content into the provided template
             template, occurences = fill_template_field(
                 field_name=str(field),
-                field_value=template_content,
+                field_value=str(template_content),
                 in_template=template)
 
             if occurences is 0:
@@ -295,10 +295,10 @@ def template_from_path(template_path, relative_to=None):
         except IOError:
             template_not_found = True
 
-    return (template, template_not_found)
+    return (template, template_not_found, template_path)
 
 
-def content_from_row(row, row_index, card_index, template, metadata):
+def content_from_row(row, row_index, card_index, template, template_path, metadata):
     content, discovered_image_paths, missing_fields = fill_template(
         template, data=row)
 
@@ -310,6 +310,11 @@ def content_from_row(row, row_index, card_index, template, metadata):
     content, occurences = fill_template_field(
         field_name='card_index',
         field_value=str(card_index),
+        in_template=content)
+
+    content, occurences = fill_template_field(
+        field_name='card_template_path',
+        field_value=template_path,
         in_template=content)
 
     content, occurences = fill_template_field(
@@ -504,7 +509,7 @@ def main(argv):
                     template_path = row.get('@template', default_template_path)
 
                     if template_path is not default_template_path:
-                        template, not_found = template_from_path(
+                        template, not_found, template_path = template_from_path(
                             template_path, relative_to=data_path)
 
                         if not_found:
@@ -527,7 +532,7 @@ def main(argv):
                              as_error=True)
 
                     card_content, found_image_paths, missing_fields = content_from_row(
-                        row, row_index, card_index, template, metadata)
+                        row, row_index, card_index, template, template_path, metadata)
 
                     if len(missing_fields) > 0 and (template is not template_not_provided and
                                                     template is not template_not_opened):
@@ -548,7 +553,7 @@ def main(argv):
                         template_back = None
 
                         if template_path_back is not None:
-                            template_back, not_found = template_from_path(
+                            template_back, not_found, template_path_back = template_from_path(
                                 template_path_back, relative_to=data_path)
 
                             if not_found:
@@ -564,7 +569,7 @@ def main(argv):
                             template_back = template_back_not_provided
 
                         back_content, found_image_paths, missing_fields = content_from_row(
-                            row, row_index, card_index, template_back, metadata)
+                            row, row_index, card_index, template_back, template_path_back, metadata)
 
                         image_paths.extend(found_image_paths)
 
