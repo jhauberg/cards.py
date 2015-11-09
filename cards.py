@@ -63,8 +63,8 @@ class Metadata(object):
 
 
 def find_metadata_path(data_paths):
-    """ If found, returns the first discovered path to a metadata file,
-        otherwise, returns the first potential path to where it looked for one.
+    """ If found, returns the first discovered path to a metadata file, otherwise,
+        returns the first potential path to where it looked for one.
     """
 
     found_metadata_path = None
@@ -131,8 +131,8 @@ def create_missing_directories_if_necessary(path):
 
 def copy_images_to_output_directory(image_paths, root_path, output_path,
                                     verbosely=False):
-    """ Copies all provided images to the specified output path, keeping the
-        directory structure intact for each image.
+    """ Copies all provided images to the specified output path,
+        keeping the directory structure intact for each image.
     """
 
     for image_path in image_paths:
@@ -205,10 +205,8 @@ def fill_template_image_fields(template):
 
             if (explicit_width is not None and
                explicit_height is not None):
-                    image_tag = '<img src="{0}" width="{1}" height="{2}">'
-                    image_tag = image_tag.format(image_path,
-                                                 explicit_width,
-                                                 explicit_height)
+                    image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
+                        image_path, explicit_width, explicit_height)
             else:
                 image_tag = '<img src="{0}">'.format(image_path)
 
@@ -258,8 +256,7 @@ def fill_template(template, data):
             template_content = str(data[field])
 
             # replace any image fields with HTML compliant <img> tags
-            template_content, filled_image_paths = fill_template_image_fields(
-                template_content)
+            template_content, filled_image_paths = fill_template_image_fields(template_content)
 
             image_paths.extend(filled_image_paths)
 
@@ -322,39 +319,34 @@ def setup_arguments(parser):
     """ Sets up optional and required program arguments """
 
     # required arguments
-    parser.add_argument('-f', '--input-filename', dest='input_paths', type=str,
-                        required=True, nargs='*',
+    parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
                         help='A path to a CSV file containing card data')
 
     # optional arguments
-    parser.add_argument('-o', '--output-folder', dest='output_path', type=str,
-                        required=False,
+    parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
                         help='A path to a directory in which the pages will '
                              'be generated')
 
-    parser.add_argument('-m', '--metadata-filename', dest='metadata_path',
-                        required=False, type=str,
+    parser.add_argument('-m', '--metadata-filename', dest='metadata_path', required=False,
                         help='A path to a CSV file containing metadata')
 
-    parser.add_argument('-t', '--template', dest='template', type=str,
-                        required=False,
+    parser.add_argument('-t', '--template', dest='template', required=False,
                         help='A path to a card template')
 
-    parser.add_argument('--disable-cut-guides', dest='disable_cut_guides',
-                        required=False, default=False, action='store_true',
+    parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
+                        default=False, action='store_true',
                         help='Disable cut guides on the margins of the '
                              'generated pages')
 
-    parser.add_argument('--disable-backs', dest='disable_backs',
-                        required=False, default=False, action='store_true',
+    parser.add_argument('--disable-backs', dest='disable_backs', required=False,
+                        default=False, action='store_true',
                         help='Disable generating card backs')
 
-    parser.add_argument('--verbose', dest='verbose',
-                        required=False, default=False, action='store_true',
+    parser.add_argument('--verbose', dest='verbose', required=False,
+                        default=False, action='store_true',
                         help='Show more information')
 
-    parser.add_argument('--version', action='version',
-                        version='%(prog)s ' + __version__,
+    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__,
                         help='Show the program\'s version, then exit')
 
 
@@ -382,8 +374,7 @@ def main(argv):
             default_template = t.read().strip()
 
         if is_verbose and len(default_template) == 0:
-            warn('The provided default template appears to be empty. '
-                 'Blank cards may occur.')
+            warn('The provided default template appears to be empty. Blank cards may occur.')
     else:
         default_template = None
 
@@ -411,10 +402,12 @@ def main(argv):
         if potential_metadata_path is not None:
             if not found:
                 if is_verbose:
-                    warn('No metadata was found. '
-                         'You can provide it at e.g.: \'{0}\''
-                         .format(potential_metadata_path))
+                    warn('No metadata was found. You can provide it at e.g.: \'{0}\''.format(
+                        potential_metadata_path))
             else:
+                warn('Using metadata found at: \'{0}\''.format(
+                    potential_metadata_path))
+
                 metadata_path = potential_metadata_path
 
     metadata = Metadata.from_file(metadata_path, verbosely=is_verbose)
@@ -423,9 +416,9 @@ def main(argv):
     # template that was not found, or could not be opened
     template_not_opened = """
                           <div style=\"word-wrap: break-word; padding: 4mm\">
-                          <b>Error (at card #{{card_index}}, row %d)</b>:<br />
-                          <br />The template that was provided for this card
-                          could not be opened:<br /><br /><b>%s</b>
+                          <b>Error (at card #{{card_index}}, row %d)</b>:<br /><br />
+                          The template that was provided for this card could not be opened:
+                          <br /><br /><b>%s</b>
                           </div>
                           """
 
@@ -433,11 +426,9 @@ def main(argv):
     # template has not been specified, and the card hasn't specified one either
     template_not_provided = """
                             <div style=\"word-wrap: break-word; padding: 4mm\">
-                            <b>Error (at card #{{card_index}}, row %d)</b>:
-                            <br /><br />A template was not provided for
-                            this card.
-                            <br /><br />Provide one through the
-                            <b>@template</b> column, or by using the
+                            <b>Error (at card #{{card_index}}, row %d)</b>:<br /><br />
+                            A template was not provided for this card.<br /><br />
+                            Provide one through the <b>@template</b> column, or by using the
                             <b>--template</b> argument.
                             </div>
                             """
@@ -446,11 +437,9 @@ def main(argv):
     # template has not been specified, and the card hasn't specified one either
     template_back_not_provided = """
                             <div style=\"word-wrap: break-word; padding: 4mm\">
-                            <b>Error (at card #{{card_index}}, row %d)</b>:
-                            <br /><br />A back template was not provided for
-                            this card.
-                            <br /><br />Provide one through the
-                            <b>@template-back</b>column.
+                            <b>Error (at card #{{card_index}}, row %d)</b>:<br /><br />
+                            A back template was not provided for this card.<br /><br />
+                            Provide one through the <b>@template-back</b> column.
                             </div>
                             """
 
@@ -493,15 +482,14 @@ def main(argv):
 
             if not disable_backs and '@template-back' in data.fieldnames:
                 if is_verbose:
-                    warn('Assuming card backs should be generated '
-                         'since \'@template-back\' appears in the data. '
-                         'You can disable card backs by specifying the '
+                    warn('Assuming card backs should be generated since \'@template-back\' '
+                         'appears in the data. You can disable card backs by specifying the '
                          '--disable-backs argument.',
                          in_context=context)
             else:
                 if is_verbose:
-                    warn('Card backs will not be generated since '
-                         '\'@template-back\' does not appear in the data. ',
+                    warn('Card backs will not be generated since \'@template-back\' does not '
+                         'appear in the data.',
                          in_context=context)
 
                 disable_backs = True
@@ -535,13 +523,10 @@ def main(argv):
                         if not_found:
                             encountered_error = True
 
-                            template = template_not_opened % (row_index,
-                                                              template_path)
+                            template = template_not_opened % (row_index, template_path)
 
-                            warn('The card at #{0} (row {1}) provided a '
-                                 'template that could not be opened: '
-                                 '\'{2}\''.format(card_index, row_index,
-                                                  template_path),
+                            warn('The card at #{0} (row {1}) provided a template that could not '
+                                 'be opened: \'{2}\''.format(card_index, row_index, template_path),
                                  in_context=context,
                                  as_error=True)
                     else:
@@ -552,8 +537,8 @@ def main(argv):
 
                         template = template_not_provided % row_index
 
-                        warn('The card at #{0} (row {1}) did not provide a '
-                             'template.'.format(card_index, row_index),
+                        warn('The card at #{0} (row {1}) did not provide a template.'.format(
+                                card_index, row_index),
                              in_context=context,
                              as_error=True)
 
@@ -562,10 +547,8 @@ def main(argv):
 
                     if not encountered_error and len(missing_fields) > 0:
                         if is_verbose:
-                            warn('The template for the card at #{0} (row {1}) '
-                                 'did not contain the fields: {2}'
-                                 .format(card_index, row_index,
-                                         missing_fields),
+                            warn('The template for the card at #{0} (row {1}) did not contain '
+                                 'the fields: {2}'.format(card_index, row_index, missing_fields),
                                  in_context=context)
 
                     image_paths.extend(found_image_paths)
@@ -584,19 +567,17 @@ def main(argv):
                                 template_path_back, relative_to=data_path)
 
                             if not_found:
-                                template_back = template_not_opened % (
-                                    row_index, template_path_back)
+                                template_back = template_not_opened % (row_index,
+                                                                       template_path_back)
 
-                                warn('The card at #{0} (row {1}) provided a '
-                                     'back template that could not be opened: '
-                                     '\'{2}\''.format(card_index, row_index,
-                                                      template_path_back),
+                                warn('The card at #{0} (row {1}) provided a back template that '
+                                     'could not be opened: \'{2}\''.format(
+                                        card_index, row_index, template_path_back),
                                      in_context=context,
                                      as_error=True)
 
                         if template_back is None:
-                            template_back = template_back_not_provided % (
-                                row_index)
+                            template_back = template_back_not_provided % row_index
 
                         back_content, found_image_paths, missing_fields = content_from_row(
                             row, card_index, template_back, metadata)
@@ -688,8 +669,7 @@ def main(argv):
         result.write(index)
 
     # make sure to copy the css file to the output directory
-    shutil.copyfile('template/index.css',
-                    os.path.join(output_path, 'index.css'))
+    shutil.copyfile('template/index.css', os.path.join(output_path, 'index.css'))
 
     # ensure there are no duplicate image paths, since that would just
     # cause unnecessary copy operations
@@ -697,8 +677,7 @@ def main(argv):
 
     # additionally, copy all referenced images to the output directory as well
     # (making sure to keep their original directory structure)
-    copy_images_to_output_directory(image_paths, data_path, output_path,
-                                    verbosely=True)
+    copy_images_to_output_directory(image_paths, data_path, output_path, verbosely=True)
 
     print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
           .format(cards_total, cards_or_card,
