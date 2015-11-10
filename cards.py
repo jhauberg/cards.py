@@ -95,6 +95,8 @@ def find_metadata_path(data_paths):
 
 
 def warn(message, in_context=None, as_error=False):
+    """ Display a command-line warning """
+
     apply_red_color = '\033[31m'
     apply_yellow_color = '\033[33m'
     apply_normal_color = '\033[0m'
@@ -129,8 +131,7 @@ def create_missing_directories_if_necessary(path):
             raise
 
 
-def copy_images_to_output_directory(image_paths, root_path, output_path,
-                                    verbosely=False):
+def copy_images_to_output_directory(image_paths, root_path, output_path, verbosely=False):
     """ Copies all provided images to the specified output path,
         keeping the directory structure intact for each image.
     """
@@ -299,6 +300,8 @@ def template_from_path(template_path, relative_to=None):
 
 
 def content_from_row(row, row_index, card_index, template, template_path, metadata):
+    """ Returns the contents of a card using the specified template """
+
     content, discovered_image_paths, missing_fields = fill_template(
         template, data=row)
 
@@ -326,7 +329,7 @@ def content_from_row(row, row_index, card_index, template, template_path, metada
 
 
 def setup_arguments(parser):
-    """ Sets up optional and required program arguments """
+    """ Sets up required and optional program arguments """
 
     # required arguments
     parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
@@ -464,12 +467,15 @@ def main(argv):
     image_paths = []
 
     for data_path in data_paths:
+        # define the context as the base filename of the current data - useful when troubleshooting
         context = os.path.basename(data_path)
 
         with open(data_path) as f:
+            # read the csv as a dict, so that we can access each column by name
             data = csv.DictReader(lower_first_row(f))
 
             if default_template is None and '@template' not in data.fieldnames:
+                # every card will generate an error, but no biggie- just mention it
                 if is_verbose:
                     warn('A default template was not provided.',
                          in_context=context)
@@ -645,6 +651,7 @@ def main(argv):
                 cards_total, cards_or_card,
                 pages_total, pages_or_page)
 
+        # on all pages, fill any {{cards_total}} fields
         pages, occurences = fill_template_field(
             field_name='cards_total',
             field_value=str(cards_total),
