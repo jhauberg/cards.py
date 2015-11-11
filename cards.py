@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '3', '6')
+__version_info__ = ('0', '4', '0a')
 __version__ = '.'.join(__version_info__)
 
 
@@ -157,8 +157,8 @@ def copy_images_to_output_directory(image_paths, root_path, output_path, verbose
                 shutil.copyfile(
                     relative_source_path, relative_destination_path)
             else:
-                warn('One or more cards contain an image reference that does '
-                     'not exist: \033[4;31m\'{0}\'\033[0m'.format(relative_source_path),
+                warn('One or more cards contain an image reference that does not exist: '
+                     '\033[4;31m\'{0}\'\033[0m'.format(relative_source_path),
                      as_error=True)
 
 
@@ -344,9 +344,6 @@ def setup_arguments(parser):
     parser.add_argument('-m', '--metadata-filename', dest='metadata_path', required=False,
                         help='A path to a CSV file containing metadata')
 
-    parser.add_argument('-t', '--template', dest='template', required=False,
-                        help='A path to a card template')
-
     parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
                         default=False, action='store_true',
                         help='Disable cut guides on the margins of the '
@@ -378,19 +375,11 @@ def main(argv):
     # optional arguments
     output_path = args['output_path']
     metadata_path = args['metadata_path']
-    default_template_path = args['template']
     disable_cut_guides = bool(args['disable_cut_guides'])
     disable_backs = bool(args['disable_backs'])
     is_verbose = bool(args['verbose'])
 
-    if default_template_path is not None and len(default_template_path) > 0:
-        with open(default_template_path) as t:
-            default_template = t.read().strip()
-
-        if is_verbose and len(default_template) == 0:
-            warn('The provided default template appears to be empty. Blank cards may occur.')
-    else:
-        default_template = None
+    disable_auto_templating = False
 
     with open('template/page.html') as p:
         page = p.read()
@@ -468,17 +457,22 @@ def main(argv):
     image_paths = []
 
     for data_path in data_paths:
-        # define the context as the base filename of the current data - useful when troubleshooting
+        # define the context as the base filename of the current data- useful when troubleshooting
         context = os.path.basename(data_path)
+
+        if disable_auto_templating:
+            default_template = None
+        else:
+            default_template = 'auto'
 
         with open(data_path) as f:
             # read the csv as a dict, so that we can access each column by name
             data = csv.DictReader(lower_first_row(f))
 
             if default_template is None and '@template' not in data.fieldnames:
-                # every card will generate an error, but no biggie- just mention it
                 if is_verbose:
-                    warn('A default template was not provided.',
+                    warn('A default template was not provided and auto-templating is not enabled.'
+                         'Cards will not be generated correctly.',
                          in_context=context)
 
             if not disable_backs and '@template-back' in data.fieldnames:
@@ -511,12 +505,10 @@ def main(argv):
                 for i in range(count):
                     card_index = cards_total + 1
 
-                    # determine which template to use for this card (defaults
-                    # to the template specified from the --template option)
-                    template_path = row.get('@template', default_template_path)
+                    # determine which template to use for this card, if any
+                    template_path = row.get('@template', None)
 
-                    if (template_path is not default_template_path and
-                       template_path is not None and len(template_path) > 0):
+                    if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
                             template_path, relative_to=data_path)
 
@@ -577,6 +569,11 @@ def main(argv):
                                          card_index, row_index, template_path_back),
                                      in_context=context,
                                      as_error=True)
+                            elif is_verbose and len(template_back) == 0:
+                                warn('The back template at \033[4;31m\'{0}\'\033[0m for the card '
+                                     'at #{1} (row {2}) appears to be empty. Blank cards may occur.'
+                                     .format(template_path, card_index, row_index),
+                                     in_context=context)
 
                         if template_back is None:
                             template_back = template_back_not_provided
