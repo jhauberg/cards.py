@@ -283,8 +283,7 @@ def template_from_path(template_path, relative_to=None):
 
     if template_path is not None and len(template_path) > 0:
         if not os.path.isabs(template_path):
-            # if the template path is not an absolute path,
-            # assume that it's located relative to the data
+            # the path is not an absolute path, assume that it's located relative to the data
             if relative_to is not None:
                 template_path = os.path.join(
                     os.path.dirname(relative_to),
@@ -295,6 +294,8 @@ def template_from_path(template_path, relative_to=None):
                 template = t.read().strip()
         except IOError:
             template_not_found = True
+    else:
+        template_not_found = True
 
     return (template, template_not_found, template_path)
 
@@ -514,7 +515,8 @@ def main(argv):
                     # to the template specified from the --template option)
                     template_path = row.get('@template', default_template_path)
 
-                    if template_path is not default_template_path:
+                    if (template_path is not default_template_path and
+                       template_path is not None and len(template_path) > 0):
                         template, not_found, template_path = template_from_path(
                             template_path, relative_to=data_path)
 
@@ -526,6 +528,11 @@ def main(argv):
                                      card_index, row_index, template_path),
                                  in_context=context,
                                  as_error=True)
+                        elif is_verbose and len(template) == 0:
+                            warn('The template at \033[4;31m\'{0}\'\033[0m for the card at '
+                                 '#{1} (row {2}) appears to be empty. Blank cards may occur.'
+                                 .format(template_path, card_index, row_index),
+                                 in_context=context)
                     else:
                         template = default_template
 
