@@ -113,6 +113,10 @@ def warn(message, in_context=None, as_error=False):
     print(apply_color + message_content + apply_normal_color)
 
 
+def is_special_column(column):
+    return column.startswith('@') if column is not None else False
+
+
 def lower_first_row(rows):
     """ Returns rows where the first row is all lower-case """
 
@@ -244,7 +248,7 @@ def fill_template_field(field_name, field_value, in_template):
     return search.subn(field_value, in_template)
 
 
-def fill_template(template, data):
+def fill_template(template, row):
     """ Returns the contents of the template with all template fields replaced
         by any matching fields in the provided data.
     """
@@ -252,11 +256,11 @@ def fill_template(template, data):
     image_paths = []
     missing_fields = []
 
-    for field in data:
-        # ignore special variable columns
-        if not field.startswith('@'):
+    for column in row:
+        # ignore special columns
+        if not is_special_column(column):
             # fetch the content for the field (may also be templated)
-            template_content = str(data[field])
+            template_content = str(row[column])
 
             # replace any image fields with HTML compliant <img> tags
             template_content, filled_image_paths = fill_template_image_fields(template_content)
@@ -265,12 +269,12 @@ def fill_template(template, data):
 
             # fill content into the provided template
             template, occurences = fill_template_field(
-                field_name=str(field),
+                field_name=str(column),
                 field_value=str(template_content),
                 in_template=template)
 
             if occurences is 0:
-                missing_fields.append(field)
+                missing_fields.append(column)
 
     return (template, image_paths, missing_fields)
 
@@ -330,16 +334,16 @@ def template_from_data(data):
 
     analysis = {}
 
-    for data_row in data:
-        for field in data.fieldnames:
-            if not field.startswith('@'):
-                field_type = field_type_from_value(data_row[field])
+    for row in data:
+        for column in data.fieldnames:
+            if not is_special_column(column):
+                field_type = field_type_from_value(row[column])
 
                 if field_type is not None:
-                    l = analysis.get(field, [])
+                    l = analysis.get(column, [])
                     l.append(field_type)
 
-                    analysis[field] = l
+                    analysis[column] = l
 
     template = None if len(analysis) == 0 else ''
 
@@ -358,7 +362,7 @@ def content_from_row(row, row_index, card_index, template, template_path, metada
     """ Returns the contents of a card using the specified template """
 
     content, discovered_image_paths, missing_fields = fill_template(
-        template, data=row)
+        template, row)
 
     content, occurences = fill_template_field(
         field_name='card_row',
@@ -523,7 +527,6 @@ def main(argv):
             else:
                 # get a fitting template for the first row of data
                 default_template = template_from_data(data)
-                    #csv.DictReader(f))
 
                 # reset the iterator
                 f.seek(0)
