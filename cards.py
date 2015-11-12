@@ -230,6 +230,8 @@ def fill_template_field(field_name, field_value, in_template):
         of a given template field.
     """
 
+    field_value = field_value if field_value is not None else ''
+
     # template fields are always represented by wrapping {{ }}'s'
     template_field = re.escape('{{%s}}' % str(field_name))
 
@@ -298,6 +300,58 @@ def template_from_path(template_path, relative_to=None):
         template_not_found = True
 
     return (template, template_not_found, template_path)
+
+
+def most_common(lst):
+    return max(set(lst), key=lst.count)
+
+
+def field_type_from_value(value):
+    field_type = None
+
+    if value is not None and len(value) > 0:
+        if value.isdigit():
+            # value is a numerical value
+            field_type = 'number'
+        elif len(value.split(' ')) > 3:
+            # value has more than 3 components;
+            # assume it's a text
+            field_type = 'text'
+        else:
+            # value has less than 3 components, and is not a numerical value;
+            # assume it's a title
+            field_type = 'title'
+
+    return field_type
+
+
+def template_from_data(data):
+    """ Returns a template that is fit for the provided data. """
+
+    analysis = {}
+
+    for data_row in data:
+        for field in data.fieldnames:
+            if not field.startswith('@'):
+                field_type = field_type_from_value(data_row[field])
+
+                if field_type is not None:
+                    l = analysis.get(field, [])
+                    l.append(field_type)
+
+                    analysis[field] = l
+
+    template = None if len(analysis) == 0 else ''
+
+    for field, field_types in analysis.iteritems():
+        field_type = most_common(field_types)
+
+        if len(template) > 0:
+            template = template + '<br />'
+
+        template = template + '{{%s}}' % field
+
+    return template
 
 
 def content_from_row(row, row_index, card_index, template, template_path, metadata):
@@ -460,14 +514,21 @@ def main(argv):
         # define the context as the base filename of the current data- useful when troubleshooting
         context = os.path.basename(data_path)
 
-        if disable_auto_templating:
-            default_template = None
-        else:
-            default_template = 'auto'
-
         with open(data_path) as f:
             # read the csv as a dict, so that we can access each column by name
             data = csv.DictReader(lower_first_row(f))
+
+            if disable_auto_templating:
+                default_template = None
+            else:
+                # get a fitting template for the first row of data
+                default_template = template_from_data(data)
+                    #csv.DictReader(f))
+
+                # reset the iterator
+                f.seek(0)
+
+                data = csv.DictReader(lower_first_row(f))
 
             if default_template is None and '@template' not in data.fieldnames:
                 if is_verbose:
@@ -557,7 +618,7 @@ def main(argv):
                         template_path_back = row.get('@template-back')
                         template_back = None
 
-                        if template_path_back is not None:
+                        if template_path_back is not None and len(template_path_back) > 0:
                             template_back, not_found, template_path_back = template_from_path(
                                 template_path_back, relative_to=data_path)
 
