@@ -310,20 +310,43 @@ def most_common(lst):
     return max(set(lst), key=lst.count)
 
 
+def is_probably_number(value):
+    # value is simply a numerical value
+    is_probably_number = value.isdigit()
+
+    if not is_probably_number:
+        s = value.split(' ')
+
+        if len(s) is 2:
+            # value is made up of 2 components;
+            # consider it a number if either of the components is a numerical value
+            is_probably_number = True if s[0].isdigit() else s[1].isdigit()
+
+    return is_probably_number
+
+
+def is_probably_text(value):
+    # value has more than 3 components; assume it's a text
+    return len(value.split(' ')) > 3
+
+
+def is_probably_title(value):
+    # value has less than 3 components; assume it's a title
+    return len(value.split(' ')) <= 3
+
+
 def field_type_from_value(value):
     field_type = None
 
     if value is not None and len(value) > 0:
-        if value.isdigit():
-            # value is a numerical value
+        # let's not waste efforts on troubleshooting whitespace...
+        value = value.strip()
+
+        if is_probably_number(value):
             field_type = 'number'
-        elif len(value.split(' ')) > 3:
-            # value has more than 3 components;
-            # assume it's a text
+        elif is_probably_text(value):
             field_type = 'text'
-        else:
-            # value has less than 3 components, and is not a numerical value;
-            # assume it's a title
+        elif is_probably_title(value):
             field_type = 'title'
 
     return field_type
@@ -350,6 +373,14 @@ def template_from_data(data):
     for field, field_types in analysis.iteritems():
         field_type = most_common(field_types)
 
+        analysis[field] = field_type
+
+    fields = sorted(analysis.items(), key=lambda item: (
+        0 if item[1] is 'number' else (
+            1 if item[1] is 'title' else (
+                2 if item[1] is 'text' else -1))))
+
+    for field, field_type in fields:
         if len(template) > 0:
             template = template + '<br />'
 
