@@ -368,23 +368,25 @@ def template_from_data(data):
 
                     analysis[column] = l
 
-    template = None if len(analysis) == 0 else ''
-
     for field, field_types in analysis.iteritems():
         field_type = most_common(field_types)
 
         analysis[field] = field_type
 
-    fields = sorted(analysis.items(), key=lambda item: (
-        0 if item[1] is 'number' else (
-            1 if item[1] is 'title' else (
-                2 if item[1] is 'text' else -1))))
+    sort_fields_by_type = True
+
+    if not sort_fields_by_type:
+        fields = analysis.iteritems()
+    else:
+        fields = sorted(analysis.items(), key=lambda item: (
+            0 if item[1] is 'number' else (
+                1 if item[1] is 'title' else (
+                    2 if item[1] is 'text' else -1))))
+
+    template = '' if len(analysis) > 0 else None
 
     for field, field_type in fields:
-        if len(template) > 0:
-            template = template + '<br />'
-
-        template = template + '{{%s}}' % field
+        template = template + '<div class=\"auto-template-field auto-template-%s\">{{%s}}</div>' % (field_type, field)
 
     return template
 

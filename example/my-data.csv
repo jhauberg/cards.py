@@ -1,6 +1,6 @@
 @count,rank,title,text,@template,@template-back
-2,1,King,King of the Castle,templates/my-card-template.html,templates/my-card-template-back.html
-2,2,Queen,Queen of the King,templates/my-card-template.html,
+1,1,King,King of the Castle,templates/my-card-template.html,templates/my-card-template-back.html
+1,2,Queen,Queen of the King,,
 1,2,Test Missing Text,,templates/my-card-template.html,templates/my-other-card-template-back.html
 1,2,Test Missing Template,Should use default,,
 1,1,Test Invalid Template Path,Should print blank,example/templates/my-card-template.html,
