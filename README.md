@@ -1,4 +1,4 @@
-# <img width="72" src="cards.svg" alt="Tabletops"> cards.py
+# <img width="72" src="https://rawgit.com/jhauberg/cards.py/master/cards.svg" alt="cards.py"> cards.py
 
 A tool for generating print-ready sheets of cards. Particularly useful in the early stages of prototyping a card game.
 
