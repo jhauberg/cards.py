@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '4', '0a')
+__version_info__ = ('0', '4', '1')
 __version__ = '.'.join(__version_info__)
 
 
@@ -70,24 +70,37 @@ def find_metadata_path(data_paths):
     found_metadata_path = None
     first_potential_metadata_path = None
 
-    # attempt looking for a file named like 'my-data.meta.csv' for each
-    # provided data path until a file is found
-    for data_path in data_paths:
-        data_path_components = os.path.splitext(data_path)
+    if len(data_paths) > 0:
+        # first look for a general purpose metadata file- we'll just use the first provided
+        # data path and assume that this is the main directory for the project
+        data_path_directory = os.path.dirname(data_paths[0])
 
-        potential_metadata_path = data_path_components[0] + '.meta'
-
-        if len(data_path_components) > 1:
-            potential_metadata_path += data_path_components[1]
-
-        if first_potential_metadata_path is None:
-            first_potential_metadata_path = potential_metadata_path
+        potential_metadata_path = os.path.join(data_path_directory, 'meta.csv')
 
         if os.path.isfile(potential_metadata_path):
             # we found one
             found_metadata_path = potential_metadata_path
 
-            break
+    if found_metadata_path is None:
+        # then attempt looking for a file named like 'my-data.meta.csv' for each
+        # provided data path until a file is found, if any
+        for data_path in data_paths:
+            data_path_components = os.path.splitext(data_path)
+
+            potential_metadata_path = data_path_components[0] + '.meta'
+
+            if len(data_path_components) > 1:
+                # apply the extension, if any
+                potential_metadata_path += data_path_components[1]
+
+            if first_potential_metadata_path is None:
+                first_potential_metadata_path = potential_metadata_path
+
+            if os.path.isfile(potential_metadata_path):
+                # we found one
+                found_metadata_path = potential_metadata_path
+
+                break
 
     return ((True, found_metadata_path) if
             found_metadata_path is not None else
