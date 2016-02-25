@@ -201,7 +201,7 @@ def fill_template_image_fields(template):
                 # get the size specifications (removing any whitespace)
                 size = image_path[size_index + 1:].strip()
                 # get each size specification separately (removing blanks)
-                size = filter(None, size.split('x'))
+                size = list(filter(None, size.split('x')))
 
                 if len(size) > 0:
                     explicit_width = int(size[0])
@@ -381,7 +381,7 @@ def template_from_data(data):
 
                     analysis[column] = l
 
-    for field, field_types in analysis.iteritems():
+    for field, field_types in analysis.items():
         field_type = most_common(field_types)
 
         analysis[field] = field_type
