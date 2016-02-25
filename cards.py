@@ -108,7 +108,7 @@ def find_metadata_path(data_paths):
 
 
 def warn(message, in_context=None, as_error=False):
-    """ Display a command-line warning """
+    """ Display a command-line warning. """
 
     apply_red_color = '\033[31m'
     apply_yellow_color = '\033[33m'
@@ -131,7 +131,7 @@ def is_special_column(column):
 
 
 def lower_first_row(rows):
-    """ Returns rows where the first row is all lower-case """
+    """ Returns rows where the first row is all lower-case. """
 
     return itertools.chain([next(rows).lower()], rows)
 
@@ -302,7 +302,7 @@ def template_from_path(template_path, relative_to=None):
 
     if template_path is not None and len(template_path) > 0:
         if not os.path.isabs(template_path):
-            # the path is not an absolute path, assume that it's located relative to the data
+            # the path is not an absolute path; assume that it's located relative to the data
             if relative_to is not None:
                 template_path = os.path.join(
                     os.path.dirname(relative_to),
@@ -319,11 +319,15 @@ def template_from_path(template_path, relative_to=None):
     return (template, template_not_found, template_path)
 
 
-def most_common(lst):
-    return max(set(lst), key=lst.count)
+def most_common(objects):
+    """ Returns the object that occurs most frequently in a list of objects. """
+
+    return max(set(objects), key=objects.count)
 
 
 def is_probably_number(value):
+    """ Determine whether value is probably a numerical element. """
+
     # value is simply a numerical value
     is_probably_number = value.isdigit()
 
@@ -339,11 +343,15 @@ def is_probably_number(value):
 
 
 def is_probably_text(value):
+    """ Determine whether value is probably a text element. """
+
     # value has more than 3 components; assume it's a text
     return len(value.split(' ')) > 3
 
 
 def is_probably_title(value):
+    """ Determine whether value is probably a title element. """
+
     # value has less than 3 components; assume it's a title
     return len(value.split(' ')) <= 3
 
@@ -399,13 +407,14 @@ def template_from_data(data):
     template = '' if len(analysis) > 0 else None
 
     for field, field_type in fields:
-        template = template + '<div class=\"auto-template-field auto-template-%s\">{{%s}}</div>' % (field_type, field)
+        field_format = '<div class=\"auto-template-field auto-template-%s\">{{%s}}</div>'
+        template = template + field_format % (field_type, field)
 
     return template
 
 
 def content_from_row(row, row_index, card_index, template, template_path, metadata):
-    """ Returns the contents of a card using the specified template """
+    """ Returns the contents of a card using the specified template. """
 
     content, discovered_image_paths, missing_fields = fill_template(
         template, row)
@@ -434,7 +443,7 @@ def content_from_row(row, row_index, card_index, template, template_path, metada
 
 
 def setup_arguments(parser):
-    """ Sets up required and optional program arguments """
+    """ Sets up required and optional program arguments. """
 
     # required arguments
     parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
@@ -442,20 +451,19 @@ def setup_arguments(parser):
 
     # optional arguments
     parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
-                        help='A path to a directory in which the pages will '
-                             'be generated')
+                        help='Path to a directory in which the pages will be generated '
+                             '(a sub-directory will be created)')
 
     parser.add_argument('-m', '--metadata-filename', dest='metadata_path', required=False,
-                        help='A path to a CSV file containing metadata')
+                        help='Path to a CSV file containing metadata')
 
     parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
                         default=False, action='store_true',
-                        help='Disable cut guides on the margins of the '
-                             'generated pages')
+                        help='Don\'t show cut guides on the margins of the generated pages')
 
     parser.add_argument('--disable-backs', dest='disable_backs', required=False,
                         default=False, action='store_true',
-                        help='Disable generating card backs')
+                        help='Don\'t generate card backs')
 
     parser.add_argument('--verbose', dest='verbose', required=False,
                         default=False, action='store_true',
@@ -502,8 +510,7 @@ def main(argv):
         index = i.read()
 
     if metadata_path is None:
-        # no metadata has been explicitly specified, so try looking for it
-        # where the data is located
+        # no metadata has been explicitly specified, so try looking for it where the data is located
         found, potential_metadata_path = find_metadata_path(data_paths)
 
         if potential_metadata_path is not None:
@@ -539,10 +546,10 @@ def main(argv):
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
     cards = ''
-    # buffer that is filled reversely to support double-sided printing
-    backs_line = ''
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of card backs
     backs = ''
+    # buffer of a row of backs that is filled in reverse to support double-sided printing
+    backs_row = ''
     # buffer for all generated pages
     pages = ''
 
@@ -694,7 +701,7 @@ def main(argv):
                         image_paths.extend(found_image_paths)
 
                         # prepend this card back to the current line of backs
-                        backs_line = card.replace('{{content}}', back_content) + backs_line
+                        backs_row = card.replace('{{content}}', back_content) + backs_row
 
                         # card backs are prepended rather than appended to
                         # ensure correct layout when printing doublesided
@@ -702,10 +709,10 @@ def main(argv):
                         if cards_on_page % 3 is 0:
                             # a line has been filled- append the 3 card backs
                             # to the page in the right order
-                            backs += backs_line
+                            backs += backs_row
 
                             # reset to prepare for the next line
-                            backs_line = ''
+                            backs_row = ''
 
                     if cards_on_page == MAX_CARDS_PER_PAGE:
                         # add another page full of cards
@@ -734,9 +741,9 @@ def main(argv):
                 # less than 3 cards were added to the current line, so
                 # we have to add an additional blank filler card to ensure
                 # correct layout
-                backs_line = empty_back + backs_line
+                backs_row = empty_back + backs_row
 
-            backs += backs_line
+            backs += backs_row
 
             # fill another page with the backs
             pages += page.replace('{{cards}}', backs)
@@ -772,6 +779,8 @@ def main(argv):
             in_template=pages)
 
         index = index.replace('{{pages}}', pages)
+        # pages must be inserted prior to filling metadata fields,
+        # since each page may contain fields that should be filled
         index = index.replace('{{title}}', title)
         index = index.replace('{{description}}', metadata.description)
         index = index.replace('{{copyright}}', metadata.copyright)
