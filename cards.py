@@ -26,11 +26,12 @@ __version__ = '.'.join(__version_info__)
 class Metadata(object):
     """ Provides metadata properties for the generated pages. """
 
-    def __init__(self, title, description, version, copyright):
+    def __init__(self, title, description, version, copyright, size_definitions=None):
         self.title = title
         self.description = description
         self.version = version
         self.copyright = copyright
+        self.size_definitions = size_definitions
 
     @staticmethod
     def from_file(path, verbosely=False):
@@ -38,10 +39,13 @@ class Metadata(object):
             and returns it.
         """
 
+        # default values
         title = ''
         description = ''
         version = ''
         copyright = ''
+
+        size_definitions = None
 
         if path is not None and len(path) > 0:
             if not os.path.isfile(path):
@@ -57,9 +61,14 @@ class Metadata(object):
                         version = row.get('@version', version)
                         copyright = row.get('@copyright', copyright)
 
+                        sizes = row.get('@sizes')
+
+                        if sizes is not None:
+                            size_definitions = dict(s.strip().split('=') for s in sizes.split(','))
+
                         break
 
-        return Metadata(title, description, version, copyright)
+        return Metadata(title, description, version, copyright, size_definitions)
 
 
 def find_metadata_path(data_paths):
@@ -179,7 +188,7 @@ def copy_images_to_output_directory(image_paths, root_path, output_path, verbose
                      as_error=True)
 
 
-def fill_template_image_fields(template):
+def fill_template_image_fields(template, sizes=None):
     """ Recursively finds all {{image:size}} fields and returns a string
         replaced with HTML compliant <img> tags.
     """
@@ -201,6 +210,11 @@ def fill_template_image_fields(template):
                 # get the size specifications; i.e. whatever is on the right hand size of
                 # the ':' split character (whitespace excluded).
                 size = image_path[size_index + 1:].strip()
+                # then, determine whether the value is a size specified in the metadata;
+                # if it is, use that size specification.
+                if size in sizes:
+                    size = sizes.get(size)
+
                 # get each size specification separately (removing blanks)
                 size = list(filter(None, size.split('x')))
 
@@ -234,7 +248,7 @@ def fill_template_image_fields(template):
             # since the string we're finding matches on has just been changed,
             # we have to recursively look for more fields if there are any
             template, filled_image_paths = fill_template_image_fields(
-                template[:match.start()] + image_tag + template[match.end():])
+                template[:match.start()] + image_tag + template[match.end():], sizes)
 
             image_paths.extend(filled_image_paths)
 
@@ -262,7 +276,7 @@ def fill_template_field(field_name, field_value, in_template):
     return search.subn(field_value, in_template)
 
 
-def fill_template(template, row):
+def fill_template(template, row, metadata):
     """ Returns the contents of the template with all template fields replaced
         by any matching fields in the provided data.
     """
@@ -277,7 +291,8 @@ def fill_template(template, row):
             template_content = str(row[column])
 
             # replace any image fields with HTML compliant <img> tags
-            template_content, filled_image_paths = fill_template_image_fields(template_content)
+            template_content, filled_image_paths = fill_template_image_fields(
+                template_content, metadata.size_definitions)
 
             image_paths.extend(filled_image_paths)
 
@@ -419,7 +434,7 @@ def content_from_row(row, row_index, card_index, template, template_path, metada
     """ Returns the contents of a card using the specified template. """
 
     content, discovered_image_paths, missing_fields = fill_template(
-        template, row)
+        template, row, metadata)
 
     content, occurences = fill_template_field(
         field_name='card_row',
