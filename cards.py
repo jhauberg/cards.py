@@ -52,10 +52,10 @@ class Metadata(object):
                     metadata = csv.DictReader(lower_first_row(mf))
 
                     for row in metadata:
-                        title = row.get('@title')
-                        description = row.get('@description')
-                        version = row.get('@version')
-                        copyright = row.get('@copyright')
+                        title = row.get('@title', title)
+                        description = row.get('@description', description)
+                        version = row.get('@version', version)
+                        copyright = row.get('@copyright', copyright)
 
                         break
 
@@ -198,7 +198,8 @@ def fill_template_image_fields(template):
             explicit_height = None
 
             if size_index is not -1:
-                # get the size specifications (removing any whitespace)
+                # get the size specifications; i.e. whatever is on the right hand size of
+                # the ':' split character (whitespace excluded).
                 size = image_path[size_index + 1:].strip()
                 # get each size specification separately (removing blanks)
                 size = list(filter(None, size.split('x')))
@@ -408,6 +409,7 @@ def template_from_data(data):
 
     for field, field_type in fields:
         field_format = '<div class=\"auto-template-field auto-template-%s\">{{%s}}</div>'
+
         template = template + field_format % (field_type, field)
 
     return template
