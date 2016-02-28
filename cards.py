@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import itertools
 
-__version_info__ = ('0', '4', '1')
+__version_info__ = ('0', '4', '2')
 __version__ = '.'.join(__version_info__)
 
 
@@ -510,7 +510,12 @@ def main(argv):
 
     disable_auto_templating = False
 
+    with open('template/card.html') as c:
+        # load the container template for a card
+        card = c.read()
+
     with open('template/page.html') as p:
+        # load the container template for a page
         page = p.read()
 
         if disable_cut_guides:
@@ -520,10 +525,8 @@ def main(argv):
 
         page = page.replace('{{cut_guides_style}}', cut_guides_display)
 
-    with open('template/card.html') as c:
-        card = c.read()
-
     with open('template/index.html') as i:
+        # load the container template for the final html file
         index = i.read()
 
     if metadata_path is None:
@@ -748,23 +751,23 @@ def main(argv):
                         cards_on_page = 0
                         cards = ''
 
-    if cards_on_page > 0:
-        # in case there's still cards remaining, fill those into a new page
-        pages += page.replace('{{cards}}', cards)
-        pages_total += 1
-
-        if not disable_backs:
-            if cards_on_page % 3 is not 0:
-                # less than 3 cards were added to the current line, so
-                # we have to add an additional blank filler card to ensure
-                # correct layout
-                backs_row = empty_back + backs_row
-
-            backs += backs_row
-
-            # fill another page with the backs
-            pages += page.replace('{{cards}}', backs)
+        if cards_on_page > 0:
+            # in case there's still cards remaining, fill those into a new page
+            pages += page.replace('{{cards}}', cards)
             pages_total += 1
+
+            if not disable_backs:
+                if cards_on_page % 3 is not 0:
+                    # less than 3 cards were added to the current line, so
+                    # we have to add an additional blank filler card to ensure
+                    # correct layout
+                    backs_row = empty_back + backs_row
+
+                backs += backs_row
+
+                # fill another page with the backs
+                pages += page.replace('{{cards}}', backs)
+                pages_total += 1
 
     if output_path is None:
         # output to current working directory unless otherwise specified
