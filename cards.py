@@ -514,6 +514,7 @@ def main(argv):
         page = p.read()
 
         if disable_cut_guides:
+            # simply add a css rule to hide them
             cut_guides_display = 'style="display: none"'
         else:
             cut_guides_display = 'style="display: block"'
@@ -556,7 +557,14 @@ def main(argv):
     with open('template/error/back_not_provided.html') as e:
         template_back_not_provided = e.read()
 
-    # 3x3 cards is the ideal fit for an A4 page
+    CARD_SIZES = {
+        '25x35': 'card-size-25x35',
+        '35x55': 'card-size-35x55'
+    }
+
+    default_card_size = CARD_SIZES['25x35']
+
+    # 3x3 cards is the ideal fit for standard sized cards on an A4 page
     MAX_CARDS_PER_PAGE = 9
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
@@ -567,10 +575,6 @@ def main(argv):
     backs_row = ''
     # buffer for all generated pages
     pages = ''
-
-    # empty backs may be necessary to fill in empty spots on a page
-    # to ensure that the layout remains correct
-    empty_back = card.replace('{{content}}', '')
 
     # incremented each time a card is generated, but reset to 0 for each page
     cards_on_page = 0
@@ -585,6 +589,13 @@ def main(argv):
     for data_path in data_paths:
         # define the context as the base filename of the current data- useful when troubleshooting
         context = os.path.basename(data_path)
+
+        card_size = default_card_size
+
+        # empty backs may be necessary to fill in empty spots on a page to ensure
+        # that the layout remains correct
+        empty_back = card.replace('{{size}}', card_size)
+        empty_back = card.replace('{{content}}', '')
 
         with open(data_path) as f:
             # read the csv as a dict, so that we can access each column by name
@@ -680,7 +691,8 @@ def main(argv):
 
                     image_paths.extend(found_image_paths)
 
-                    current_card = card.replace('{{content}}', card_content)
+                    current_card = card.replace('{{size}}', card_size)
+                    current_card = current_card.replace('{{content}}', card_content)
 
                     cards += current_card
 

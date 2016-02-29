@@ -41,12 +41,20 @@ html, body {
 }
 
 .card {
-  /* Standard poker card */
-  width: 2.5in;
-  height: 3.5in;
-
   /* Content should be clipped if too large */
   overflow: hidden;
+}
+
+.card-size-25x35 {
+  /* Standard card */
+  width: 2.5in;
+  height: 3.5in;
+}
+
+.card-size-35x55 {
+  /* Jumbo card */
+  width: 3.5in;
+  height: 5.5in;
 }
 
 .page {
