@@ -35,9 +35,7 @@ class Metadata(object):
 
     @staticmethod
     def from_file(path, verbosely=False):
-        """ Reads the specified file containing metadata into a Metadata object
-            and returns it.
-        """
+        """ Reads the specified file containing metadata into a Metadata object and returns it. """
 
         # default values
         title = ''
@@ -66,54 +64,51 @@ class Metadata(object):
                         if sizes is not None:
                             size_definitions = dict(s.strip().split('=') for s in sizes.split(','))
 
+                        # only read the first row of data
                         break
 
         return Metadata(title, description, version, copyright, size_definitions)
 
 
-def find_metadata_path(data_paths):
-    """ If found, returns the first discovered path to a metadata file, otherwise,
-        returns the first potential path to where it looked for one.
+def find_path(name, data_paths):
+    """ If found, returns the first discovered path to a file containing the specified name,
+        otherwise returns the first potential path to where it looked for one.
     """
 
-    found_metadata_path = None
-    first_potential_metadata_path = None
+    found_path = None
+    first_potential_path = None
 
     if len(data_paths) > 0:
         # first look for a general purpose metadata file- we'll just use the first provided
         # data path and assume that this is the main directory for the project
         data_path_directory = os.path.dirname(data_paths[0])
 
-        potential_metadata_path = os.path.join(data_path_directory, 'meta.csv')
+        potential_path = os.path.join(data_path_directory, name)
 
-        if os.path.isfile(potential_metadata_path):
+        if os.path.isfile(potential_path):
             # we found one
-            found_metadata_path = potential_metadata_path
+            found_path = potential_path
 
-    if found_metadata_path is None:
+    if found_path is None:
         # then attempt looking for a file named like 'my-data.meta.csv' for each
         # provided data path until a file is found, if any
         for data_path in data_paths:
             data_path_components = os.path.splitext(data_path)
 
-            potential_metadata_path = data_path_components[0] + '.meta'
+            potential_path = data_path_components[0] + '.' + name
 
-            if len(data_path_components) > 1:
-                # apply the extension, if any
-                potential_metadata_path += data_path_components[1]
+            if first_potential_path is None:
+                first_potential_path = potential_path
 
-            if first_potential_metadata_path is None:
-                first_potential_metadata_path = potential_metadata_path
-
-            if os.path.isfile(potential_metadata_path):
+            if os.path.isfile(potential_path):
                 # we found one
-                found_metadata_path = potential_metadata_path
+                found_path = potential_path
 
                 break
 
-    return ((True, found_metadata_path) if
-            found_metadata_path is not None else
-            (False, first_potential_metadata_path))
+    return ((True, found_path) if
+            found_path is not None else
+            (False, first_potential_path))
 
 
 def warn(message, in_context=None, as_error=False):
@@ -212,7 +207,7 @@ def fill_template_image_fields(template, sizes=None):
                 size = image_path[size_index + 1:].strip()
                 # then, determine whether the value is a size specified in the metadata;
                 # if it is, use that size specification.
-                if size in sizes:
+                if sizes is not None and size in sizes:
                     size = sizes.get(size)
 
                 # get each size specification separately (removing blanks)
@@ -464,7 +459,7 @@ def setup_arguments(parser):
 
     # required arguments
     parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
-                        help='A path to a CSV file containing card data')
+                        help='One or more paths to CSV files containing card data')
 
     # optional arguments
     parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
@@ -531,7 +526,7 @@ def main(argv):
 
     if metadata_path is None:
         # no metadata has been explicitly specified, so try looking for it where the data is located
-        found, potential_metadata_path = find_metadata_path(data_paths)
+        found, potential_metadata_path = find_path('meta.csv', data_paths)
 
         if potential_metadata_path is not None:
             if not found:
@@ -685,7 +680,9 @@ def main(argv):
 
                     image_paths.extend(found_image_paths)
 
-                    cards += card.replace('{{content}}', card_content)
+                    current_card = card.replace('{{content}}', card_content)
+
+                    cards += current_card
 
                     cards_on_page += 1
                     cards_total += 1
@@ -768,6 +765,10 @@ def main(argv):
                 # fill another page with the backs
                 pages += page.replace('{{cards}}', backs)
                 pages_total += 1
+
+            # reset to prepare for the next page
+            cards_on_page = 0
+            cards = ''
 
     if output_path is None:
         # output to current working directory unless otherwise specified
