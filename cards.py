@@ -26,11 +26,12 @@ __version__ = '.'.join(__version_info__)
 class Metadata(object):
     """ Provides metadata properties for the generated pages. """
 
-    def __init__(self, title, description, version, copyright, size_definitions=None):
+    def __init__(self, title, description, version, copyright, image_definitions=None, size_definitions=None):
         self.title = title
         self.description = description
         self.version = version
         self.copyright = copyright
+        self.image_definitions = image_definitions
         self.size_definitions = size_definitions
 
     @staticmethod
@@ -43,6 +44,7 @@ class Metadata(object):
         version = ''
         copyright = ''
 
+        image_definitions = None
         size_definitions = None
 
         if path is not None and len(path) > 0:
@@ -59,15 +61,18 @@ class Metadata(object):
                         version = row.get('@version', version)
                         copyright = row.get('@copyright', copyright)
 
-                        sizes = row.get('@sizes')
-
-                        if sizes is not None:
-                            size_definitions = dict(s.strip().split('=') for s in sizes.split(','))
+                        image_definitions = get_definitions(row.get('@images'))
+                        size_definitions = get_definitions(row.get('@sizes'))
 
                         # only read the first row of data
                         break
 
-        return Metadata(title, description, version, copyright, size_definitions)
+        return Metadata(title, description, version, copyright, image_definitions, size_definitions)
+
+
+def get_definitions(value):
+    return (dict(definition.strip().split('=') for definition in value.split(','))
+            if value is not None else None)
 
 
 def find_path(name, data_paths):
@@ -183,7 +188,7 @@ def copy_images_to_output_directory(image_paths, root_path, output_path, verbose
                      as_error=True)
 
 
-def fill_template_image_fields(template, sizes=None):
+def fill_template_image_fields(template, images=None, sizes=None):
     """ Recursively finds all {{image:size}} fields and returns a string
         replaced with HTML compliant <img> tags.
     """
@@ -231,6 +236,9 @@ def fill_template_image_fields(template, sizes=None):
                 # get rid of the size specification to have a clean image path
                 image_path = image_path[:size_index]
 
+                if images is not None and image_path in images:
+                    image_path = images.get(image_path)
+
             if (explicit_width is not None and
                explicit_height is not None):
                     image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
@@ -243,7 +251,7 @@ def fill_template_image_fields(template, sizes=None):
             # since the string we're finding matches on has just been changed,
             # we have to recursively look for more fields if there are any
             template, filled_image_paths = fill_template_image_fields(
-                template[:match.start()] + image_tag + template[match.end():], sizes)
+                template[:match.start()] + image_tag + template[match.end():], images, sizes)
 
             image_paths.extend(filled_image_paths)
 
@@ -287,7 +295,7 @@ def fill_template(template, row, metadata):
 
             # replace any image fields with HTML compliant <img> tags
             template_content, filled_image_paths = fill_template_image_fields(
-                template_content, metadata.size_definitions)
+                template_content, metadata.image_definitions, metadata.size_definitions)
 
             image_paths.extend(filled_image_paths)
 
@@ -565,7 +573,9 @@ def main(argv):
     default_card_size = CARD_SIZES['25x35']
 
     # 3x3 cards is the ideal fit for standard sized cards on an A4 page
-    MAX_CARDS_PER_PAGE = 9
+    MAX_CARDS_PER_ROW = 3
+    MAX_CARDS_PER_COLUMN = 3
+    MAX_CARDS_PER_PAGE = MAX_CARDS_PER_ROW * MAX_CARDS_PER_COLUMN
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
     cards = ''
@@ -735,7 +745,7 @@ def main(argv):
                         # card backs are prepended rather than appended to
                         # ensure correct layout when printing doublesided
 
-                        if cards_on_page % 3 is 0:
+                        if cards_on_page % MAX_CARDS_PER_ROW is 0:
                             # a line has been filled- append the 3 card backs
                             # to the page in the right order
                             backs += backs_row
@@ -766,10 +776,9 @@ def main(argv):
             pages_total += 1
 
             if not disable_backs:
-                if cards_on_page % 3 is not 0:
-                    # less than 3 cards were added to the current line, so
-                    # we have to add an additional blank filler card to ensure
-                    # correct layout
+                if cards_on_page % MAX_CARDS_PER_ROW is not 0:
+                    # less than MAX_CARDS_PER_ROW cards were added to the current line, so
+                    # we have to add an additional blank filler card to ensure correct layout
                     backs_row = empty_back + backs_row
 
                 backs += backs_row
