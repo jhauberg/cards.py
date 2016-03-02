@@ -26,13 +26,13 @@ __version__ = '.'.join(__version_info__)
 class Metadata(object):
     """ Provides metadata properties for the generated pages. """
 
-    def __init__(self, title, description, version, copyright, image_definitions=None, size_definitions=None):
+    def __init__(self, title, description, version, copyright, image_defs=None, size_defs=None):
         self.title = title
         self.description = description
         self.version = version
         self.copyright = copyright
-        self.image_definitions = image_definitions
-        self.size_definitions = size_definitions
+        self.image_definitions = image_defs
+        self.size_definitions = size_defs
 
     @staticmethod
     def from_file(path, verbosely=False):
@@ -61,8 +61,8 @@ class Metadata(object):
                         version = row.get('@version', version)
                         copyright = row.get('@copyright', copyright)
 
-                        image_definitions = get_definitions(row.get('@images'))
-                        size_definitions = get_definitions(row.get('@sizes'))
+                        image_definitions = dict_from_string(row.get('@images'))
+                        size_definitions = dict_from_string(row.get('@sizes'))
 
                         # only read the first row of data
                         break
@@ -70,37 +70,43 @@ class Metadata(object):
         return Metadata(title, description, version, copyright, image_definitions, size_definitions)
 
 
-def get_definitions(value):
-    return (dict(definition.strip().split('=') for definition in value.split(','))
-            if value is not None else None)
+def dict_from_string(string):
+    """ Returns a dictionary object parsed from a string containing key-value pairs.
+        For example: "a_key=a_value, another_key=another_value"
+    """
+
+    return (dict(kvp.strip().split('=') for kvp in string.split(','))
+            if (string is not None and len(string) > 0) else None)
 
 
-def find_path(name, data_paths):
-    """ If found, returns the first discovered path to a file containing the specified name,
+def find_file_path(name, paths):
+    """ Look for a path with 'name' in the filename in the specified paths.
+
+        If found, returns the first discovered path to a file containing the specified name,
         otherwise returns the first potential path to where it looked for one.
     """
 
     found_path = None
     first_potential_path = None
 
-    if len(data_paths) > 0:
-        # first look for a general purpose metadata file- we'll just use the first provided
-        # data path and assume that this is the main directory for the project
-        data_path_directory = os.path.dirname(data_paths[0])
+    if len(paths) > 0:
+        # first look for a file simply named exactly the specified name- we'll just use
+        # the first provided path and assume that this is the main directory
+        path_directory = os.path.dirname(paths[0])
 
-        potential_path = os.path.join(data_path_directory, name)
+        potential_path = os.path.join(path_directory, name)
 
         if os.path.isfile(potential_path):
             # we found one
             found_path = potential_path
 
     if found_path is None:
-        # then attempt looking for a file named like 'my-data.meta.csv' for each
-        # provided data path until a file is found, if any
-        for data_path in data_paths:
-            data_path_components = os.path.splitext(data_path)
+        # then attempt looking for a file named like 'some_file.the-name.csv' for each
+        # provided path until a file is found, if any
+        for path in paths:
+            path_components = os.path.splitext(path)
 
-            potential_path = data_path_components[0] + '.' + name
+            potential_path = path_components[0] + '.' + name
 
             if first_potential_path is None:
                 first_potential_path = potential_path
@@ -188,6 +194,61 @@ def copy_images_to_output_directory(image_paths, root_path, output_path, verbose
                      as_error=True)
 
 
+def image_tag_from_path(image_path, images=None, sizes=None):
+    """ Constructs an HTML compliant image tag using the specified image path. """
+
+    image_tag = None
+    actual_image_path = image_path
+
+    # determine whether a size has been explicitly specified; e.g. "images/name-of-image.svg:16x16"
+    size_index = image_path.rfind(':')
+
+    explicit_width = None
+    explicit_height = None
+
+    if size_index is not -1:
+        # get the size specification; i.e. whatever is on the right hand size of the ':' splitter
+        size = image_path[size_index + 1:].strip()
+
+        # then, determine whether the value is a size specified in the metadata;
+        # if it is, use that size specification.
+        if sizes is not None and size in sizes:
+            size = sizes.get(size)
+
+        # get each size specification separately (removing blanks)
+        size = list(filter(None, size.split('x')))
+
+        if len(size) > 0:
+            explicit_width = int(size[0])
+
+            if explicit_width < 0:
+                explicit_width = None
+
+        if len(size) > 1:
+            explicit_height = int(size[1])
+
+            if explicit_height < 0:
+                explicit_height = None
+        else:
+            # default to a squared size using the width specification
+            explicit_height = explicit_width
+
+        # get rid of the size specification to have a clean image path
+        actual_image_path = image_path[:size_index]
+
+        if images is not None and actual_image_path in images:
+            actual_image_path = images.get(actual_image_path)
+
+    if (explicit_width is not None and
+       explicit_height is not None):
+            image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
+                actual_image_path, explicit_width, explicit_height)
+    else:
+        image_tag = '<img src="{0}">'.format(actual_image_path)
+
+    return (image_tag, actual_image_path)
+
+
 def fill_template_image_fields(template, images=None, sizes=None):
     """ Recursively finds all {{image:size}} fields and returns a string
         replaced with HTML compliant <img> tags.
@@ -199,52 +260,7 @@ def fill_template_image_fields(template, images=None, sizes=None):
         image_path = match.group(1)
 
         if len(image_path) > 0:
-            # determine whether a size has been explicitly specified; e.g.
-            # images/name-of-image.svg:16x16
-            size_index = image_path.rfind(':')
-
-            explicit_width = None
-            explicit_height = None
-
-            if size_index is not -1:
-                # get the size specifications; i.e. whatever is on the right hand size of
-                # the ':' split character (whitespace excluded).
-                size = image_path[size_index + 1:].strip()
-                # then, determine whether the value is a size specified in the metadata;
-                # if it is, use that size specification.
-                if sizes is not None and size in sizes:
-                    size = sizes.get(size)
-
-                # get each size specification separately (removing blanks)
-                size = list(filter(None, size.split('x')))
-
-                if len(size) > 0:
-                    explicit_width = int(size[0])
-
-                    if explicit_width < 0:
-                        explicit_width = None
-
-                if len(size) > 1:
-                    explicit_height = int(size[1])
-
-                    if explicit_height < 0:
-                        explicit_height = None
-                else:
-                    # default to a square image using the width specification
-                    explicit_height = explicit_width
-
-                # get rid of the size specification to have a clean image path
-                image_path = image_path[:size_index]
-
-                if images is not None and image_path in images:
-                    image_path = images.get(image_path)
-
-            if (explicit_width is not None and
-               explicit_height is not None):
-                    image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
-                        image_path, explicit_width, explicit_height)
-            else:
-                image_tag = '<img src="{0}">'.format(image_path)
+            image_tag, image_path = image_tag_from_path(image_path, images, sizes)
 
             image_paths.append(image_path)
 
@@ -535,7 +551,7 @@ def main(argv):
 
     if metadata_path is None:
         # no metadata has been explicitly specified, so try looking for it where the data is located
-        found, potential_metadata_path = find_path('meta.csv', data_paths)
+        found, potential_metadata_path = find_file_path('meta.csv', data_paths)
 
         if potential_metadata_path is not None:
             if not found:
