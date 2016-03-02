@@ -284,7 +284,7 @@ def fill_template_field(field_name, field_value, in_template):
     field_value = field_value if field_value is not None else ''
 
     # template fields are always represented by wrapping {{ }}'s'
-    template_field = re.escape('{{%s}}' % str(field_name))
+    template_field = re.escape('{{' + str(field_name) + '}}')
 
     # find any occurences of the field, using a case-insensitive
     # comparison, to ensure that e.g. {{name}} is populated with the
@@ -424,10 +424,10 @@ def template_from_data(data):
 
                     analysis[column] = l
 
-    for field, field_types in analysis.items():
+    for field_name, field_types in analysis.items():
         field_type = most_common(field_types)
 
-        analysis[field] = field_type
+        analysis[field_name] = field_type
 
     sort_fields_by_type = True
 
@@ -441,10 +441,11 @@ def template_from_data(data):
 
     template = '' if len(analysis) > 0 else None
 
-    for field, field_type in fields:
-        field_format = '<div class=\"auto-template-field auto-template-%s\">{{%s}}</div>'
+    for field_name, field_type in fields:
+        field = '{{' + str(field_name) + '}}'
+        field_tag = '<div class=\"auto-template-field auto-template-{0}\">{1}</div>'
 
-        template = template + field_format % (field_type, field)
+        template = template + field_tag.format(field_type, field)
 
     return template
 
