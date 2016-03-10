@@ -530,11 +530,18 @@ def main(argv):
 
     disable_auto_templating = False
 
-    with open('template/card.html') as c:
+    # get the current working directory (though not the ACTUAL working directory,
+    # we pretend that the location of this script file is the working directory and base path.
+    # this ensures that the relative paths still work, even if this script should be executed
+    # through a shell script or similar where the working directory might not be where this
+    # script is located)
+    cwd = os.path.dirname(os.path.realpath(__file__))
+
+    with open(os.path.join(cwd, 'template/card.html')) as c:
         # load the container template for a card
         card = c.read()
 
-    with open('template/page.html') as p:
+    with open(os.path.join(cwd, 'template/page.html')) as p:
         # load the container template for a page
         page = p.read()
 
@@ -546,7 +553,7 @@ def main(argv):
 
         page = page.replace('{{cut_guides_style}}', cut_guides_display)
 
-    with open('template/index.html') as i:
+    with open(os.path.join(cwd, 'template/index.html')) as i:
         # load the container template for the final html file
         index = i.read()
 
@@ -569,17 +576,17 @@ def main(argv):
 
     # error template for the output on cards specifying a template that was not found,
     # or could not be opened
-    with open('template/error/could_not_open.html') as e:
+    with open(os.path.join(cwd, 'template/error/could_not_open.html')) as e:
         template_not_opened = e.read()
 
     # error template for the output on cards when a default template has not been specified,
     # and the card hasn't specified one either
-    with open('template/error/not_provided.html') as e:
+    with open(os.path.join(cwd, 'template/error/not_provided.html')) as e:
         template_not_provided = e.read()
 
     # error template for the output on cards when a template back has not been specified,
     # and backs are not disabled
-    with open('template/error/back_not_provided.html') as e:
+    with open(os.path.join(cwd, 'template/error/back_not_provided.html')) as e:
         template_back_not_provided = e.read()
 
     CARD_SIZES = {
@@ -847,7 +854,7 @@ def main(argv):
         result.write(index)
 
     # make sure to copy the css file to the output directory
-    shutil.copyfile('template/index.css', os.path.join(output_path, 'index.css'))
+    shutil.copyfile(os.path.join(cwd, 'template/index.css'), os.path.join(output_path, 'index.css'))
 
     # ensure there are no duplicate image paths, since that would just
     # cause unnecessary copy operations
