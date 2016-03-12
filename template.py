@@ -4,7 +4,7 @@ import csv
 import os
 import re
 
-from util import most_common
+from util import most_common, warn
 from meta import Metadata
 
 
@@ -20,6 +20,12 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
     explicit_height = None
 
     if size_index is not -1:
+        # get rid of the size specification to have a clean image path
+        actual_image_path = image_path[:size_index]
+
+        if images is not None and actual_image_path in images:
+            actual_image_path = images.get(actual_image_path)
+
         # get the size specification; i.e. whatever is on the right hand size of the ':' splitter
         size = image_path[size_index + 1:].strip()
 
@@ -32,25 +38,27 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
         size = list(filter(None, size.split('x')))
 
         if len(size) > 0:
-            explicit_width = int(size[0])
+            width_specification = size[0]
 
-            if explicit_width < 0:
+            try:
+                explicit_width = int(width_specification)
+            except ValueError:
+                warn('The size specification \'{0}\' has not been defined. '
+                     'Image might not display as expected.'.format(width_specification),
+                     in_context=actual_image_path)
                 explicit_width = None
+            else:
+                if explicit_width < 0:
+                    explicit_width = None
 
         if len(size) > 1:
-            explicit_height = int(size[1])
+            explicit_height = int(size[1]) if size[1].isdigit() else None
 
-            if explicit_height < 0:
+            if explicit_height is not None and explicit_height < 0:
                 explicit_height = None
         else:
             # default to a squared size using the width specification
             explicit_height = explicit_width
-
-        # get rid of the size specification to have a clean image path
-        actual_image_path = image_path[:size_index]
-
-        if images is not None and actual_image_path in images:
-            actual_image_path = images.get(actual_image_path)
 
     if (explicit_width is not None and
        explicit_height is not None):
