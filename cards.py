@@ -26,23 +26,30 @@ __version__ = '.'.join(__version_info__)
 class Metadata(object):
     """ Provides metadata properties for the generated pages. """
 
-    def __init__(self, title, description, version, copyright, image_defs=None, size_defs=None):
+    def __init__(
+            self,
+            title: str,
+            description: str,
+            version: str,
+            copyright_notice: str,
+            image_defs: list=None,
+            size_defs: list=None):
         self.title = title
         self.description = description
         self.version = version
-        self.copyright = copyright
+        self.copyright_notice = copyright_notice
         self.image_definitions = image_defs
         self.size_definitions = size_defs
 
     @staticmethod
-    def from_file(path, verbosely=False):
+    def from_file(path: str, verbosely: 'show warnings'=False) -> 'Metadata':
         """ Reads the specified file containing metadata into a Metadata object and returns it. """
 
         # default values
         title = ''
         description = ''
         version = ''
-        copyright = ''
+        copyright_notice = ''
 
         image_definitions = None
         size_definitions = None
@@ -59,7 +66,7 @@ class Metadata(object):
                         title = row.get('@title', title)
                         description = row.get('@description', description)
                         version = row.get('@version', version)
-                        copyright = row.get('@copyright', copyright)
+                        copyright_notice = row.get('@copyright', copyright_notice)
 
                         image_definitions = dict_from_string(row.get('@images'))
                         size_definitions = dict_from_string(row.get('@sizes'))
@@ -67,19 +74,22 @@ class Metadata(object):
                         # only read the first row of data
                         break
 
-        return Metadata(title, description, version, copyright, image_definitions, size_definitions)
+        return Metadata(title, description, version, copyright_notice,
+                        image_definitions, size_definitions)
 
 
-def dict_from_string(string):
-    """ Returns a dictionary object parsed from a string containing key-value pairs.
+def dict_from_string(string: 'a string of key-value pairs') -> dict:
+    """ Returns a dictionary object parsed from a string containing comma-separated key-value pairs.
+
         For example: "a_key=a_value, another_key=another_value"
     """
+    if string is None or len(string) == 0:
+        return None
 
-    return (dict(kvp.strip().split('=') for kvp in string.split(','))
-            if (string is not None and len(string) > 0) else None)
+    return dict(kvp.strip().split('=') for kvp in string.split(','))
 
 
-def find_file_path(name, paths):
+def find_file_path(name: str, paths: list) -> (bool, str):
     """ Look for a path with 'name' in the filename in the specified paths.
 
         If found, returns the first discovered path to a file containing the specified name,
@@ -117,12 +127,11 @@ def find_file_path(name, paths):
 
                 break
 
-    return ((True, found_path) if
-            found_path is not None else
+    return ((True, found_path) if found_path is not None else
             (False, first_potential_path))
 
 
-def warn(message, in_context=None, as_error=False):
+def warn(message: str, in_context: str=None, as_error: 'apply error color'=False) -> None:
     """ Display a command-line warning. """
 
     apply_red_color = '\033[31m'
@@ -131,7 +140,7 @@ def warn(message, in_context=None, as_error=False):
 
     apply_color = apply_yellow_color if not as_error else apply_red_color
 
-    message_content = '[' + ('!' if as_error else '-') + ']'
+    message_content = '[{0}]'.format('!' if as_error else '-')
 
     if in_context is not None:
         message_content = '{0} [{1}]'.format(message_content, str(in_context))
@@ -141,7 +150,9 @@ def warn(message, in_context=None, as_error=False):
     print(apply_color + message_content + apply_normal_color)
 
 
-def is_special_column(column):
+def is_special_column(column: str) -> bool:
+    """ Determines whether a column is to be treated as a special column. """
+
     return column.startswith('@') if column is not None else False
 
 
@@ -151,7 +162,7 @@ def lower_first_row(rows):
     return itertools.chain([next(rows).lower()], rows)
 
 
-def create_missing_directories_if_necessary(path):
+def create_missing_directories_if_necessary(path: str) -> None:
     """ Mimics the command 'mkdir -p'. """
 
     try:
@@ -163,15 +174,23 @@ def create_missing_directories_if_necessary(path):
             raise
 
 
-def copy_images_to_output_directory(image_paths, root_path, output_path, verbosely=False):
-    """ Copies all provided images to the specified output path,
-        keeping the directory structure intact for each image.
+def copy_images_to_output_directory(
+        image_paths: list,
+        root_path: str,
+        output_path: str,
+        verbosely: 'show warnings'=False) -> None:
+    """ Copies all provided images to the specified output path, keeping the directory structure
+        intact for each image.
     """
 
     for image_path in image_paths:
         # copy each relatively specified image (if an image is specified
         # using an absolute path, assume that it should not be copied)
-        if not os.path.isabs(image_path):
+        if os.path.isabs(image_path):
+            if verbosely:
+                warn('An image was not copied to the output directory since it was specified with '
+                     'an absolute path: \033[4;31m\'{0}\'\033[0m'.format(image_path))
+        else:
             # if the image path is not an absolute path, assume
             # that it's located relative to where the data is
             relative_source_path = os.path.join(
@@ -194,10 +213,9 @@ def copy_images_to_output_directory(image_paths, root_path, output_path, verbose
                      as_error=True)
 
 
-def image_tag_from_path(image_path, images=None, sizes=None):
+def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
     """ Constructs an HTML compliant image tag using the specified image path. """
 
-    image_tag = None
     actual_image_path = image_path
 
     # determine whether a size has been explicitly specified; e.g. "images/name-of-image.svg:16x16"
@@ -246,10 +264,10 @@ def image_tag_from_path(image_path, images=None, sizes=None):
     else:
         image_tag = '<img src="{0}">'.format(actual_image_path)
 
-    return (image_tag, actual_image_path)
+    return image_tag, actual_image_path
 
 
-def fill_template_image_fields(template, images=None, sizes=None):
+def fill_template_image_fields(template: str, images: dict=None, sizes: dict=None) -> (str, list):
     """ Recursively finds all {{image:size}} fields and returns a string
         replaced with HTML compliant <img> tags.
     """
@@ -273,10 +291,10 @@ def fill_template_image_fields(template, images=None, sizes=None):
 
             break
 
-    return (template, image_paths)
+    return template, image_paths
 
 
-def fill_template_field(field_name, field_value, in_template):
+def fill_template_field(field_name: str, field_value: str, in_template: str) -> (str, int):
     """ Fills in the provided value in the provided template for all occurences
         of a given template field.
     """
@@ -295,7 +313,7 @@ def fill_template_field(field_name, field_value, in_template):
     return search.subn(field_value, in_template)
 
 
-def fill_template(template, row, metadata):
+def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, list):
     """ Returns the contents of the template with all template fields replaced
         by any matching fields in the provided data.
     """
@@ -324,10 +342,10 @@ def fill_template(template, row, metadata):
             if occurences is 0:
                 missing_fields.append(column)
 
-    return (template, image_paths, missing_fields)
+    return template, image_paths, missing_fields
 
 
-def template_from_path(template_path, relative_to=None):
+def template_from_path(template_path: str, relative_to_path: str=None) -> (str, bool, str):
     """ Attempts returning the template contents of the given path.
         If specified, path is made relative to another path.
     """
@@ -338,9 +356,9 @@ def template_from_path(template_path, relative_to=None):
     if template_path is not None and len(template_path) > 0:
         if not os.path.isabs(template_path):
             # the path is not an absolute path; assume that it's located relative to the data
-            if relative_to is not None:
+            if relative_to_path is not None:
                 template_path = os.path.join(
-                    os.path.dirname(relative_to),
+                    os.path.dirname(relative_to_path),
                     template_path)
 
         try:
@@ -351,47 +369,47 @@ def template_from_path(template_path, relative_to=None):
     else:
         template_not_found = True
 
-    return (template, template_not_found, template_path)
+    return template, template_not_found, template_path
 
 
-def most_common(objects):
+def most_common(objects: list) -> object:
     """ Returns the object that occurs most frequently in a list of objects. """
 
     return max(set(objects), key=objects.count)
 
 
-def is_probably_number(value):
+def is_probably_number(value: str) -> bool:
     """ Determine whether value is probably a numerical element. """
 
     # value is simply a numerical value
-    is_probably_number = value.isdigit()
+    probably_number = value.isdigit()
 
-    if not is_probably_number:
+    if not probably_number:
         s = value.split(' ')
 
         if len(s) is 2:
             # value is made up of 2 components;
             # consider it a number if either of the components is a numerical value
-            is_probably_number = True if s[0].isdigit() else s[1].isdigit()
+            probably_number = True if s[0].isdigit() else s[1].isdigit()
 
-    return is_probably_number
+    return probably_number
 
 
-def is_probably_text(value):
+def is_probably_text(value: str) -> bool:
     """ Determine whether value is probably a text element. """
 
     # value has more than 3 components; assume it's a text
     return len(value.split(' ')) > 3
 
 
-def is_probably_title(value):
+def is_probably_title(value: str) -> bool:
     """ Determine whether value is probably a title element. """
 
     # value has less than 3 components; assume it's a title
     return len(value.split(' ')) <= 3
 
 
-def field_type_from_value(value):
+def field_type_from_value(value: str) -> str:
     field_type = None
 
     if value is not None and len(value) > 0:
@@ -408,7 +426,7 @@ def field_type_from_value(value):
     return field_type
 
 
-def template_from_data(data):
+def template_from_data(data: csv.DictReader) -> str:
     """ Returns a template that is fit for the provided data. """
 
     analysis = {}
@@ -432,7 +450,7 @@ def template_from_data(data):
     sort_fields_by_type = True
 
     if not sort_fields_by_type:
-        fields = analysis.iteritems()
+        fields = analysis.items()
     else:
         fields = sorted(analysis.items(), key=lambda item: (
             0 if item[1] is 'number' else (
@@ -445,41 +463,52 @@ def template_from_data(data):
         field = '{{' + str(field_name) + '}}'
         field_tag = '<div class=\"auto-template-field auto-template-{0}\">{1}</div>'
 
-        template = template + field_tag.format(field_type, field)
+        template += field_tag.format(field_type, field)
 
     return template
 
 
-def content_from_row(row, row_index, card_index, template, template_path, metadata):
+def content_from_row(
+        row: dict,
+        row_index: int,
+        card_index: int,
+        template: str,
+        template_path: str,
+        metadata: Metadata) -> (str, list, list):
     """ Returns the contents of a card using the specified template. """
 
+    # attempt to fill all fields discovered in the template using the data for this card
     content, discovered_image_paths, missing_fields = fill_template(
         template, row, metadata)
 
+    # fill all row index fields (usually used for error templates)
     content, occurences = fill_template_field(
         field_name='card_row',
         field_value=str(row_index),
         in_template=content)
 
-    content, occurences = fill_template_field(
-        field_name='card_index',
-        field_value=str(card_index),
-        in_template=content)
-
+    # fill all template path fields (usually used for error templates)
     content, occurences = fill_template_field(
         field_name='card_template_path',
         field_value=template_path,
         in_template=content)
 
+    # fill all card index fields
+    content, occurences = fill_template_field(
+        field_name='card_index',
+        field_value=str(card_index),
+        in_template=content)
+
+    # fill all version fields
     content, occurences = fill_template_field(
         field_name='version',
         field_value=metadata.version,
         in_template=content)
 
-    return (content, discovered_image_paths, missing_fields)
+    return content, discovered_image_paths, missing_fields
 
 
-def setup_arguments(parser):
+def setup_arguments(parser: argparse.ArgumentParser) -> None:
     """ Sets up required and optional program arguments. """
 
     # required arguments
@@ -629,7 +658,7 @@ def main(argv):
         # empty backs may be necessary to fill in empty spots on a page to ensure
         # that the layout remains correct
         empty_back = card.replace('{{size}}', card_size)
-        empty_back = card.replace('{{content}}', '')
+        empty_back = empty_back.replace('{{content}}', '')
 
         with open(data_path) as f:
             # read the csv as a dict, so that we can access each column by name
@@ -671,7 +700,7 @@ def main(argv):
             for row in data:
                 # since the column names counts as a row, and most editors
                 # do not use a zero-based row index, the first row == 2
-                row_index = row_index + 1
+                row_index += 1
 
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
@@ -687,7 +716,7 @@ def main(argv):
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
-                            template_path, relative_to=data_path)
+                            template_path, relative_to_path=data_path)
 
                         if not_found:
                             template = template_not_opened
@@ -739,7 +768,7 @@ def main(argv):
 
                         if template_path_back is not None and len(template_path_back) > 0:
                             template_back, not_found, template_path_back = template_from_path(
-                                template_path_back, relative_to=data_path)
+                                template_path_back, relative_to_path=data_path)
 
                             if not_found:
                                 template_back = template_not_opened
@@ -849,7 +878,7 @@ def main(argv):
         # since each page may contain fields that should be filled
         index = index.replace('{{title}}', title)
         index = index.replace('{{description}}', metadata.description)
-        index = index.replace('{{copyright}}', metadata.copyright)
+        index = index.replace('{{copyright}}', metadata.copyright_notice)
 
         result.write(index)
 
