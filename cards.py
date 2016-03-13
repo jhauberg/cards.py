@@ -21,7 +21,7 @@ from meta import Metadata
 
 from template import template_from_data, template_from_path, fill_template_field, fill_card
 
-__version_info__ = ('0', '4', '2')
+__version_info__ = ('0', '4', '3')
 __version__ = '.'.join(__version_info__)
 
 
@@ -244,7 +244,7 @@ def main(argv):
     pages_total = 0
 
     # list of all the image paths discovered during card generation
-    image_paths = []
+    context_image_paths = {}
 
     for data_path in data_paths:
         # define the context as the base filename of the current data- useful when troubleshooting
@@ -256,6 +256,8 @@ def main(argv):
         # that the layout remains correct
         empty_back = card.replace('{{size}}', card_size)
         empty_back = empty_back.replace('{{content}}', '')
+
+        image_paths = []
 
         with open(data_path) as f:
             # read the csv as a dict, so that we can access each column by name
@@ -441,6 +443,10 @@ def main(argv):
             cards_on_page = 0
             cards = ''
 
+        # ensure there are no duplicate image paths, since that would just
+        # cause unnecessary copy operations
+        context_image_paths[data_path] = list(set(image_paths))
+
     if output_path is None:
         # output to current working directory unless otherwise specified
         output_path = ''
@@ -483,13 +489,11 @@ def main(argv):
     shutil.copyfile(os.path.join(cwd, 'templates/index.css'),
                     os.path.join(output_path, 'index.css'))
 
-    # ensure there are no duplicate image paths, since that would just
-    # cause unnecessary copy operations
-    image_paths = list(set(image_paths))
-
     # additionally, copy all referenced images to the output directory as well
-    # (making sure to keep their original directory structure)
-    copy_images_to_output_directory(image_paths, data_path, output_path, verbosely=True)
+    # (making sure to keep their original directory structure in relation to their context)
+    for context in context_image_paths:
+        copy_images_to_output_directory(
+            context_image_paths[context], context, output_path, verbosely=True)
 
     print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
           .format(cards_total, cards_or_card,
