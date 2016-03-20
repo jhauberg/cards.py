@@ -422,8 +422,9 @@ def main(argv):
                         cards_on_page = 0
                         cards = ''
 
-        if cards_on_page > 0:
-            # in case there's still cards remaining, fill those into a new page
+        if data_path is data_paths[-1] and cards_on_page > 0:
+            # in case we're on the last datasource and there's still cards remaining,
+            # then do a pagebreak and fill those into a new page
             pages += page.replace('{{cards}}', cards)
             pages_total += 1
 
