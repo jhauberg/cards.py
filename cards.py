@@ -120,6 +120,10 @@ def setup_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('-m', '--metadata-filename', dest='metadata_path', required=False,
                         help='Path to a CSV file containing metadata')
 
+    parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
+                        default=False, action='store_true',
+                        help='Force a page break for each datasource')
+
     parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
                         default=False, action='store_true',
                         help='Don\'t show cut guides on the margins of the generated pages')
@@ -150,6 +154,7 @@ def main(argv):
     # optional arguments
     output_path = args['output_path']
     metadata_path = args['metadata_path']
+    force_page_breaks = args['force_page_breaks']
     disable_cut_guides = bool(args['disable_cut_guides'])
     disable_backs = bool(args['disable_backs'])
     is_verbose = bool(args['verbose'])
@@ -422,7 +427,7 @@ def main(argv):
                         cards_on_page = 0
                         cards = ''
 
-        if data_path is data_paths[-1] and cards_on_page > 0:
+        if (force_page_breaks or data_path is data_paths[-1]) and cards_on_page > 0:
             # in case we're on the last datasource and there's still cards remaining,
             # then do a pagebreak and fill those into a new page
             pages += page.replace('{{cards}}', cards)
