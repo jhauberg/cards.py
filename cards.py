@@ -140,6 +140,13 @@ def setup_arguments(parser: argparse.ArgumentParser) -> None:
                         help='Show the program\'s version, then exit')
 
 
+def get_sized_card(card: str, size: str, content: str) -> str:
+    card = card.replace('{{size}}', size)
+    card = card.replace('{{content}}', content)
+
+    return card
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
         description='Generates print-ready cards for your tabletop game.')
@@ -358,8 +365,7 @@ def main(argv):
 
                     image_paths.extend(found_image_paths)
 
-                    current_card = card.replace('{{size}}', card_size)
-                    current_card = current_card.replace('{{content}}', card_content)
+                    current_card = get_sized_card(card, card_size, card_content)
 
                     cards += current_card
 
@@ -396,8 +402,10 @@ def main(argv):
 
                         image_paths.extend(found_image_paths)
 
+                        current_card_back = get_sized_card(card, card_size, back_content)
+
                         # prepend this card back to the current line of backs
-                        backs_row = card.replace('{{content}}', back_content) + backs_row
+                        backs_row = current_card_back + backs_row
 
                         # card backs are prepended rather than appended to
                         # ensure correct layout when printing doublesided
