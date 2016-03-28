@@ -215,6 +215,13 @@ def fill_card(
     return template, discovered_image_paths, missing_fields
 
 
+def get_sized_card(card: str, size: str, content: str) -> str:
+    card = card.replace('{{size}}', size)
+    card = card.replace('{{content}}', content)
+
+    return card
+
+
 def is_special_column(column: str) -> bool:
     """ Determines whether a column is to be treated as a special column. """
 

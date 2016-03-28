@@ -20,8 +20,9 @@ from util import warn, lower_first_row, create_missing_directories_if_necessary
 from meta import Metadata
 
 from template import template_from_data, template_from_path, fill_template_field, fill_card
+from template import get_sized_card
 
-__version_info__ = ('0', '4', '3')
+__version_info__ = ('0', '4', '4')
 __version__ = '.'.join(__version_info__)
 
 
@@ -138,13 +139,6 @@ def setup_arguments(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__,
                         help='Show the program\'s version, then exit')
-
-
-def get_sized_card(card: str, size: str, content: str) -> str:
-    card = card.replace('{{size}}', size)
-    card = card.replace('{{content}}', content)
-
-    return card
 
 
 def main(argv):
@@ -442,10 +436,19 @@ def main(argv):
             pages_total += 1
 
             if not disable_backs:
-                if cards_on_page % MAX_CARDS_PER_ROW is not 0:
-                    # less than MAX_CARDS_PER_ROW cards were added to the current line, so
-                    # we have to add an additional blank filler card to ensure correct layout
-                    backs_row = empty_back + backs_row
+                cards_on_last_row = cards_on_page % MAX_CARDS_PER_ROW
+
+                if cards_on_last_row is not 0:
+                    # less than MAX_CARDS_PER_ROW cards were added to the current line,
+                    # so we have to add additional blank filler cards to ensure a correct layout
+
+                    remaining_backs = MAX_CARDS_PER_ROW - cards_on_last_row
+
+                    while remaining_backs > 0:
+                        # add a filler card back
+                        backs_row = empty_back + backs_row
+
+                        remaining_backs -= 1
 
                 backs += backs_row
 
