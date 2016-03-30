@@ -249,7 +249,7 @@ def main(argv):
     # incremented each time a page is generated
     pages_total = 0
 
-    # list of all the image paths discovered during card generation
+    # dict of all image paths discovered for each context during card generation
     context_image_paths = {}
 
     for data_path in data_paths:
@@ -445,7 +445,7 @@ def main(argv):
                     remaining_backs = MAX_CARDS_PER_ROW - cards_on_last_row
 
                     while remaining_backs > 0:
-                        # add a filler card back
+                        # keep adding empty filler card backs until we've filled a row
                         backs_row = empty_back + backs_row
 
                         remaining_backs -= 1
