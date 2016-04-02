@@ -430,8 +430,8 @@ def main(argv):
                         cards = ''
 
         if (force_page_breaks or data_path is data_paths[-1]) and cards_on_page > 0:
-            # in case we're on the last datasource and there's still cards remaining,
-            # then do a pagebreak and fill those into a new page
+            # in case we're forcing pagebreaks for each datasource, or we're on the last datasource
+            # and there's still cards remaining, then do a pagebreak and fill those into a new page
             pages += page.replace('{{cards}}', cards)
             pages_total += 1
 
@@ -452,9 +452,13 @@ def main(argv):
 
                 backs += backs_row
 
+                backs_row = ''
+
                 # fill another page with the backs
                 pages += page.replace('{{cards}}', backs)
                 pages_total += 1
+
+                backs = ''
 
             # reset to prepare for the next page
             cards_on_page = 0
