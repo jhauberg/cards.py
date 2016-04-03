@@ -136,6 +136,7 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
     image_paths = []
     missing_fields = []
 
+    # go through each data field for this card (row)
     for column in row:
         # ignore special columns
         if not is_special_column(column):
@@ -155,7 +156,23 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
                 in_template=template)
 
             if occurences is 0:
+                # this field was not found anywhere in the specified template
                 missing_fields.append(column)
+
+    # find any remaining template fields so we can warn that they were not filled
+    remaining_fields = get_template_fields(template)
+
+    # note that leftover fields may include special fields like '{{cards_total}}' that will actually
+    # not be filled until all pages have been generated
+
+    if len(remaining_fields) > 0:
+        # leftover fields were found
+        for remaining_field in remaining_fields:
+            # get the actual field name
+            field_name = remaining_field.group(1)
+
+            if len(field_name) > 0:
+                missing_fields.append(field_name)
 
     return template, image_paths, missing_fields
 
