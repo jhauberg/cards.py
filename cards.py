@@ -394,6 +394,12 @@ def main(argv):
                         back_content, found_image_paths, missing_fields = fill_card(
                             template_back, template_path_back, row, row_index, card_index, metadata)
 
+                        if len(missing_fields) > 0 and is_verbose:
+                            warn('The back template for the card at #{0} (row {1}) did not '
+                                 'contain the fields: {2}'
+                                 .format(card_index, row_index, missing_fields),
+                                 in_context=context)
+
                         image_paths.extend(found_image_paths)
 
                         current_card_back = get_sized_card(card, card_size, back_content)
