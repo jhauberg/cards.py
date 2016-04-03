@@ -9,7 +9,7 @@ from meta import Metadata
 
 
 def is_image(image_path: str) -> bool:
-    return image_path.lower().endswith(('.svg', '.png', '.jpg', '.jpeg'))
+    return image_path.strip().lower().endswith(('.svg', '.png', '.jpg', '.jpeg'))
 
 
 def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
@@ -143,11 +143,14 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
             # fetch the content for the field (may also be templated)
             field_content = str(row[column])
 
-            # replace any image fields with HTML compliant <img> tags
-            field_content, filled_image_paths = fill_image_fields(
-                field_content, metadata.image_definitions, metadata.size_definitions)
+            if is_image(field_content):
+                image_paths.append(field_content)
+            else:
+                # replace any image fields with HTML compliant <img> tags
+                field_content, filled_image_paths = fill_image_fields(
+                    field_content, metadata.image_definitions, metadata.size_definitions)
 
-            image_paths.extend(filled_image_paths)
+                image_paths.extend(filled_image_paths)
 
             # fill content into the provided template
             template, occurences = fill_template_field(
