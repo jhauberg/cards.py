@@ -8,6 +8,10 @@ from util import most_common, warn
 from meta import Metadata
 
 
+def is_image(image_path: str) -> bool:
+    return image_path.lower().endswith(('.svg', '.png', '.jpg', '.jpeg'))
+
+
 def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
     """ Constructs an HTML compliant image tag using the specified image path. """
 
@@ -60,24 +64,32 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
             # default to a squared size using the width specification
             explicit_height = explicit_width
 
-    if (explicit_width is not None and
-       explicit_height is not None):
-            image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
-                actual_image_path, explicit_width, explicit_height)
+    if is_image(actual_image_path):
+        if (explicit_width is not None and
+           explicit_height is not None):
+                image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
+                    actual_image_path, explicit_width, explicit_height)
+        else:
+            image_tag = '<img src="{0}">'.format(actual_image_path)
     else:
-        image_tag = '<img src="{0}">'.format(actual_image_path)
+        image_tag = ''
 
     return image_tag, actual_image_path
 
 
-def fill_template_image_fields(template: str, images: dict=None, sizes: dict=None) -> (str, list):
+def get_template_fields(template: str) -> list:
+    """ Returns a list of all template fields (e.g. {{a_field}}) in a given template """
+    return list(re.finditer('{{(.*?)}}', template, re.DOTALL))
+
+
+def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str, list):
     """ Recursively finds all {{image:size}} fields and returns a string
         replaced with HTML compliant <img> tags.
     """
 
     image_paths = []
 
-    for match in re.finditer('{{(.*?)}}', template, re.DOTALL):
+    for match in get_template_fields(content):
         image_path = match.group(1)
 
         if len(image_path) > 0:
@@ -87,14 +99,14 @@ def fill_template_image_fields(template: str, images: dict=None, sizes: dict=Non
 
             # since the string we're finding matches on has just been changed,
             # we have to recursively look for more fields if there are any
-            template, filled_image_paths = fill_template_image_fields(
-                template[:match.start()] + image_tag + template[match.end():], images, sizes)
+            content, filled_image_paths = fill_image_fields(
+                content[:match.start()] + image_tag + content[match.end():], images, sizes)
 
             image_paths.extend(filled_image_paths)
 
             break
 
-    return template, image_paths
+    return content, image_paths
 
 
 def fill_template_field(field_name: str, field_value: str, in_template: str) -> (str, int):
@@ -128,18 +140,18 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
         # ignore special columns
         if not is_special_column(column):
             # fetch the content for the field (may also be templated)
-            template_content = str(row[column])
+            field_content = str(row[column])
 
             # replace any image fields with HTML compliant <img> tags
-            template_content, filled_image_paths = fill_template_image_fields(
-                template_content, metadata.image_definitions, metadata.size_definitions)
+            field_content, filled_image_paths = fill_image_fields(
+                field_content, metadata.image_definitions, metadata.size_definitions)
 
             image_paths.extend(filled_image_paths)
 
             # fill content into the provided template
             template, occurences = fill_template_field(
                 field_name=str(column),
-                field_value=str(template_content),
+                field_value=str(field_content),
                 in_template=template)
 
             if occurences is 0:
@@ -184,10 +196,6 @@ def fill_card(
         metadata: Metadata) -> (str, list, list):
     """ Returns the contents of a card using the specified template. """
 
-    # attempt to fill all fields discovered in the template using the data for this card
-    template, discovered_image_paths, missing_fields = fill_template(
-        template, row, metadata)
-
     # fill all row index fields (usually used for error templates)
     template, occurences = fill_template_field(
         field_name='card_row',
@@ -211,6 +219,10 @@ def fill_card(
         field_name='version',
         field_value=metadata.version,
         in_template=template)
+
+    # attempt to fill all fields discovered in the template using the data for this card
+    template, discovered_image_paths, missing_fields = fill_template(
+        template, row, metadata)
 
     return template, discovered_image_paths, missing_fields
 
