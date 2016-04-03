@@ -172,7 +172,16 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
             field_name = remaining_field.group(1)
 
             if len(field_name) > 0:
-                missing_fields.append(field_name)
+                if is_image(field_name):
+                    # the field is probably pointing to an image, so make sure that the image
+                    # will be copied to the output directory
+                    image_paths.append(field_name)
+
+                    # finally "fill" this image field by simply getting rid of the curly brackets
+                    template = template.replace(remaining_field.group(0), field_name)
+                else:
+                    # the field was not found in the card data, so make a warning about it
+                    missing_fields.append(field_name)
 
     return template, image_paths, missing_fields
 
