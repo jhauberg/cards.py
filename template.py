@@ -167,9 +167,6 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
     # find any remaining template fields so we can warn that they were not filled
     remaining_fields = get_template_fields(template)
 
-    # note that leftover fields may include special fields like '{{cards_total}}' that will actually
-    # not be filled until all pages have been generated
-
     if len(remaining_fields) > 0:
         # leftover fields were found
         for remaining_field in remaining_fields:
@@ -177,7 +174,12 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
             field_name = remaining_field.group(1)
 
             if len(field_name) > 0:
-                if is_image(field_name):
+                if field_name == 'cards_total':
+                    # this is a special case: this field will not be filled until every card
+                    # has been generated- so this field should not be treated as if missing;
+                    # instead, simply ignore it at this point
+                    pass
+                elif is_image(field_name):
                     # the field is probably pointing to an image, so make sure that the image
                     # will be copied to the output directory
                     image_paths.append(field_name)
