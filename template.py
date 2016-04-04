@@ -258,6 +258,50 @@ def fill_card(
     return template, discovered_image_paths, missing_fields
 
 
+def fill_card_front(
+        template: str,
+        template_path: str,
+        row: dict,
+        row_index: int,
+        card_index: int,
+        metadata: Metadata) -> (str, list, list):
+    """ Returns the contents of the front of a card using the specified template. """
+    return fill_card(template, template_path, get_front_data(row), row_index, card_index, metadata)
+
+
+def fill_card_back(
+        template: str,
+        template_path: str,
+        row: dict,
+        row_index: int,
+        card_index: int,
+        metadata: Metadata) -> (str, list, list):
+    """ Returns the contents of the back of a card using the specified template. """
+    return fill_card(template, template_path, get_back_data(row), row_index, card_index, metadata)
+
+
+def get_front_data(row: dict) -> dict:
+    front_data = {}
+
+    for column in row:
+        if not column.endswith('@back'):
+            front_data[column] = row[column]
+
+    return front_data
+
+
+def get_back_data(row: dict) -> dict:
+    back_data = {}
+
+    for column in row:
+        if column.endswith('@back'):
+            stripped_column = column[:-len('@back')]
+
+            back_data[stripped_column] = row[column]
+
+    return back_data
+
+
 def get_sized_card(card: str, size: str, content: str) -> str:
     card = card.replace('{{size}}', size)
     card = card.replace('{{content}}', content)

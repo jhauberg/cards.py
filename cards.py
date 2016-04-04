@@ -19,7 +19,8 @@ import subprocess
 from util import warn, lower_first_row, create_missing_directories_if_necessary
 from meta import Metadata
 
-from template import template_from_data, template_from_path, fill_template_field, fill_card
+from template import fill_template_field, fill_card_front, fill_card_back
+from template import template_from_data, template_from_path
 from template import get_sized_card
 
 __version_info__ = ('0', '4', '4')
@@ -347,7 +348,7 @@ def main(argv):
                              in_context=context,
                              as_error=True)
 
-                    card_content, found_image_paths, missing_fields = fill_card(
+                    card_content, found_image_paths, missing_fields = fill_card_front(
                         template, template_path, row, row_index, card_index, metadata)
 
                     if (template is not template_not_provided and
@@ -401,7 +402,7 @@ def main(argv):
                         if template_back is None:
                             template_back = template_back_not_provided
 
-                        back_content, found_image_paths, missing_fields = fill_card(
+                        back_content, found_image_paths, missing_fields = fill_card_back(
                             template_back, template_path_back, row, row_index, card_index, metadata)
 
                         if (template_back is not template_back_not_provided and
