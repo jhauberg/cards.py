@@ -350,11 +350,21 @@ def main(argv):
                     card_content, found_image_paths, missing_fields = fill_card(
                         template, template_path, row, row_index, card_index, metadata)
 
-                    if len(missing_fields) > 0 and (template is not template_not_provided and
-                                                    template is not template_not_opened):
-                        if is_verbose:
-                            warn('The template for the card at #{0} (row {1}) did not contain '
-                                 'the fields: {2}'.format(card_index, row_index, missing_fields),
+                    if (template is not template_not_provided and
+                        template is not template_not_opened):
+                        missing_fields_in_template = missing_fields[0]
+                        missing_fields_in_data = missing_fields[1]
+
+                        if len(missing_fields_in_template) > 0 and is_verbose:
+                            warn('The template for the card at #{0} (row {1}) does not contain '
+                                 'the fields: {2}'
+                                 .format(card_index, row_index, missing_fields_in_template),
+                                 in_context=context)
+
+                        if len(missing_fields_in_data) > 0 and is_verbose:
+                            warn('The template for the card at #{0} (row {1}) contains fields that '
+                                 'are not present for this card: {2}'
+                                 .format(card_index, row_index, missing_fields_in_data),
                                  in_context=context)
 
                     image_paths.extend(found_image_paths)
@@ -394,11 +404,22 @@ def main(argv):
                         back_content, found_image_paths, missing_fields = fill_card(
                             template_back, template_path_back, row, row_index, card_index, metadata)
 
-                        if len(missing_fields) > 0 and is_verbose:
-                            warn('The back template for the card at #{0} (row {1}) did not '
-                                 'contain the fields: {2}'
-                                 .format(card_index, row_index, missing_fields),
-                                 in_context=context)
+                        if (template_back is not template_back_not_provided and
+                            template_back is not template_not_opened):
+                            missing_fields_in_template = missing_fields[0]
+                            missing_fields_in_data = missing_fields[1]
+
+                            if len(missing_fields_in_template) > 0 and is_verbose:
+                                warn('The back template for the card at #{0} (row {1}) does not '
+                                     'contain the fields: {2}'
+                                     .format(card_index, row_index, missing_fields_in_template),
+                                     in_context=context)
+
+                            if len(missing_fields_in_data) > 0 and is_verbose:
+                                warn('The back template for the card at #{0} (row {1}) contains '
+                                     'fields that are not present for this card: {2}'
+                                     .format(card_index, row_index, missing_fields_in_data),
+                                     in_context=context)
 
                         image_paths.extend(found_image_paths)
 

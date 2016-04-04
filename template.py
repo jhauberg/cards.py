@@ -134,7 +134,7 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
     """
 
     image_paths = []
-    missing_fields = []
+    missing_fields_in_template = []
 
     # go through each data field for this card (row)
     for column in row:
@@ -160,7 +160,9 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
 
             if occurences is 0:
                 # this field was not found anywhere in the specified template
-                missing_fields.append(column)
+                missing_fields_in_template.append(column)
+
+    missing_fields_in_data = []
 
     # find any remaining template fields so we can warn that they were not filled
     remaining_fields = get_template_fields(template)
@@ -184,9 +186,9 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
                     template = template.replace(remaining_field.group(0), field_name)
                 else:
                     # the field was not found in the card data, so make a warning about it
-                    missing_fields.append(field_name)
+                    missing_fields_in_data.append(field_name)
 
-    return template, image_paths, missing_fields
+    return template, image_paths, (missing_fields_in_template, missing_fields_in_data)
 
 
 def template_from_path(template_path: str, relative_to_path: str=None) -> (str, bool, str):
