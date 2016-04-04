@@ -332,7 +332,7 @@ def main(argv):
                                  in_context=context,
                                  as_error=True)
                         elif is_verbose and len(template) == 0:
-                            warn('The template at \033[4;31m\'{0}\'\033[0m for the card at '
+                            warn('The template at \033[4;33m\'{0}\'\033[0;33m for the card at '
                                  '#{1} (row {2}) appears to be empty. Blank cards may occur.'
                                  .format(template_path, card_index, row_index),
                                  in_context=context)
@@ -383,9 +383,9 @@ def main(argv):
                                      in_context=context,
                                      as_error=True)
                             elif is_verbose and len(template_back) == 0:
-                                warn('The back template at \033[4;31m\'{0}\'\033[0m for the card '
-                                     'at #{1} (row {2}) appears to be empty. Blank cards may occur.'
-                                     .format(template_path, card_index, row_index),
+                                warn('The template at \033[4;33m\'{0}\'\033[0;33m for the card at '
+                                     '#{1} (row {2}) appears to be empty. Blank cards may occur.'
+                                     .format('template/template_path', 1, 1),
                                      in_context=context)
 
                         if template_back is None:
@@ -522,7 +522,7 @@ def main(argv):
         copy_images_to_output_directory(
             context_image_paths[context], context, output_path, verbosely=True)
 
-    print('Generated {0} {1} on {2} {3}. See \'{4}/index.html\'.'
+    print('Generated {0} {1} on {2} {3}. See \033[4m\'{4}/index.html\'\033[0m.'
           .format(cards_total, cards_or_card,
                   pages_total, pages_or_page,
                   output_path))
