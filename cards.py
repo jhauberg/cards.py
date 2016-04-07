@@ -83,6 +83,7 @@ def copy_images_to_output_directory(
     """ Copies all provided images to the specified output path, keeping the directory structure
         intact for each image.
     """
+    context = os.path.basename(root_path)
 
     for image_path in image_paths:
         # copy each relatively specified image (if an image is specified
@@ -90,7 +91,8 @@ def copy_images_to_output_directory(
         if os.path.isabs(image_path) or is_url(image_path):
             if verbosely:
                 warn('An image was not copied to the output directory since it was specified with '
-                     'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path))
+                     'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path),
+                     in_context=context)
         else:
             # if the image path is not an absolute path, assume
             # that it's located relative to where the data is
@@ -110,6 +112,7 @@ def copy_images_to_output_directory(
             else:
                 warn('One or more cards contain an image reference that does not exist: '
                      '\033[4;31m\'{0}\'\033[0m'.format(relative_source_path),
+                     in_context=context,
                      as_error=True)
 
 
