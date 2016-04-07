@@ -20,6 +20,11 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
     # determine whether a size has been explicitly specified; e.g. "images/name-of-image.svg:16x16"
     size_index = image_path.rfind(':')
 
+    # determine whether the : actually represents a protocol specification; i.e. http:// or similar
+    if image_path[size_index + 1:size_index + 1 + 2] == '//':
+        # in case it is, then ignore anything beyond the protocol specification
+        size_index = -1
+
     explicit_width = None
     explicit_height = None
 

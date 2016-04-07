@@ -16,6 +16,8 @@ import csv
 import shutil
 import subprocess
 
+from urllib.parse import urlparse
+
 from util import warn, lower_first_row, create_missing_directories_if_necessary
 from meta import Metadata
 
@@ -25,6 +27,10 @@ from template import get_sized_card
 
 __version_info__ = ('0', '4', '5')
 __version__ = '.'.join(__version_info__)
+
+
+def is_url(url):
+    return urlparse(url).scheme != ""
 
 
 def find_file_path(name: str, paths: list) -> (bool, str):
@@ -81,25 +87,25 @@ def copy_images_to_output_directory(
     for image_path in image_paths:
         # copy each relatively specified image (if an image is specified
         # using an absolute path, assume that it should not be copied)
-        if os.path.isabs(image_path):
+        if os.path.isabs(image_path) or is_url(image_path):
             if verbosely:
                 warn('An image was not copied to the output directory since it was specified with '
-                     'an absolute path: \033[4;31m\'{0}\'\033[0m'.format(image_path))
+                     'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path))
         else:
             # if the image path is not an absolute path, assume
             # that it's located relative to where the data is
             relative_source_path = os.path.join(
                 os.path.dirname(root_path), image_path)
 
-            relative_destination_path = os.path.join(
-                output_path, image_path)
-
-            # make sure any missing directories are created as needed
-            create_missing_directories_if_necessary(
-                os.path.dirname(relative_destination_path))
-
             if os.path.isfile(relative_source_path):
                 # only copy if the file actually exists
+                relative_destination_path = os.path.join(
+                    output_path, image_path)
+
+                # make sure any missing directories are created as needed
+                create_missing_directories_if_necessary(
+                    os.path.dirname(relative_destination_path))
+
                 shutil.copyfile(relative_source_path, relative_destination_path)
             else:
                 warn('One or more cards contain an image reference that does not exist: '
