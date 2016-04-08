@@ -8,10 +8,6 @@ from util import most_common, warn
 from meta import Metadata
 
 
-def is_image(image_path: str) -> bool:
-    return image_path.strip().lower().endswith(('.svg', '.png', '.jpg', '.jpeg'))
-
-
 def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
     """ Constructs an HTML compliant image tag using the specified image path. """
 
@@ -84,6 +80,7 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
 
 def get_template_fields(template: str) -> list:
     """ Returns a list of all template fields (e.g. {{a_field}}) in a given template """
+
     return list(re.finditer('{{(.*?)}}', template, re.DOTALL))
 
 
@@ -273,6 +270,7 @@ def fill_card_front(
         card_index: int,
         metadata: Metadata) -> (str, list, list):
     """ Returns the contents of the front of a card using the specified template. """
+
     return fill_card(template, template_path, get_front_data(row), row_index, card_index, metadata)
 
 
@@ -284,29 +282,22 @@ def fill_card_back(
         card_index: int,
         metadata: Metadata) -> (str, list, list):
     """ Returns the contents of the back of a card using the specified template. """
+
     return fill_card(template, template_path, get_back_data(row), row_index, card_index, metadata)
 
 
 def get_front_data(row: dict) -> dict:
-    front_data = {}
+    """ Returns a dict containing only fields fit for the front of a card. """
 
-    for column in row:
-        if not column.endswith('@back'):
-            front_data[column] = row[column]
-
-    return front_data
+    return {column: value for column, value in row.items()
+            if not is_special_column(column) and not is_back_column(column)}
 
 
 def get_back_data(row: dict) -> dict:
-    back_data = {}
+    """ Returns a dict containing only fields fit for the back of a card. """
 
-    for column in row:
-        if column.endswith('@back'):
-            stripped_column = column[:-len('@back')]
-
-            back_data[stripped_column] = row[column]
-
-    return back_data
+    return {column[:-len('@back')]: value for column, value in row.items()
+            if not is_special_column(column) and is_back_column(column)}
 
 
 def get_sized_card(card: str, size: str, content: str) -> str:
@@ -316,10 +307,22 @@ def get_sized_card(card: str, size: str, content: str) -> str:
     return card
 
 
+def is_image(image_path: str) -> bool:
+    """ Determines whether a path points to an image. """
+
+    return image_path.strip().lower().endswith(('.svg', '.png', '.jpg', '.jpeg'))
+
+
 def is_special_column(column: str) -> bool:
     """ Determines whether a column is to be treated as a special column. """
 
     return column.startswith('@') if column is not None else False
+
+
+def is_back_column(column: str) -> bool:
+    """ Determines whether a column is only intended for the back of a card. """
+
+    return column.endswith('@back') if column is not None else False
 
 
 def is_probably_number(value: str) -> bool:
