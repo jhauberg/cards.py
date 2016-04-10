@@ -11,7 +11,7 @@ from meta import Metadata
 def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
     """ Constructs an HTML compliant image tag using the specified image path. """
 
-    actual_image_path = image_path
+    actual_image_path = ''
 
     # determine whether a size has been explicitly specified; e.g. "images/name-of-image.svg:16x16"
     size_index = image_path.rfind(':')
@@ -19,6 +19,14 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
     # determine whether the : actually represents a protocol specification; i.e. http:// or similar
     if image_path[size_index + 1:size_index + 1 + 2] == '//':
         # in case it is, then ignore anything beyond the protocol specification
+        size_index = -1
+
+    copy_only = image_path.endswith('@copy-only')
+
+    if copy_only:
+        actual_image_path = image_path.replace('@copy-only', '')
+
+        # ignore any size specification since an <img> tag will not be created for this image
         size_index = -1
 
     explicit_width = None
@@ -66,8 +74,11 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
             explicit_height = explicit_width
 
     if is_image(actual_image_path):
-        if (explicit_width is not None and
-           explicit_height is not None):
+        if copy_only:
+            # the image should only be copied - so the "tag" is simply the image path
+            image_tag = actual_image_path
+        elif (explicit_width is not None and
+              explicit_height is not None):
                 image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
                     actual_image_path, explicit_width, explicit_height)
         else:
@@ -91,20 +102,31 @@ def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str
 
     image_paths = []
 
-    for match in get_template_fields(content):
-        image_path = match.group(1)
+    for template_field in get_template_fields(content):
+        # at this point we don't know that it's actually an image field -
+        # we only know that it's a template field
+        field_name = template_field.group(1)
+
+        # so we just attempt to create an <img> tag from the field - if it turns out to
+        # actually not be an image, we just ignore the field entirely and proceed
+        image_tag, image_path = image_tag_from_path(field_name, images, sizes)
 
         if len(image_path) > 0:
-            image_tag, image_path = image_tag_from_path(image_path, images, sizes)
-
+            # we at least discovered that the field was pointing to an image,
+            # so in the end it needs to be copied
             image_paths.append(image_path)
 
-            # since the string we're finding matches on has just been changed,
-            # we have to recursively look for more fields if there are any
-            content, filled_image_paths = fill_image_fields(
-                content[:match.start()] + image_tag + content[match.end():], images, sizes)
+        if len(image_tag) > 0:
+            # the field was transformed to either an <img> tag, or just the path (for copying only)
+            content = content[:template_field.start()] + image_tag + content[template_field.end():]
 
-            image_paths.extend(filled_image_paths)
+            # so since the content we're finding matches on has just changed, we can no longer
+            # rely on the match indices, so we have to recursively "start over" again
+            content, filled_image_paths = fill_image_fields(
+                content, images, sizes)
+
+            if len(filled_image_paths) > 0:
+                image_paths.extend(filled_image_paths)
 
             break
 
@@ -140,29 +162,30 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
 
     # go through each data field for this card (row)
     for column in row:
-        # ignore special columns
-        if not is_special_column(column):
-            # fetch the content for the field (may also be templated)
-            field_content = str(row[column])
+        # fetch the content for the field (may also be templated)
+        field_content = str(row[column])
 
-            if is_image(field_content):
-                image_paths.append(field_content)
-            else:
-                # replace any image fields with HTML compliant <img> tags
-                field_content, filled_image_paths = fill_image_fields(
-                    field_content, metadata.image_definitions, metadata.size_definitions)
+        if is_image(field_content):
+            # this field contains only an image path, so we have to make sure that it gets copied
+            # note: a field that only specifies an image should rather use
+            # "{{image.png@copy-only}}", but for convenience "image.png" gives the same result
+            image_paths.append(field_content)
 
-                image_paths.extend(filled_image_paths)
+        # fill content into the provided template
+        template, occurences = fill_template_field(
+            field_name=str(column),
+            field_value=str(field_content),
+            in_template=template)
 
-            # fill content into the provided template
-            template, occurences = fill_template_field(
-                field_name=str(column),
-                field_value=str(field_content),
-                in_template=template)
+        if occurences is 0:
+            # this field was not found anywhere in the specified template
+            missing_fields_in_template.append(column)
 
-            if occurences is 0:
-                # this field was not found anywhere in the specified template
-                missing_fields_in_template.append(column)
+    # replace any image fields with HTML compliant <img> tags
+    template, filled_image_paths = fill_image_fields(
+        template, metadata.image_definitions, metadata.size_definitions)
+
+    image_paths.extend(filled_image_paths)
 
     missing_fields_in_data = []
 
@@ -181,13 +204,6 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
                     # has been generated- so this field should not be treated as if missing;
                     # instead, simply ignore it at this point
                     pass
-                elif is_image(field_name):
-                    # the field is probably pointing to an image, so make sure that the image
-                    # will be copied to the output directory
-                    image_paths.append(field_name)
-
-                    # finally "fill" this image field by simply getting rid of the curly brackets
-                    template = template.replace(remaining_field.group(0), field_name)
                 else:
                     # the field was not found in the card data, so make a warning about it
                     missing_fields_in_data.append(field_name)
