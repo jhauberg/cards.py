@@ -21,7 +21,7 @@ from urllib.parse import urlparse
 from util import warn, lower_first_row, create_missing_directories_if_necessary
 from meta import Metadata
 
-from template import fill_template_field, fill_card_front, fill_card_back
+from template import fill_template_fields, fill_card_front, fill_card_back
 from template import template_from_data, template_from_path
 from template import get_sized_card
 
@@ -529,7 +529,7 @@ def main(argv):
                 pages_total, pages_or_page)
 
         # on all pages, fill any {{cards_total}} fields
-        pages, occurences = fill_template_field(
+        pages, occurences = fill_template_fields(
             field_name='cards_total',
             field_value=str(cards_total),
             in_template=pages)

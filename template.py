@@ -128,7 +128,7 @@ def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str
 
         if len(image_tag) > 0:
             # the field was transformed to either an <img> tag, or just the path (for copying only)
-            content = content[:field.start_index] + image_tag + content[field.end_index:]
+            content = fill_template_field(field, image_tag, content)
 
             # so since the content we're finding matches on has just changed, we can no longer
             # rely on the match indices, so we have to recursively "start over" again
@@ -143,11 +143,16 @@ def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str
     return content, image_paths
 
 
-def fill_template_field(field_name: str, field_value: str, in_template: str) -> (str, int):
-    """ Fills in the provided value in the provided template for all occurences
-        of a given template field.
-    """
+def fill_template_field(field: TemplateField, field_value: str, in_template: str) -> str:
+    """ Fills a single template field with a value. """
 
+    return in_template[:field.start_index] + field_value + in_template[field.end_index:]
+
+
+def fill_template_fields(field_name: str, field_value: str, in_template: str) -> (str, int):
+    """ Fills all occurences of a named template field with a value. """
+
+    # make sure that we have a sane value
     field_value = field_value if field_value is not None else ''
 
     # template fields are always represented by wrapping {{ }}'s,
@@ -184,7 +189,7 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
             image_paths.append(field_content)
 
         # fill content into the provided template
-        template, occurences = fill_template_field(
+        template, occurences = fill_template_fields(
             field_name=str(column),
             field_value=str(field_content),
             in_template=template)
@@ -257,25 +262,25 @@ def fill_card(
     """ Returns the contents of a card using the specified template. """
 
     # fill all row index fields (usually used for error templates)
-    template, occurences = fill_template_field(
+    template, occurences = fill_template_fields(
         field_name='card_row',
         field_value=str(row_index),
         in_template=template)
 
     # fill all template path fields (usually used for error templates)
-    template, occurences = fill_template_field(
+    template, occurences = fill_template_fields(
         field_name='card_template_path',
         field_value=template_path,
         in_template=template)
 
     # fill all card index fields
-    template, occurences = fill_template_field(
+    template, occurences = fill_template_fields(
         field_name='card_index',
         field_value=str(card_index),
         in_template=template)
 
     # fill all version fields
-    template, occurences = fill_template_field(
+    template, occurences = fill_template_fields(
         field_name='version',
         field_value=metadata.version,
         in_template=template)
