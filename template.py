@@ -4,8 +4,19 @@ import csv
 import os
 import re
 
+from typing import List
+
 from util import most_common, warn
 from meta import Metadata
+
+
+class TemplateField(object):
+    """ Represents a data field in a template. """
+
+    def __init__(self, name: str, start_index: int, end_index: int):
+        self.name = name  # the inner value of the template field; i.e. the name
+        self.start_index = start_index  # the index of the first '{' wrapping character
+        self.end_index = end_index  # the index of the last '}' wrapping character
 
 
 def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
@@ -89,10 +100,12 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
     return image_tag, actual_image_path
 
 
-def get_template_fields(template: str) -> list:
-    """ Returns a list of all template fields (e.g. {{a_field}}) in a given template """
+def get_template_fields(template: str) -> List[TemplateField]:
+    """ Returns a list of all template fields (e.g. {{a_field}}) in a given template. """
 
-    return list(re.finditer('{{(.*?)}}', template, re.DOTALL))
+    return [TemplateField(name=field.group(1).strip(),
+                          start_index=field.start(), end_index=field.end())
+            for field in list(re.finditer('{{(.*?)}}', template, re.DOTALL))]
 
 
 def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str, list):
@@ -102,14 +115,11 @@ def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str
 
     image_paths = []
 
-    for template_field in get_template_fields(content):
-        # at this point we don't know that it's actually an image field -
-        # we only know that it's a template field
-        field_name = template_field.group(1)
-
-        # so we just attempt to create an <img> tag from the field - if it turns out to
-        # actually not be an image, we just ignore the field entirely and proceed
-        image_tag, image_path = image_tag_from_path(field_name, images, sizes)
+    for field in get_template_fields(content):
+        # at this point we don't know that it's actually an image field - we only know that it's
+        # a template field, so we just attempt to create an <img> tag from the field.
+        # if it turns out to not be an image, we just ignore the field entirely and proceed
+        image_tag, image_path = image_tag_from_path(field.name, images, sizes)
 
         if len(image_path) > 0:
             # we at least discovered that the field was pointing to an image,
@@ -118,7 +128,7 @@ def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str
 
         if len(image_tag) > 0:
             # the field was transformed to either an <img> tag, or just the path (for copying only)
-            content = content[:template_field.start()] + image_tag + content[template_field.end():]
+            content = content[:field.start_index] + image_tag + content[field.end_index:]
 
             # so since the content we're finding matches on has just changed, we can no longer
             # rely on the match indices, so we have to recursively "start over" again
@@ -140,13 +150,15 @@ def fill_template_field(field_name: str, field_value: str, in_template: str) -> 
 
     field_value = field_value if field_value is not None else ''
 
-    # template fields are always represented by wrapping {{ }}'s'
-    template_field = re.escape('{{' + str(field_name) + '}}')
+    # template fields are always represented by wrapping {{ }}'s,
+    # however, both {{my_field}} and {{ my_field }} should be valid;
+    # i.e. any leading or trailing whitespace should simply be ignored
+    field_search = '{{\s*' + field_name + '\s*}}'
 
     # find any occurences of the field, using a case-insensitive
     # comparison, to ensure that e.g. {{name}} is populated with the
     # value from column "Name", even though the casing might differ
-    search = re.compile(template_field, re.IGNORECASE)
+    search = re.compile(field_search, re.IGNORECASE)
 
     # finally replace any found occurences of the template field with its value
     return search.subn(field_value, in_template)
@@ -194,19 +206,16 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
 
     if len(remaining_fields) > 0:
         # leftover fields were found
-        for remaining_field in remaining_fields:
-            # get the actual field name
-            field_name = remaining_field.group(1)
-
-            if len(field_name) > 0:
-                if field_name == 'cards_total':
+        for field in remaining_fields:
+            if len(field.name) > 0:
+                if field.name == 'cards_total':
                     # this is a special case: this field will not be filled until every card
                     # has been generated- so this field should not be treated as if missing;
                     # instead, simply ignore it at this point
                     pass
                 else:
                     # the field was not found in the card data, so make a warning about it
-                    missing_fields_in_data.append(field_name)
+                    missing_fields_in_data.append(field.name)
 
     return template, image_paths, (missing_fields_in_template, missing_fields_in_data)
 
