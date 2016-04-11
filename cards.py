@@ -451,12 +451,12 @@ def main(argv):
 
                     if cards_on_page == MAX_CARDS_PER_PAGE:
                         # add another page full of cards
-                        pages += page.replace('{{cards}}', cards)
+                        pages += fill_template_fields('cards', cards, page)
                         pages_total += 1
 
                         if not disable_backs:
                             # and one full of backs
-                            pages += page.replace('{{cards}}', backs)
+                            pages += fill_template_fields('cards', backs, page)
                             pages_total += 1
 
                             # reset to prepare for the next page
@@ -469,7 +469,7 @@ def main(argv):
         if (force_page_breaks or data_path is data_paths[-1]) and cards_on_page > 0:
             # in case we're forcing pagebreaks for each datasource, or we're on the last datasource
             # and there's still cards remaining, then do a pagebreak and fill those into a new page
-            pages += page.replace('{{cards}}', cards)
+            pages += fill_template_fields('cards', cards, page)
             pages_total += 1
 
             if not disable_backs:
@@ -492,7 +492,7 @@ def main(argv):
                 backs_row = ''
 
                 # fill another page with the backs
-                pages += page.replace('{{cards}}', backs)
+                pages += fill_template_fields('cards', backs, page)
                 pages_total += 1
 
                 backs = ''
@@ -529,17 +529,32 @@ def main(argv):
                 pages_total, pages_or_page)
 
         # on all pages, fill any {{cards_total}} fields
-        pages, occurences = fill_template_fields(
+        pages = fill_template_fields(
             field_name='cards_total',
             field_value=str(cards_total),
             in_template=pages)
 
-        index = index.replace('{{pages}}', pages)
         # pages must be inserted prior to filling metadata fields,
         # since each page may contain fields that should be filled
-        index = index.replace('{{title}}', title)
-        index = index.replace('{{description}}', metadata.description)
-        index = index.replace('{{copyright}}', metadata.copyright_notice)
+        index = fill_template_fields(
+            field_name='pages',
+            field_value=pages,
+            in_template=index)
+
+        index = fill_template_fields(
+            field_name='title',
+            field_value=title,
+            in_template=index)
+
+        index = fill_template_fields(
+            field_name='description',
+            field_value=metadata.description,
+            in_template=index)
+
+        index = fill_template_fields(
+            field_name='copyright',
+            field_value=metadata.copyright_notice,
+            in_template=index)
 
         result.write(index)
 

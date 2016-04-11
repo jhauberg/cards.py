@@ -149,7 +149,11 @@ def fill_template_field(field: TemplateField, field_value: str, in_template: str
     return in_template[:field.start_index] + field_value + in_template[field.end_index:]
 
 
-def fill_template_fields(field_name: str, field_value: str, in_template: str) -> (str, int):
+def fill_template_fields(
+        field_name: str,
+        field_value: str,
+        in_template: str,
+        counting_occurences=False) -> (str, int):
     """ Fills all occurences of a named template field with a value. """
 
     # make sure that we have a sane value
@@ -166,7 +170,9 @@ def fill_template_fields(field_name: str, field_value: str, in_template: str) ->
     search = re.compile(field_search, re.IGNORECASE)
 
     # finally replace any found occurences of the template field with its value
-    return search.subn(field_value, in_template)
+    content, occurences = search.subn(field_value, in_template)
+
+    return (content, occurences) if counting_occurences else content
 
 
 def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, list):
@@ -192,7 +198,8 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
         template, occurences = fill_template_fields(
             field_name=str(column),
             field_value=str(field_content),
-            in_template=template)
+            in_template=template,
+            counting_occurences=True)
 
         if occurences is 0:
             # this field was not found anywhere in the specified template
@@ -262,25 +269,25 @@ def fill_card(
     """ Returns the contents of a card using the specified template. """
 
     # fill all row index fields (usually used for error templates)
-    template, occurences = fill_template_fields(
+    template = fill_template_fields(
         field_name='card_row',
         field_value=str(row_index),
         in_template=template)
 
     # fill all template path fields (usually used for error templates)
-    template, occurences = fill_template_fields(
+    template = fill_template_fields(
         field_name='card_template_path',
         field_value=template_path,
         in_template=template)
 
     # fill all card index fields
-    template, occurences = fill_template_fields(
+    template = fill_template_fields(
         field_name='card_index',
         field_value=str(card_index),
         in_template=template)
 
     # fill all version fields
-    template, occurences = fill_template_fields(
+    template = fill_template_fields(
         field_name='version',
         field_value=metadata.version,
         in_template=template)
@@ -331,8 +338,10 @@ def get_back_data(row: dict) -> dict:
 
 
 def get_sized_card(card: str, size: str, content: str) -> str:
-    card = card.replace('{{size}}', size)
-    card = card.replace('{{content}}', content)
+    """ Populates and returns a card in a given size with the specified content. """
+
+    card = fill_template_fields('size', size, in_template=card)
+    card = fill_template_fields('content', content, in_template=card)
 
     return card
 
