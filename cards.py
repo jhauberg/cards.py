@@ -25,7 +25,7 @@ from template import fill_template_fields, fill_card_front, fill_card_back
 from template import template_from_data, template_from_path
 from template import get_sized_card
 
-__version_info__ = ('0', '4', '5')
+__version_info__ = ('0', '4', '6')
 __version__ = '.'.join(__version_info__)
 
 
