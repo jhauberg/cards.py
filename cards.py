@@ -270,8 +270,7 @@ def main(argv):
 
         # empty backs may be necessary to fill in empty spots on a page to ensure
         # that the layout remains correct
-        empty_back = card.replace('{{size}}', card_size)
-        empty_back = empty_back.replace('{{content}}', '')
+        empty_back = get_sized_card(card, card_size, '')
 
         image_paths = []
 
