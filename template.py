@@ -9,6 +9,8 @@ from typing import List
 from util import most_common, warn
 from meta import Metadata
 
+from constants import Columns, ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
+
 
 class TemplateField(object):
     """ Represents a data field in a template. """
@@ -20,7 +22,7 @@ class TemplateField(object):
 
 
 def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
-    """ Constructs an HTML compliant image tag using the specified image path. """
+    """ Constructs an HTML-compliant image tag using the specified image path. """
 
     actual_image_path = ''
 
@@ -32,10 +34,10 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
         # in case it is, then ignore anything beyond the protocol specification
         size_index = -1
 
-    copy_only = image_path.endswith('@copy-only')
+    copy_only = image_path.endswith(TemplateFieldDescriptors.COPY_ONLY)
 
     if copy_only:
-        actual_image_path = image_path.replace('@copy-only', '')
+        actual_image_path = image_path.replace(TemplateFieldDescriptors.COPY_ONLY, '')
 
         # ignore any size specification since an <img> tag will not be created for this image
         size_index = -1
@@ -109,7 +111,7 @@ def get_template_fields(template: str) -> List[TemplateField]:
 
 
 def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str, list):
-    """ Recursively finds all {{image:size}} fields and returns a string
+    """ Recursively finds all {{ image:size }} fields and returns a string
         replaced with HTML compliant <img> tags.
     """
 
@@ -220,7 +222,7 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
         # leftover fields were found
         for field in remaining_fields:
             if len(field.name) > 0:
-                if field.name == 'cards_total':
+                if field.name == TemplateFields.CARDS_TOTAL:
                     # this is a special case: this field will not be filled until every card
                     # has been generated- so this field should not be treated as if missing;
                     # instead, simply ignore it at this point
@@ -270,25 +272,25 @@ def fill_card(
 
     # fill all row index fields (usually used for error templates)
     template = fill_template_fields(
-        field_name='card_row',
+        field_name=TemplateFields.CARD_ROW_INDEX,
         field_value=str(row_index),
         in_template=template)
 
     # fill all template path fields (usually used for error templates)
     template = fill_template_fields(
-        field_name='card_template_path',
+        field_name=TemplateFields.CARD_TEMPLATE_PATH,
         field_value=template_path,
         in_template=template)
 
     # fill all card index fields
     template = fill_template_fields(
-        field_name='card_index',
+        field_name=TemplateFields.CARD_INDEX,
         field_value=str(card_index),
         in_template=template)
 
     # fill all version fields
     template = fill_template_fields(
-        field_name='version',
+        field_name=TemplateFields.VERSION,
         field_value=metadata.version,
         in_template=template)
 
@@ -333,15 +335,15 @@ def get_front_data(row: dict) -> dict:
 def get_back_data(row: dict) -> dict:
     """ Returns a dict containing only fields fit for the back of a card. """
 
-    return {column[:-len('@back')]: value for column, value in row.items()
+    return {column[:-len(ColumnDescriptors.BACK_ONLY)]: value for column, value in row.items()
             if not is_special_column(column) and is_back_column(column)}
 
 
 def get_sized_card(card: str, size: str, content: str) -> str:
     """ Populates and returns a card in a given size with the specified content. """
 
-    card = fill_template_fields('size', size, in_template=card)
-    card = fill_template_fields('content', content, in_template=card)
+    card = fill_template_fields(TemplateFields.CARD_SIZE, size, in_template=card)
+    card = fill_template_fields(TemplateFields.CARD_CONTENT, content, in_template=card)
 
     return card
 
@@ -361,7 +363,7 @@ def is_special_column(column: str) -> bool:
 def is_back_column(column: str) -> bool:
     """ Determines whether a column is only intended for the back of a card. """
 
-    return column.endswith('@back') if column is not None else False
+    return column.endswith(ColumnDescriptors.BACK_ONLY) if column is not None else False
 
 
 def is_probably_number(value: str) -> bool:

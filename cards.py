@@ -25,6 +25,8 @@ from template import fill_template_fields, fill_card_front, fill_card_back
 from template import template_from_data, template_from_path
 from template import get_sized_card
 
+from constants import Columns, TemplateFields
+
 __version_info__ = ('0', '4', '6')
 __version__ = '.'.join(__version_info__)
 
@@ -289,22 +291,22 @@ def main(argv):
 
                 data = csv.DictReader(lower_first_row(f))
 
-            if default_template is None and '@template' not in data.fieldnames:
+            if default_template is None and Columns.TEMPLATE not in data.fieldnames:
                 if is_verbose:
                     warn('A default template was not provided and auto-templating is not enabled.'
                          'Cards will not be generated correctly.',
                          in_context=context)
 
-            if not disable_backs and '@template-back' in data.fieldnames:
+            if not disable_backs and Columns.TEMPLATE_BACK in data.fieldnames:
                 if is_verbose:
-                    warn('Assuming card backs should be generated since \'@template-back\' '
-                         'appears in the data. You can disable card backs by specifying the '
-                         '--disable-backs argument.',
+                    warn('Assuming card backs should be generated since ' +
+                         '\'' + Columns.TEMPLATE_BACK + '\' appears in the data. '
+                         'You can disable card backs by specifying the --disable-backs argument.',
                          in_context=context)
             else:
                 if is_verbose:
-                    warn('Card backs will not be generated since \'@template-back\' does not '
-                         'appear in the data.',
+                    warn('Card backs will not be generated since '
+                         '\'' + Columns.TEMPLATE_BACK + '\' does not appear in the data.',
                          in_context=context)
 
                 disable_backs = True
@@ -318,7 +320,7 @@ def main(argv):
 
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
-                count = int(row.get('@count', 1))
+                count = int(row.get(Columns.COUNT, 1))
                 # if a negative count is specified, treat it as 0
                 count = count if count > 0 else 0
 
@@ -326,7 +328,7 @@ def main(argv):
                     card_index = cards_total + 1
 
                     # determine which template to use for this card, if any
-                    template_path = row.get('@template', None)
+                    template_path = row.get(Columns.TEMPLATE, None)
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
@@ -386,7 +388,7 @@ def main(argv):
                     cards_total += 1
 
                     if not disable_backs:
-                        template_path_back = row.get('@template-back')
+                        template_path_back = row.get(Columns.TEMPLATE_BACK)
                         template_back = None
 
                         if template_path_back is not None and len(template_path_back) > 0:
@@ -450,12 +452,12 @@ def main(argv):
 
                     if cards_on_page == MAX_CARDS_PER_PAGE:
                         # add another page full of cards
-                        pages += fill_template_fields('cards', cards, page)
+                        pages += fill_template_fields(TemplateFields.CARDS, cards, page)
                         pages_total += 1
 
                         if not disable_backs:
                             # and one full of backs
-                            pages += fill_template_fields('cards', backs, page)
+                            pages += fill_template_fields(TemplateFields.CARDS, backs, page)
                             pages_total += 1
 
                             # reset to prepare for the next page
@@ -468,7 +470,7 @@ def main(argv):
         if (force_page_breaks or data_path is data_paths[-1]) and cards_on_page > 0:
             # in case we're forcing pagebreaks for each datasource, or we're on the last datasource
             # and there's still cards remaining, then do a pagebreak and fill those into a new page
-            pages += fill_template_fields('cards', cards, page)
+            pages += fill_template_fields(TemplateFields.CARDS, cards, page)
             pages_total += 1
 
             if not disable_backs:
@@ -491,7 +493,7 @@ def main(argv):
                 backs_row = ''
 
                 # fill another page with the backs
-                pages += fill_template_fields('cards', backs, page)
+                pages += fill_template_fields(TemplateFields.CARDS, backs, page)
                 pages_total += 1
 
                 backs = ''
@@ -529,29 +531,29 @@ def main(argv):
 
         # on all pages, fill any {{cards_total}} fields
         pages = fill_template_fields(
-            field_name='cards_total',
+            field_name=TemplateFields.CARDS_TOTAL,
             field_value=str(cards_total),
             in_template=pages)
 
         # pages must be inserted prior to filling metadata fields,
         # since each page may contain fields that should be filled
         index = fill_template_fields(
-            field_name='pages',
+            field_name=TemplateFields.PAGES,
             field_value=pages,
             in_template=index)
 
         index = fill_template_fields(
-            field_name='title',
+            field_name=TemplateFields.TITLE,
             field_value=title,
             in_template=index)
 
         index = fill_template_fields(
-            field_name='description',
+            field_name=TemplateFields.DESCRIPTION,
             field_value=metadata.description,
             in_template=index)
 
         index = fill_template_fields(
-            field_name='copyright',
+            field_name=TemplateFields.COPYRIGHT,
             field_value=metadata.copyright_notice,
             in_template=index)
 
