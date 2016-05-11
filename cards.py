@@ -19,7 +19,6 @@ import subprocess
 from urllib.parse import urlparse
 
 from util import warn, lower_first_row, create_missing_directories_if_necessary
-from meta import Metadata
 
 from template import fill_template_fields, fill_card_front, fill_card_back
 from template import template_from_data, template_from_path
@@ -27,7 +26,7 @@ from template import get_sized_card
 
 from constants import Columns, TemplateFields
 
-__version_info__ = ('0', '4', '6')
+__version_info__ = ('0', '4', '7')
 __version__ = '.'.join(__version_info__)
 
 
@@ -130,8 +129,8 @@ def setup_arguments(parser: argparse.ArgumentParser) -> None:
                         help='Path to a directory in which the pages will be generated '
                              '(a sub-directory will be created)')
 
-    parser.add_argument('-m', '--metadata-filename', dest='metadata_path', required=False,
-                        help='Path to a CSV file containing metadata')
+    parser.add_argument('-d', '--definitions-filename', dest='definitions_path', required=False,
+                        help='Path to a CSV file containing definitions')
 
     parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
                         default=False, action='store_true',
@@ -153,6 +152,25 @@ def setup_arguments(parser: argparse.ArgumentParser) -> None:
                         help='Show the program\'s version, then exit')
 
 
+def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
+    definitions = None
+
+    if path is not None and len(path) > 0:
+        if not os.path.isfile(path):
+            if verbosely:
+                warn('No definitions file was found at: \033[4;31m\'{0}\'\033[0m'.format(path),
+                     as_error=True)
+        else:
+            with open(path) as f:
+                # skip the first row (column headers)
+                f.readline()
+
+                # map all rows into key-value pairs (assume no more than 2 columns are present)
+                definitions = {k: v for k, v in csv.reader(f)}
+
+    return definitions
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
         description='Generates print-ready cards for your tabletop game.')
@@ -166,7 +184,7 @@ def main(argv):
 
     # optional arguments
     output_path = args['output_path']
-    metadata_path = args['metadata_path']
+    definitions_path = args['definitions_path']
     force_page_breaks = args['force_page_breaks']
     disable_cut_guides = bool(args['disable_cut_guides'])
     disable_backs = bool(args['disable_backs'])
@@ -201,22 +219,17 @@ def main(argv):
         # load the container template for the final html file
         index = i.read()
 
-    if metadata_path is None:
-        # no metadata has been explicitly specified, so try looking for it where the data is located
-        found, potential_metadata_path = find_file_path('meta.csv', data_paths)
+    if definitions_path is None:
+        # no definitions file has been explicitly specified, so try looking for it automatically
+        found, potential_definitions_path = find_file_path('definitions.csv', data_paths)
 
-        if potential_metadata_path is not None:
-            if not found:
-                if is_verbose:
-                    warn('No metadata was found. You can provide it at e.g.: '
-                         '\033[4;33m\'{0}\'\033[0m'.format(potential_metadata_path))
-            else:
-                warn('Using metadata found at: '
-                     '\033[4;33m\'{0}\'\033[0m'.format(potential_metadata_path))
+        if potential_definitions_path is not None:
+            definitions_path = potential_definitions_path
 
-                metadata_path = potential_metadata_path
+            warn('No definitions have been specified. Using definitions automatically found at: '
+                 '\033[4;33m\'{0}\'\033[0m'.format(definitions_path))
 
-    metadata = Metadata.from_file(metadata_path, verbosely=is_verbose)
+    definitions = get_definitions(definitions_path)
 
     # error template for the output on cards specifying a template that was not found,
     # or could not be opened
@@ -272,7 +285,7 @@ def main(argv):
 
         # empty backs may be necessary to fill in empty spots on a page to ensure
         # that the layout remains correct
-        empty_back = get_sized_card(card, card_size, '')
+        empty_back = get_sized_card(card, card_size, content='')
 
         image_paths = []
 
@@ -359,7 +372,9 @@ def main(argv):
                              as_error=True)
 
                     card_content, found_image_paths, missing_fields = fill_card_front(
-                        template, template_path, row, row_index, card_index, metadata)
+                        template, template_path,
+                        row, row_index, card_index,
+                        definitions)
 
                     if (template is not template_not_provided and
                         template is not template_not_opened):
@@ -388,7 +403,7 @@ def main(argv):
                     cards_total += 1
 
                     if not disable_backs:
-                        template_path_back = row.get(Columns.TEMPLATE_BACK)
+                        template_path_back = row.get(Columns.TEMPLATE_BACK, None)
                         template_back = None
 
                         if template_path_back is not None and len(template_path_back) > 0:
@@ -413,7 +428,9 @@ def main(argv):
                             template_back = template_back_not_provided
 
                         back_content, found_image_paths, missing_fields = fill_card_back(
-                            template_back, template_path_back, row, row_index, card_index, metadata)
+                            template_back, template_path_back,
+                            row, row_index, card_index,
+                            definitions)
 
                         if (template_back is not template_back_not_provided and
                             template_back is not template_not_opened):
@@ -522,14 +539,14 @@ def main(argv):
 
     # begin writing pages to the output file (overwriting any existing file)
     with open(os.path.join(output_path, 'index.html'), 'w') as result:
-        title = metadata.title
+        title = definitions.get(TemplateFields.TITLE, None)
 
-        if not title or len(title) == 0:
+        if title is None or len(title) == 0:
             title = 'cards.py: {0} {1} on {2} {3}'.format(
                 cards_total, cards_or_card,
                 pages_total, pages_or_page)
 
-        # on all pages, fill any {{cards_total}} fields
+        # on all pages, fill any {{ cards_total }} fields
         pages = fill_template_fields(
             field_name=TemplateFields.CARDS_TOTAL,
             field_value=str(cards_total),
@@ -549,12 +566,12 @@ def main(argv):
 
         index = fill_template_fields(
             field_name=TemplateFields.DESCRIPTION,
-            field_value=metadata.description,
+            field_value=definitions.get(TemplateFields.DESCRIPTION, ''),
             in_template=index)
 
         index = fill_template_fields(
             field_name=TemplateFields.COPYRIGHT,
-            field_value=metadata.copyright_notice,
+            field_value=definitions.get(TemplateFields.COPYRIGHT, ''),
             in_template=index)
 
         result.write(index)

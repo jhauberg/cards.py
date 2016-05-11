@@ -21,7 +21,7 @@ class TemplateField(object):
         self.end_index = end_index  # the index of the last '}' wrapping character
 
 
-def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) -> (str, str):
+def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
     """ Constructs an HTML-compliant image tag using the specified image path. """
 
     actual_image_path = ''
@@ -49,16 +49,17 @@ def image_tag_from_path(image_path: str, images: dict=None, sizes: dict=None) ->
         # get rid of the size specification to have a clean image path
         actual_image_path = image_path[:size_index]
 
-        if images is not None and actual_image_path in images:
-            actual_image_path = images.get(actual_image_path)
+        if definitions is not None and actual_image_path in definitions:
+            # the path is actually a symbol definition; e.g. "enemy" or similar.
+            actual_image_path = definitions.get(actual_image_path)
 
         # get the size specification; i.e. whatever is on the right hand size of the ':' splitter
         size = image_path[size_index + 1:].strip()
 
         # then, determine whether the value is a size specified in the metadata;
         # if it is, use that size specification.
-        if sizes is not None and size in sizes:
-            size = sizes.get(size)
+        if definitions is not None and size in definitions:
+            size = definitions.get(size)
 
         # get each size specification separately (removing blanks)
         size = list(filter(None, size.split('x')))
@@ -110,7 +111,7 @@ def get_template_fields(template: str) -> List[TemplateField]:
             for field in list(re.finditer('{{(.*?)}}', template, re.DOTALL))]
 
 
-def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str, list):
+def fill_image_fields(content: str, definitions: dict=None) -> (str, list):
     """ Recursively finds all {{ image:size }} fields and returns a string
         replaced with HTML compliant <img> tags.
     """
@@ -121,7 +122,7 @@ def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str
         # at this point we don't know that it's actually an image field - we only know that it's
         # a template field, so we just attempt to create an <img> tag from the field.
         # if it turns out to not be an image, we just ignore the field entirely and proceed
-        image_tag, image_path = image_tag_from_path(field.name, images, sizes)
+        image_tag, image_path = image_tag_from_path(field.name, definitions)
 
         if len(image_path) > 0:
             # we at least discovered that the field was pointing to an image,
@@ -135,7 +136,7 @@ def fill_image_fields(content: str, images: dict=None, sizes: dict=None) -> (str
             # so since the content we're finding matches on has just changed, we can no longer
             # rely on the match indices, so we have to recursively "start over" again
             content, filled_image_paths = fill_image_fields(
-                content, images, sizes)
+                content, definitions)
 
             if len(filled_image_paths) > 0:
                 image_paths.extend(filled_image_paths)
@@ -177,7 +178,7 @@ def fill_template_fields(
     return (content, occurences) if counting_occurences else content
 
 
-def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, list):
+def fill_template(template: str, row: dict, definitions: dict) -> (str, list, list):
     """ Returns the contents of the template with all template fields replaced
         by any matching fields in the provided data.
     """
@@ -208,8 +209,7 @@ def fill_template(template: str, row: dict, metadata: Metadata) -> (str, list, l
             missing_fields_in_template.append(column)
 
     # replace any image fields with HTML compliant <img> tags
-    template, filled_image_paths = fill_image_fields(
-        template, metadata.image_definitions, metadata.size_definitions)
+    template, filled_image_paths = fill_image_fields(template, definitions)
 
     image_paths.extend(filled_image_paths)
 
@@ -267,7 +267,7 @@ def fill_card(
         row: dict,
         row_index: int,
         card_index: int,
-        metadata: Metadata) -> (str, list, list):
+        definitions: dict) -> (str, list, list):
     """ Returns the contents of a card using the specified template. """
 
     # fill all row index fields (usually used for error templates)
@@ -291,12 +291,12 @@ def fill_card(
     # fill all version fields
     template = fill_template_fields(
         field_name=TemplateFields.VERSION,
-        field_value=metadata.version,
+        field_value=definitions.get(TemplateFields.VERSION, ''),
         in_template=template)
 
     # attempt to fill all fields discovered in the template using the data for this card
     template, discovered_image_paths, missing_fields = fill_template(
-        template, row, metadata)
+        template, row, definitions)
 
     return template, discovered_image_paths, missing_fields
 
@@ -307,10 +307,11 @@ def fill_card_front(
         row: dict,
         row_index: int,
         card_index: int,
-        metadata: Metadata) -> (str, list, list):
+        definitions: dict) -> (str, list, list):
     """ Returns the contents of the front of a card using the specified template. """
 
-    return fill_card(template, template_path, get_front_data(row), row_index, card_index, metadata)
+    return fill_card(template, template_path, get_front_data(row),
+                     row_index, card_index, definitions)
 
 
 def fill_card_back(
@@ -319,10 +320,11 @@ def fill_card_back(
         row: dict,
         row_index: int,
         card_index: int,
-        metadata: Metadata) -> (str, list, list):
+        definitions: dict) -> (str, list, list):
     """ Returns the contents of the back of a card using the specified template. """
 
-    return fill_card(template, template_path, get_back_data(row), row_index, card_index, metadata)
+    return fill_card(template, template_path, get_back_data(row),
+                     row_index, card_index, definitions)
 
 
 def get_front_data(row: dict) -> dict:
