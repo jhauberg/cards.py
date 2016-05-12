@@ -117,41 +117,6 @@ def copy_images_to_output_directory(
                      as_error=True)
 
 
-def setup_arguments(parser: argparse.ArgumentParser) -> None:
-    """ Sets up required and optional program arguments. """
-
-    # required arguments
-    parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
-                        help='One or more paths to CSV files containing card data')
-
-    # optional arguments
-    parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
-                        help='Path to a directory in which the pages will be generated '
-                             '(a sub-directory will be created)')
-
-    parser.add_argument('-d', '--definitions-filename', dest='definitions_path', required=False,
-                        help='Path to a CSV file containing definitions')
-
-    parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
-                        default=False, action='store_true',
-                        help='Force a page break for each datasource')
-
-    parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
-                        default=False, action='store_true',
-                        help='Don\'t show cut guides on the margins of the generated pages')
-
-    parser.add_argument('--disable-backs', dest='disable_backs', required=False,
-                        default=False, action='store_true',
-                        help='Don\'t generate card backs')
-
-    parser.add_argument('--verbose', dest='verbose', required=False,
-                        default=False, action='store_true',
-                        help='Show more information')
-
-    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__,
-                        help='Show the program\'s version, then exit')
-
-
 def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
     definitions = None
 
@@ -171,14 +136,7 @@ def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
     return definitions
 
 
-def main(argv):
-    parser = argparse.ArgumentParser(
-        description='Generates print-ready cards for your tabletop game.')
-
-    setup_arguments(parser)
-
-    args = vars(parser.parse_args())
-
+def main():
     # required arguments
     data_paths = args['input_paths']
 
@@ -601,5 +559,47 @@ def main(argv):
     elif os.name == 'posix':
         subprocess.call(('xdg-open', output_path))
 
+
+def setup_arguments() -> None:
+    """ Sets up required and optional program arguments. """
+
+    # required arguments
+    parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
+                        help='One or more paths to CSV files containing card data')
+
+    # optional arguments
+    parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
+                        help='Path to a directory in which the pages will be generated '
+                             '(a sub-directory will be created)')
+
+    parser.add_argument('-d', '--definitions-filename', dest='definitions_path', required=False,
+                        help='Path to a CSV file containing definitions')
+
+    parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
+                        default=False, action='store_true',
+                        help='Force a page break for each datasource')
+
+    parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
+                        default=False, action='store_true',
+                        help='Don\'t show cut guides on the margins of the generated pages')
+
+    parser.add_argument('--disable-backs', dest='disable_backs', required=False,
+                        default=False, action='store_true',
+                        help='Don\'t generate card backs')
+
+    parser.add_argument('--verbose', dest='verbose', required=False,
+                        default=False, action='store_true',
+                        help='Show more information')
+
+    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__,
+                        help='Show the program\'s version, then exit')
+
 if __name__ == "__main__":
-    main(sys.argv)
+    parser = argparse.ArgumentParser(
+        description='Generates print-ready cards for your tabletop game.')
+
+    setup_arguments()
+
+    args = vars(parser.parse_args())
+
+    main()
