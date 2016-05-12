@@ -22,7 +22,7 @@ from util import warn, lower_first_row, create_missing_directories_if_necessary
 
 from template import fill_template_fields, fill_card_front, fill_card_back
 from template import template_from_data, template_from_path
-from template import get_sized_card
+from template import get_column_content, get_sized_card
 
 from constants import Columns, TemplateFields
 
@@ -341,7 +341,8 @@ def main(argv):
                     card_index = cards_total + 1
 
                     # determine which template to use for this card, if any
-                    template_path = row.get(Columns.TEMPLATE, None)
+                    template_path = get_column_content(
+                        row, Columns.TEMPLATE, definitions, default_content=None)
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
@@ -403,7 +404,9 @@ def main(argv):
                     cards_total += 1
 
                     if not disable_backs:
-                        template_path_back = row.get(Columns.TEMPLATE_BACK, None)
+                        template_path_back = get_column_content(
+                            row, Columns.TEMPLATE_BACK, definitions, default_content=None)
+
                         template_back = None
 
                         if template_path_back is not None and len(template_path_back) > 0:
@@ -539,9 +542,9 @@ def main(argv):
 
     # begin writing pages to the output file (overwriting any existing file)
     with open(os.path.join(output_path, 'index.html'), 'w') as result:
-        title = definitions.get(TemplateFields.TITLE, None)
+        title = definitions.get(TemplateFields.TITLE, '')
 
-        if title is None or len(title) == 0:
+        if len(title) == 0:
             title = 'cards.py: {0} {1} on {2} {3}'.format(
                 cards_total, cards_or_card,
                 pages_total, pages_or_page)

@@ -7,9 +7,8 @@ import re
 from typing import List
 
 from util import most_common, warn
-from meta import Metadata
 
-from constants import Columns, ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
+from constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
 
 
 class TemplateField(object):
@@ -188,19 +187,19 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, list, li
 
     # go through each data field for this card (row)
     for column in row:
-        # fetch the content for the field (may also be templated)
-        field_content = str(row[column])
+        # fetch the content for the field
+        field_content = row.get(column, '')
 
         if is_image(field_content):
             # this field contains only an image path, so we have to make sure that it gets copied
             # note: a field that only specifies an image should rather use
-            # "{{image.png@copy-only}}", but for convenience "image.png" gives the same result
+            # "{{ image.png@copy-only }}", but for convenience "image.png" gives the same result
             image_paths.append(field_content)
 
         # fill content into the provided template
         template, occurences = fill_template_fields(
-            field_name=str(column),
-            field_value=str(field_content),
+            field_name=column,
+            field_value=field_content,
             in_template=template,
             counting_occurences=True)
 
@@ -227,6 +226,13 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, list, li
                     # has been generated- so this field should not be treated as if missing;
                     # instead, simply ignore it at this point
                     pass
+                elif field.name in definitions:
+                    # the field is actually defined as a symbolic definition,
+                    # so fill it with the defined value
+                    template = fill_template_fields(
+                        field_name=field.name,
+                        field_value=definitions.get(field.name),
+                        in_template=template)
                 else:
                     # the field was not found in the card data, so make a warning about it
                     missing_fields_in_data.append(field.name)
@@ -288,12 +294,6 @@ def fill_card(
         field_value=str(card_index),
         in_template=template)
 
-    # fill all version fields
-    template = fill_template_fields(
-        field_name=TemplateFields.VERSION,
-        field_value=definitions.get(TemplateFields.VERSION, ''),
-        in_template=template)
-
     # attempt to fill all fields discovered in the template using the data for this card
     template, discovered_image_paths, missing_fields = fill_template(
         template, row, definitions)
@@ -339,6 +339,19 @@ def get_back_data(row: dict) -> dict:
 
     return {column[:-len(ColumnDescriptors.BACK_ONLY)]: value for column, value in row.items()
             if not is_special_column(column) and is_back_column(column)}
+
+
+def get_column_content(row: dict, column: str, definitions: dict, default_content: str=None) -> str:
+    column_content = row.get(column, default_content)
+
+    if column_content is not None:
+        for definition, value in definitions.items():
+            column_content = fill_template_fields(
+                field_name=definition,
+                field_value=value,
+                in_template=column_content)
+
+    return column_content
 
 
 def get_sized_card(card: str, size: str, content: str) -> str:
