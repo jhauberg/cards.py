@@ -171,7 +171,7 @@ def main():
         else:
             cut_guides_display = 'style="display: block"'
 
-        page = page.replace('{{cut_guides_style}}', cut_guides_display)
+        page = fill_template_fields('cut_guides_style', cut_guides_display, page)
 
     with open(os.path.join(cwd, 'templates/index.html')) as i:
         # load the container template for the final html file
