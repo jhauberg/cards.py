@@ -1,3 +1,9 @@
 <div class="card {{ card_size }}">
-  {{ card_content }}
+  <div class="cut-guide cut-guide-top cut-guide-left" style="visibility: {{ cut_guides_visibility }};">+</div>
+  <div class="cut-guide cut-guide-top cut-guide-right" style="visibility: {{ cut_guides_visibility }};">+</div>
+  <div class="cut-guide cut-guide-bottom cut-guide-left" style="visibility: {{ cut_guides_visibility }};">+</div>
+  <div class="cut-guide cut-guide-bottom cut-guide-right" style="visibility: {{ cut_guides_visibility }};">+</div>
+  <div class="card-content">
+    {{ card_content }}
+  </div>
 </div>

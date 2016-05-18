@@ -1,8 +1,6 @@
 html, body {
   margin: 0;
   padding: 0;
-
-  background-color: #eee;
 }
 
 * {
@@ -41,8 +39,15 @@ html, body {
 }
 
 .card {
+  position: relative;
+}
+
+.card-content {
   /* Content should be clipped if too large */
   overflow: hidden;
+
+  width: 100%;
+  height: 100%;
 }
 
 .card-size-25x35 {
@@ -62,204 +67,87 @@ html, body {
   width: 21cm;
   height: 29.7cm;
 
-  /* Put some separation between pages. Purely for show. */
-  margin: 1cm auto;
-
   /* Paddings that precisely allow 3x3 cards to be laid out on a single A4 page */
-  padding-top: 1.52cm;
-  padding-bottom: 1.52cm;
+  /* More padding at bottom than top for aesthetics; but vertical paddings must total 3cm */
+  padding-top: 1.1cm;
+  padding-bottom: 1.4cm;
   /* Side paddings set to .01 less than what they actually should be to prevent
-  any rounding issues causing cards to not be laid out as expected */
+     any rounding issues causing cards to not be laid out as expected */
   padding-left: 0.97cm;
   padding-right: 0.97cm;
 
   background: #fff;
-  box-shadow: 0 4px 5px rgba(75, 75, 75, 0.2);
 
+  position: relative;
+}
+
+.page-content {
   /* Lay out cards horizontally */
   display: flex;
   flex-wrap: wrap;
 
-  /* Ensure all cards are aligned towards the top; not the center */
-  align-content: start;
-}
+  /* Ensure all cards are aligned starting from the top/start; not the center */
+  align-content: flex-start;
 
-.page-content {
-  /* Exactly the size of 3 cards laid out horizontally */
+  /* Exactly the size of 3 poker-sized cards laid out horizontally. This is the "safe zone" */
   width: 7.5in;
-  /* Exactly the size of 3 cards laid out vertically */
+  /* Exactly the size of 3 poker-sized cards laid out vertically. This is the "safe zone" */
   height: 10.5in;
-
-  position: absolute;
 }
 
-.footer {
-  height: 0.8cm;
-  width: 100%;
-
-  /* Should appear at below the content */
-  top: 100%;
-
-  position: relative;
-
-  overflow: hidden;
-}
-
-.footer-item {
-  /* Split up each footer item in 3 columns */
-  width: 33.3%;
-
-  padding-top: 1mm;
-  padding-left: 3mm;
-  padding-right: 3mm;
-  padding-bottom: 0;
-
-  position: absolute;
-}
-
-#footer-title {
-  text-align: left;
-}
-
-#footer-description {
+.page-footer {
+  font-size: 0.8em;
   text-align: center;
 
-  left: 33.3%;
+  padding-top: 0.5cm;
+
+  margin: auto;
+
+  position: relative;
 }
 
-#footer-copyright {
-  text-align: right;
+.cut-guide {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 1em;
 
-  right: 0;
-}
-
-.page-cut-line {
-  width: 5mm;
-  height: 5mm;
-
+  /* Ensure that the cut guides do not take up space between cards */
   position: absolute;
 }
 
-#page-cut-line-top-left-horizontal {
-  border-bottom: 0.6mm dashed black;
+/* Each cut guide will take up approximately 10x18 pixels at 1em */
 
-  top: -4.6mm;
-  left: -6mm;
+.cut-guide-top {
+  top: -9px;
 }
 
-#page-cut-line-top-right-horizontal {
-  border-bottom: 0.6mm dashed black;
-
-  top: -4.6mm;
-  left: 100.5%;
+.cut-guide-left {
+  left: -5px;
 }
 
-#page-cut-line-bottom-left-horizontal {
-  border-top: 0.6mm dashed black;
-
-  top: 99.85%;
-  left: -6mm;
+.cut-guide-right {
+  right: -5px;
 }
 
-#page-cut-line-bottom-right-horizontal {
-  border-top: 0.6mm dashed black;
-
-  top: 99.85%;
-  left: 100.5%;
-}
-
-#page-cut-line-top-left-vertical {
-  border-right: 0.6mm dashed black;
-
-  top: -6mm;
-  left: -4.6mm;
-}
-
-#page-cut-line-top-right-vertical {
-  border-left: 0.6mm dashed black;
-
-  top: -6mm;
-  left: 99.8%;
-}
-
-#page-cut-line-bottom-left-vertical {
-  border-right: 0.6mm dashed black;
-
-  top: 100.5%;
-  left: -4.6mm;
-}
-
-#page-cut-line-bottom-right-vertical {
-  border-left: 0.6mm dashed black;
-
-  top: 100.5%;
-  left: 99.8%;
-}
-
-#page-cut-line-top-middle-left {
-  border-left: 0.6mm dashed black;
-
-  top: -6mm;
-  left: 33.2%;
-}
-
-#page-cut-line-top-middle-right {
-  border-left: 0.6mm dashed black;
-
-  top: -6mm;
-  left: 66.55%;
-}
-
-#page-cut-line-bottom-middle-left {
-  border-left: 0.6mm dashed black;
-
-  top: 100.5%;
-  left: 33.2%;
-}
-
-#page-cut-line-bottom-middle-right {
-  border-left: 0.6mm dashed black;
-
-  top: 100.5%;
-  left: 66.55%;
-}
-
-#page-cut-line-left-middle-top {
-  border-top: 0.6mm dashed black;
-
-  top: 33.2%;
-  left: -6mm;
-}
-
-#page-cut-line-left-middle-bottom {
-  border-top: 0.6mm dashed black;
-
-  top: 66.55%;
-  left: -6mm;
-}
-
-#page-cut-line-right-middle-top {
-  border-top: 0.6mm dashed black;
-
-  top: 33.2%;
-  left: 100.5%;
-}
-
-#page-cut-line-right-middle-bottom {
-  border-top: 0.6mm dashed black;
-
-  top: 66.55%;
-  left: 100.5%;
+.cut-guide-bottom {
+  bottom: -9px;
 }
 
 @page {
   size: A4 portrait;
+}
 
-  /* Margins should match the paddings defined by .page */
-  margin-left: 0.97cm;
-  margin-right: 0.97cm;
-  margin-top: 1.52cm;
-  margin-bottom: 1.52cm;
+@media screen {
+  html, body {
+    background-color: #eee;
+  }
+
+  .page {
+    /* Put some separation between pages. Purely for show */
+    margin: 1cm auto;
+
+    /* Pages just look better with some drop shadow */
+    box-shadow: 0 4px 5px rgba(75, 75, 75, 0.2);
+  }
 }
 
 @media print {
@@ -268,28 +156,24 @@ html, body {
   }
 
   .page {
+    /* Safari-hack to avoid additional blank pages. Safari forces margins on the printed content,
+       so it likely goes beyond the paper bounds and thus a new page is added.
+      Chrome does not seem to have any issue with this setting, so we can just leave it here */
+    height: 0 !important;
+
     /* Chrome - When printing: enable printing of backgrounds. Set margins to Minimum, and disable Headers & Footers */
     /* Safari - When printing: enable printing of backgrounds. */
 
-    /* Slightly less than actual width to ensure cards are laid out as expected
-    after any margins have been applied by the browser */
-    width: 19.05cm !important;
-    height: initial !important;
-
-    padding: 0 !important;
-
-    /* Approximated margins to ensure cards are laid out as expected
-    after any margins have been applied by the browser */
-    margin-left: 0.6cm !important;
-    margin-top: 0.6cm !important;
-    margin-right: 0 !important;
-    margin-bottom: 0 !important;
+    /* Clear any margins, but keep the current paddings. This is important */
+    margin: 0 !important;
 
     background: initial !important;
     box-shadow: none !important;
 
     /* Force page breaks after each .page element of the document */
     page-break-after: always;
+    page-break-before: none;
+    page-break-inside: avoid;
   }
 
   /* Except for the last .page element to avoid a blank ending page */

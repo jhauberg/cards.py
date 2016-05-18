@@ -166,17 +166,13 @@ def main():
         # load the container template for a card
         card = c.read()
 
+        cut_guides_visibility = 'hidden' if disable_cut_guides else 'visible'
+
+        card = fill_template_fields('cut_guides_visibility', cut_guides_visibility, card)
+
     with open(os.path.join(cwd, 'templates/page.html')) as p:
         # load the container template for a page
         page = p.read()
-
-        if disable_cut_guides:
-            # simply add a css rule to hide them
-            cut_guides_display = 'style="display: none"'
-        else:
-            cut_guides_display = 'style="display: block"'
-
-        page = fill_template_fields('cut_guides_style', cut_guides_display, page)
 
     with open(os.path.join(cwd, 'templates/index.html')) as i:
         # load the container template for the final html file
