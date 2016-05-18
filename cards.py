@@ -136,6 +136,11 @@ def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
     return definitions
 
 
+def get_page(page_number: int, cards: str, page_template: str) -> str:
+    numbered_page = fill_template_fields('page_number', str(page_number), page_template)
+    return fill_template_fields(TemplateFields.CARDS, cards, numbered_page)
+
+
 def main():
     # required arguments
     data_paths = args['input_paths']
@@ -430,12 +435,12 @@ def main():
 
                     if cards_on_page == MAX_CARDS_PER_PAGE:
                         # add another page full of cards
-                        pages += fill_template_fields(TemplateFields.CARDS, cards, page)
+                        pages += get_page(pages_total + 1, cards, page)
                         pages_total += 1
 
                         if not disable_backs:
                             # and one full of backs
-                            pages += fill_template_fields(TemplateFields.CARDS, backs, page)
+                            pages += get_page(pages_total + 1, backs, page)
                             pages_total += 1
 
                             # reset to prepare for the next page
@@ -448,7 +453,7 @@ def main():
         if (force_page_breaks or data_path is data_paths[-1]) and cards_on_page > 0:
             # in case we're forcing pagebreaks for each datasource, or we're on the last datasource
             # and there's still cards remaining, then do a pagebreak and fill those into a new page
-            pages += fill_template_fields(TemplateFields.CARDS, cards, page)
+            pages += get_page(pages_total + 1, cards, page)
             pages_total += 1
 
             if not disable_backs:
@@ -471,7 +476,7 @@ def main():
                 backs_row = ''
 
                 # fill another page with the backs
-                pages += fill_template_fields(TemplateFields.CARDS, backs, page)
+                pages += get_page(pages_total + 1, backs, page)
                 pages_total += 1
 
                 backs = ''
