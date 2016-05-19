@@ -150,6 +150,7 @@ def main():
     definitions_path = args['definitions_path']
     force_page_breaks = args['force_page_breaks']
     disable_cut_guides = bool(args['disable_cut_guides'])
+    disable_footer = bool(args['disable_footer'])
     disable_backs = bool(args['disable_backs'])
     is_verbose = bool(args['verbose'])
 
@@ -173,6 +174,10 @@ def main():
     with open(os.path.join(cwd, 'templates/page.html')) as p:
         # load the container template for a page
         page = p.read()
+
+        footer_visibility = 'hidden' if disable_footer else 'visible'
+
+        page = fill_template_fields('footer_visibility', footer_visibility, page)
 
     with open(os.path.join(cwd, 'templates/index.html')) as i:
         # load the container template for the final html file
@@ -588,6 +593,10 @@ def setup_arguments() -> None:
     parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
                         default=False, action='store_true',
                         help='Don\'t show cut guides on the margins of the generated pages')
+
+    parser.add_argument('--disable-footer', dest='disable_footer', required=False,
+                        default=False, action='store_true',
+                        help='Don\'t show a footer on the generated pages')
 
     parser.add_argument('--disable-backs', dest='disable_backs', required=False,
                         default=False, action='store_true',
