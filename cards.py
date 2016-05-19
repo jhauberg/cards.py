@@ -531,6 +531,9 @@ def main():
             field_value=title,
             in_template=index)
 
+        # note that most of these fields could potentially be filled already when first getting the
+        # page template; however, we instead do it as the very last thing to allow cards
+        # using these fields (even if that might only be on rare occasions)
         index = fill_template_fields(
             field_name=TemplateFields.DESCRIPTION,
             field_value=definitions.get(TemplateFields.DESCRIPTION, ''),
@@ -539,6 +542,16 @@ def main():
         index = fill_template_fields(
             field_name=TemplateFields.COPYRIGHT,
             field_value=definitions.get(TemplateFields.COPYRIGHT, ''),
+            in_template=index)
+
+        index = fill_template_fields(
+            field_name=TemplateFields.VERSION,
+            field_value=definitions.get(TemplateFields.VERSION, ''),
+            in_template=index)
+
+        index = fill_template_fields(
+            field_name=TemplateFields.PROGRAM_VERSION,
+            field_value=__version__,
             in_template=index)
 
         result.write(index)
@@ -554,6 +567,9 @@ def main():
 
     shutil.copyfile(os.path.join(cwd, 'templates/resources/guide.svg'),
                     os.path.join(resources_path, 'guide.svg'))
+
+    shutil.copyfile(os.path.join(cwd, 'cards.svg'),
+                    os.path.join(resources_path, 'cards.svg'))
 
     # additionally, copy all referenced images to the output directory as well
     # (making sure to keep their original directory structure in relation to their context)

@@ -96,14 +96,39 @@ html, body {
 }
 
 .page-footer {
+  font-family: Helvetica, Arial, sans-serif;
   font-size: 0.8em;
-  text-align: center;
 
-  padding-top: 0.5cm;
-
-  margin: auto;
+  margin-top: 0.5cm;
+  height: 0.4cm;
 
   position: relative;
+
+  /* Clip any content over a single line */
+  overflow: hidden;
+}
+
+.page-footer-tag {
+  color: white;
+  background-color: rgb(78, 78, 78);
+
+  /* Tag contents should be slightly smaller */
+  font-size: .7em;
+
+  border-radius: 4px;
+
+  padding-top: .04cm;
+  padding-bottom: .04cm;
+  padding-left: .1cm;
+  padding-right: .1cm;
+
+  margin-left: .1cm;
+
+  float: right;
+}
+
+.page-footer-content {
+  float: left;
 }
 
 .cut-guide {
