@@ -67,14 +67,8 @@ html, body {
   width: 21cm;
   height: 29.7cm;
 
-  /* Paddings that precisely allow 3x3 cards to be laid out on a single A4 page */
-  /* More padding at bottom than top for aesthetics; but vertical paddings must total 3cm */
-  padding-top: 1.1cm;
-  padding-bottom: 1.4cm;
-  /* Side paddings set to .01 less than what they actually should be to prevent
-     any rounding issues causing cards to not be laid out as expected */
-  padding-left: 0.97cm;
-  padding-right: 0.97cm;
+  /* Add some padding. Values higher than 0.97cm or lower than 0.5cm will cause problems */
+  padding: 0.97cm;
 
   background: #fff;
 
@@ -93,6 +87,9 @@ html, body {
   width: 7.5in;
   /* Exactly the size of 3 poker-sized cards laid out vertically. This is the "safe zone" */
   height: 10.5in;
+
+  /* Center content in case of mismatched page padding */
+  margin: auto;
 }
 
 .page-footer {
@@ -107,29 +104,27 @@ html, body {
 }
 
 .cut-guide {
-  font-family: "Courier New", Courier, monospace;
-  font-size: 1em;
-
   /* Ensure that the cut guides do not take up space between cards */
   position: absolute;
+
+  width: 5mm;
+  height: 5mm;
 }
 
-/* Each cut guide will take up approximately 10x18 pixels at 1em */
-
 .cut-guide-top {
-  top: -9px;
+  top: -2.5mm;
 }
 
 .cut-guide-left {
-  left: -5px;
+  left: -2.5mm;
 }
 
 .cut-guide-right {
-  right: -5px;
+  right: -2.5mm;
 }
 
 .cut-guide-bottom {
-  bottom: -9px;
+  bottom: -2.5mm;
 }
 
 @page {
@@ -159,7 +154,12 @@ html, body {
     /* Safari-hack to avoid additional blank pages. Safari forces margins on the printed content,
        so it likely goes beyond the paper bounds and thus a new page is added.
       Chrome does not seem to have any issue with this setting, so we can just leave it here */
-    height: 0 !important;
+      height: 0 !important;
+
+      /* Page width is slightly reduced to combat browser-added margins, causing content to shrink */
+      width: 20cm !important;
+      /* Padding is also reduced. Note that adjusting width affects padding needed, and vice versa */
+      padding: 0.4cm;
 
     /* Chrome - When printing: enable printing of backgrounds. Set margins to Minimum, and disable Headers & Footers */
     /* Safari - When printing: enable printing of backgrounds. */

@@ -542,6 +542,11 @@ def main():
     shutil.copyfile(os.path.join(cwd, 'templates/index.css'),
                     os.path.join(output_path, 'index.css'))
 
+    # and the guide (if needed)
+    if not disable_cut_guides:
+        shutil.copyfile(os.path.join(cwd, 'templates/guide.svg'),
+                        os.path.join(output_path, 'guide.svg'))
+
     # additionally, copy all referenced images to the output directory as well
     # (making sure to keep their original directory structure in relation to their context)
     for context in context_image_paths:
