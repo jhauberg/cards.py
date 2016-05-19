@@ -547,10 +547,13 @@ def main():
     shutil.copyfile(os.path.join(cwd, 'templates/index.css'),
                     os.path.join(output_path, 'index.css'))
 
-    # and the guide (if needed)
-    if not disable_cut_guides:
-        shutil.copyfile(os.path.join(cwd, 'templates/guide.svg'),
-                        os.path.join(output_path, 'guide.svg'))
+    # and copy the additional image resources
+    resources_path = os.path.join(output_path, 'resources')
+    # creating the directory if needed
+    create_missing_directories_if_necessary(resources_path)
+
+    shutil.copyfile(os.path.join(cwd, 'templates/resources/guide.svg'),
+                    os.path.join(resources_path, 'guide.svg'))
 
     # additionally, copy all referenced images to the output directory as well
     # (making sure to keep their original directory structure in relation to their context)
@@ -592,7 +595,7 @@ def setup_arguments() -> None:
 
     parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
                         default=False, action='store_true',
-                        help='Don\'t show cut guides on the margins of the generated pages')
+                        help='Don\'t show cut guides on the margins of the cards')
 
     parser.add_argument('--disable-footer', dest='disable_footer', required=False,
                         default=False, action='store_true',
@@ -607,7 +610,7 @@ def setup_arguments() -> None:
                         help='Show more information')
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__,
-                        help='Show the program\'s version, then exit')
+                        help='Show the program\'s version')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
