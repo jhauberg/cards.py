@@ -73,6 +73,9 @@ html, body {
   background: #fff;
 
   position: relative;
+
+  /* Set up a z-index context to allow putting cut guides behind, or on top of content */
+  z-index: 0;
 }
 
 .page-content {
@@ -109,6 +112,9 @@ html, body {
 
   width: 5mm;
   height: 5mm;
+
+  /* Cut guides should appear on top of any content. Use -1 to appear below */
+  z-index: 1;
 }
 
 .cut-guide-top {
