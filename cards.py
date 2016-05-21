@@ -18,7 +18,7 @@ import subprocess
 
 from urllib.parse import urlparse
 
-from util import warn, lower_first_row, create_missing_directories_if_necessary
+from util import WarningContext, warn, lower_first_row, create_missing_directories_if_necessary
 
 from template import fill_template_fields, fill_card_front, fill_card_back
 from template import template_from_data, template_from_path
@@ -93,7 +93,7 @@ def copy_images_to_output_directory(
             if verbosely:
                 warn('An image was not copied to the output directory since it was specified with '
                      'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path),
-                     in_context=context)
+                     in_context=WarningContext(context))
         else:
             # if the image path is not an absolute path, assume
             # that it's located relative to where the data is
@@ -113,7 +113,7 @@ def copy_images_to_output_directory(
             else:
                 warn('One or more cards contain an image reference that does not exist: '
                      '\033[4;31m\'{0}\'\033[0m'.format(relative_source_path),
-                     in_context=context,
+                     in_context=WarningContext(context),
                      as_error=True)
 
 
@@ -272,19 +272,19 @@ def main():
                 if is_verbose:
                     warn('A default template was not provided and auto-templating is not enabled.'
                          'Cards will not be generated correctly.',
-                         in_context=context)
+                         in_context=WarningContext(context))
 
             if not disable_backs and Columns.TEMPLATE_BACK in data.fieldnames:
                 if is_verbose:
                     warn('Assuming card backs should be generated since ' +
                          '\'' + Columns.TEMPLATE_BACK + '\' appears in data. '
                          'You can disable card backs by specifying the --disable-backs argument.',
-                         in_context=context)
+                         in_context=WarningContext(context))
             else:
                 if is_verbose:
                     warn('Card backs will not be generated since '
                          '\'' + Columns.TEMPLATE_BACK + '\' does not appear in data.',
-                         in_context=context)
+                         in_context=WarningContext(context))
 
                 disable_backs = True
 
@@ -302,9 +302,8 @@ def main():
                 except ValueError:
                     count = 0
 
-                    warn('[Row {0}] The card provided an indeterminable count and was was skipped.'
-                         .format(row_index),
-                         in_context=context)
+                    warn('The card provided an indeterminable count and was was skipped.',
+                         in_context=WarningContext(context, row_index))
 
                 # if a negative count is specified, treat it as 0
                 count = count if count > 0 else 0
@@ -323,25 +322,22 @@ def main():
                         if not_found:
                             template = template_not_opened
 
-                            warn('[Row {0}#{1}] The card provided a template that could not '
-                                 'be opened: \033[4;31m\'{2}\'\033[0m'
-                                 .format(row_index, card_index, template_path),
-                                 in_context=context,
+                            warn('The card provided a template that could not be opened: '
+                                 '\033[4;31m\'{0}\'\033[0m'.format(template_path),
+                                 in_context=WarningContext(context, row_index, card_index),
                                  as_error=True)
                         elif is_verbose and len(template) == 0:
-                            warn('[Row {0}#{1}] The card provided a template that appears to be '
-                                 'empty: \033[4;33m\'{2}\'\033[0;33m.'
-                                 .format(row_index, card_index, template_path),
-                                 in_context=context)
+                            warn('The card provided a template that appears to be empty: '
+                                 '\033[4;33m\'{0}\'\033[0;33m.'.format(template_path),
+                                 in_context=WarningContext(context, row_index, card_index))
                     else:
                         template = default_template
 
                     if template is None:
                         template = template_not_provided
 
-                        warn('[Row {0}#{1}] The card did not provide a template.'
-                             .format(row_index, card_index),
-                             in_context=context,
+                        warn('The card did not provide a template.',
+                             in_context=WarningContext(context, row_index, card_index),
                              as_error=True)
 
                     card_content, found_image_paths, missing_fields = fill_card_front(
@@ -355,15 +351,15 @@ def main():
                         missing_fields_in_data = missing_fields[1]
 
                         if len(missing_fields_in_template) > 0 and is_verbose:
-                            warn('[Row {0}#{1}] The template does not contain the fields: {2}'
-                                 .format(row_index, card_index, missing_fields_in_template),
-                                 in_context=context)
+                            warn('The template does not contain the fields: {0}'
+                                 .format(missing_fields_in_template),
+                                 in_context=WarningContext(context, row_index, card_index))
 
                         if len(missing_fields_in_data) > 0 and is_verbose:
-                            warn('[Row {0}#{1}] The template contains fields that are not '
-                                 'present for this card: {2}'
-                                 .format(row_index, card_index, missing_fields_in_data),
-                                 in_context=context)
+                            warn('The template contains fields that are not '
+                                 'present for this card: {0}'
+                                 .format(missing_fields_in_data),
+                                 in_context=WarningContext(context, row_index, card_index))
 
                     image_paths.extend(found_image_paths)
 
@@ -387,16 +383,14 @@ def main():
                             if not_found:
                                 template_back = template_not_opened
 
-                                warn('[Row {0}#{1}] The card provided a back template that '
-                                     'could not be opened: \033[4;31m\'{2}\'\033[0m'
-                                     .format(row_index, card_index, template_path_back),
-                                     in_context=context,
+                                warn('The card provided a back template that could not be opened: '
+                                     '\033[4;31m\'{0}\'\033[0m'.format(template_path_back),
+                                     in_context=WarningContext(context, row_index, card_index),
                                      as_error=True)
                             elif is_verbose and len(template_back) == 0:
-                                warn('[Row {0}#{1}] The card provided a back template that appears '
-                                     'to be empty: \033[4;33m\'{2}\'\033[0;33m.'
-                                     .format(row_index, card_index, template_path_back),
-                                     in_context=context)
+                                warn('The card provided a back template that appears to be empty: '
+                                     '\033[4;33m\'{0}\'\033[0;33m.'.format(template_path_back),
+                                     in_context=WarningContext(context, row_index, card_index))
 
                         if template_back is None:
                             template_back = template_back_not_provided
@@ -412,16 +406,15 @@ def main():
                             missing_fields_in_data = missing_fields[1]
 
                             if len(missing_fields_in_template) > 0 and is_verbose:
-                                warn('[Row {0}#{1}] The back template does not '
-                                     'contain the fields: {2}'
-                                     .format(row_index, card_index, missing_fields_in_template),
-                                     in_context=context)
+                                warn('The back template does not contain the fields: {0}'
+                                     .format(missing_fields_in_template),
+                                     in_context=WarningContext(context, row_index, card_index))
 
                             if len(missing_fields_in_data) > 0 and is_verbose:
-                                warn('[Row {0}#{1}] The back template contains fields '
-                                     'that are not present for this card: {2}'
-                                     .format(row_index, card_index, missing_fields_in_data),
-                                     in_context=context)
+                                warn('The back template contains fields '
+                                     'that are not present for this card: {0}'
+                                     .format(missing_fields_in_data),
+                                     in_context=WarningContext(context, row_index, card_index))
 
                         image_paths.extend(found_image_paths)
 

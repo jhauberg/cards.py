@@ -5,7 +5,14 @@ import itertools
 import errno
 
 
-def warn(message: str, in_context: str=None, as_error: 'apply error color'=False) -> None:
+class WarningContext(object):
+    def __init__(self, name: str, row_index: int=-1, card_index: int=-1):
+        self.name = name
+        self.row_index = row_index
+        self.card_index = card_index
+
+
+def warn(message: str, in_context: WarningContext=None, as_error: 'apply error color'=False) -> None:
     """ Display a command-line warning. """
 
     apply_red_color = '\033[31m'
@@ -17,7 +24,16 @@ def warn(message: str, in_context: str=None, as_error: 'apply error color'=False
     message_content = '[{0}]'.format('!' if as_error else '-')
 
     if in_context is not None:
-        message_content = '{0} [{1}]'.format(message_content, str(in_context))
+        if in_context.row_index > -1:
+            if in_context.card_index > -1:
+                message_content = '{0} [{1}:{2}#{3}]'.format(
+                    message_content, in_context.name, in_context.row_index, in_context.card_index)
+            else:
+                message_content = '{0} [{1}:{2}]'.format(
+                    message_content, in_context.name, in_context.row_index)
+        else:
+            message_content = '{0} [{1}]'.format(
+                message_content, in_context.name)
 
     message_content = message_content + ' ' + message
 
