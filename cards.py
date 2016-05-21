@@ -316,6 +316,19 @@ def main():
                 # if a negative count is specified, treat it as 0
                 count = count if count > 0 else 0
 
+                if count > 1000:
+                    # arbitrarily determined amount- but if the count is really high
+                    # it might just be an error
+                    warn('The card has specified a high count: {0}. '
+                         'Are you sure you want to continue?'.format(count),
+                         in_context=WarningContext(context, row_index))
+
+                    answer = input('(Y)es or (n)o?').strip().lower()
+
+                    if answer == 'n' or answer == 'no':
+                        # break out and continue with the next card
+                        continue
+
                 for i in range(count):
                     card_index = cards_total + 1
 
