@@ -302,6 +302,11 @@ def main():
                 except ValueError:
                     count = 0
 
+                    warn('The card at row {0} provided an indeterminable count '
+                         'and was was skipped.'
+                         .format(row_index),
+                         in_context=context)
+
                 # if a negative count is specified, treat it as 0
                 count = count if count > 0 else 0
 
