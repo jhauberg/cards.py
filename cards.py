@@ -297,13 +297,21 @@ def main():
 
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
-                try:
-                    count = int(row.get(Columns.COUNT, 1))
-                except ValueError:
-                    count = 0
+                count = row.get(Columns.COUNT, '1')
 
-                    warn('The card provided an indeterminable count and was was skipped.',
-                         in_context=WarningContext(context, row_index))
+                if len(count.strip()) > 0:
+                    # the count column has content, so attempt to parse it
+                    try:
+                        count = int(count)
+                    except ValueError:
+                        # count could not be determined, so default to skip this card
+                        count = 0
+
+                        warn('The card provided an indeterminable count and was was skipped.',
+                             in_context=WarningContext(context, row_index))
+                else:
+                    # the count column did not have content, so default count to 1
+                    count = 1
 
                 # if a negative count is specified, treat it as 0
                 count = count if count > 0 else 0
