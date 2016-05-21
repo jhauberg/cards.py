@@ -187,7 +187,7 @@ def main():
         # no definitions file has been explicitly specified, so try looking for it automatically
         found, potential_definitions_path = find_file_path('definitions.csv', data_paths)
 
-        if potential_definitions_path is not None:
+        if found and potential_definitions_path is not None:
             definitions_path = potential_definitions_path
 
             warn('No definitions have been specified. Using definitions automatically found at: '
