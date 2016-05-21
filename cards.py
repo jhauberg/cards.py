@@ -297,7 +297,11 @@ def main():
 
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
-                count = int(row.get(Columns.COUNT, 1))
+                try:
+                    count = int(row.get(Columns.COUNT, 1))
+                except ValueError:
+                    count = 0
+
                 # if a negative count is specified, treat it as 0
                 count = count if count > 0 else 0
 
