@@ -118,7 +118,7 @@ def copy_images_to_output_directory(
 
 
 def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
-    definitions = None
+    definitions = {}
 
     if path is not None and len(path) > 0:
         if not os.path.isfile(path):
