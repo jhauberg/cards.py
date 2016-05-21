@@ -177,7 +177,7 @@ def fill_template_fields(
     return (content, occurences) if counting_occurences else content
 
 
-def fill_template(template: str, row: dict, definitions: dict) -> (str, list, list):
+def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set):
     """ Returns the contents of the template with all template fields replaced
         by any matching fields in the provided data.
     """
@@ -237,7 +237,7 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, list, li
                     # the field was not found in the card data, so make a warning about it
                     missing_fields_in_data.append(field.name)
 
-    return template, image_paths, (missing_fields_in_template, missing_fields_in_data)
+    return template, image_paths, (set(missing_fields_in_template), set(missing_fields_in_data))
 
 
 def template_from_path(template_path: str, relative_to_path: str=None) -> (str, bool, str):
@@ -276,6 +276,10 @@ def fill_card(
         definitions: dict) -> (str, list, list):
     """ Returns the contents of a card using the specified template. """
 
+    # attempt to fill all fields discovered in the template using the data for this card
+    template, discovered_image_paths, missing_fields = fill_template(
+        template, row, definitions)
+
     # fill all row index fields (usually used for error templates)
     template = fill_template_fields(
         field_name=TemplateFields.CARD_ROW_INDEX,
@@ -294,9 +298,13 @@ def fill_card(
         field_value=str(card_index),
         in_template=template)
 
-    # attempt to fill all fields discovered in the template using the data for this card
-    template, discovered_image_paths, missing_fields = fill_template(
-        template, row, definitions)
+    # card data might contain these three fields, but they would not have been rendered
+    # during fill_template(), so make sure to remove them from the missing list if necessary
+    except_fields = {TemplateFields.CARD_INDEX,
+                     TemplateFields.CARD_ROW_INDEX,
+                     TemplateFields.CARD_TEMPLATE_PATH}
+
+    missing_fields = (missing_fields[0], missing_fields[1] - except_fields)
 
     return template, discovered_image_paths, missing_fields
 
@@ -463,7 +471,7 @@ def template_from_data(data: csv.DictReader) -> str:
     template = '' if len(analysis) > 0 else None
 
     for field_name, field_type in fields:
-        field = '{{' + str(field_name) + '}}'
+        field = '{{ ' + str(field_name) + ' }}'
         field_tag = '<div class=\"auto-template-field auto-template-{0}\">{1}</div>'
 
         template += field_tag.format(field_type, field)
