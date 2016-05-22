@@ -158,6 +158,7 @@ def main():
 
     # optional arguments
     output_path = args['output_path']
+    output_filename = args['output_filename']
     definitions_path = args['definitions_path']
     force_page_breaks = args['force_page_breaks']
     disable_cut_guides = bool(args['disable_cut_guides'])
@@ -526,8 +527,10 @@ def main():
         # output to current working directory unless otherwise specified
         output_path = ''
 
+    output_directory_name = 'generated'
+
     # construct the final output path
-    output_path = os.path.join(output_path, 'generated')
+    output_path = os.path.join(output_path, output_directory_name)
 
     # ensure all directories exist or created if missing
     create_missing_directories_if_necessary(output_path)
@@ -537,7 +540,7 @@ def main():
     cards_or_card = 'cards' if cards_total > 1 else 'card'
 
     # begin writing pages to the output file (overwriting any existing file)
-    with open(os.path.join(output_path, 'index.html'), 'w') as result:
+    with open(os.path.join(output_path, output_filename), 'w') as result:
         # on all pages, fill any {{ cards_total }} fields
         pages = fill_template_fields(
             field_name=TemplateFields.CARDS_TOTAL,
@@ -622,6 +625,10 @@ def setup_arguments() -> None:
     parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
                         help='Path to a directory in which the pages will be generated '
                              '(a sub-directory will be created)')
+
+    parser.add_argument('-O', '--output-filename', dest='output_filename', required=False,
+                        default='index.html',
+                        help='Name of the generated file')
 
     parser.add_argument('-d', '--definitions-filename', dest='definitions_path', required=False,
                         help='Path to a CSV file containing definitions')
