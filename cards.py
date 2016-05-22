@@ -346,7 +346,7 @@ def main():
 
                     # determine which template to use for this card, if any
                     template_path = get_column_content(
-                        row, Columns.TEMPLATE, definitions, default_content=None)
+                        row, Columns.TEMPLATE, definitions, default_content='').strip()
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
@@ -411,7 +411,7 @@ def main():
 
                     if not disable_backs:
                         template_path_back = get_column_content(
-                            row, Columns.TEMPLATE_BACK, definitions, default_content=None)
+                            row, Columns.TEMPLATE_BACK, definitions, default_content='').strip()
 
                         template_back = None
 
