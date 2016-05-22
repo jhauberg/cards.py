@@ -138,7 +138,18 @@ def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
 
 def get_page(page_number: int, cards: str, page_template: str) -> str:
     numbered_page = fill_template_fields('page_number', str(page_number), page_template)
+
     return fill_template_fields(TemplateFields.CARDS, cards, numbered_page)
+
+
+def fill_metadata_field(field_name: str, field_value: str, in_template: str) -> str:
+    field_value = field_value.strip()
+    field_visibility = 'hidden' if len(field_value) == 0 else 'visible'
+
+    in_template = fill_template_fields('{0}_visibility'.format(field_name), field_visibility, in_template)
+    in_template = fill_template_fields(field_name, field_value, in_template)
+
+    return in_template
 
 
 def main():
@@ -155,6 +166,18 @@ def main():
     is_verbose = bool(args['verbose'])
 
     disable_auto_templating = False
+
+    if definitions_path is None:
+        # no definitions file has been explicitly specified, so try looking for it automatically
+        found, potential_definitions_path = find_file_path('definitions.csv', data_paths)
+
+        if found and potential_definitions_path is not None:
+            definitions_path = potential_definitions_path
+
+            warn('No definitions have been specified. Using definitions automatically found at: '
+                 '\033[4;33m\'{0}\'\033[0m'.format(definitions_path))
+
+    definitions = get_definitions(definitions_path)
 
     # get the current working directory (though not the ACTUAL working directory,
     # we pretend that the location of this script file is the working directory and base path.
@@ -182,18 +205,6 @@ def main():
     with open(os.path.join(cwd, 'templates/index.html')) as i:
         # load the container template for the final html file
         index = i.read()
-
-    if definitions_path is None:
-        # no definitions file has been explicitly specified, so try looking for it automatically
-        found, potential_definitions_path = find_file_path('definitions.csv', data_paths)
-
-        if found and potential_definitions_path is not None:
-            definitions_path = potential_definitions_path
-
-            warn('No definitions have been specified. Using definitions automatically found at: '
-                 '\033[4;33m\'{0}\'\033[0m'.format(definitions_path))
-
-    definitions = get_definitions(definitions_path)
 
     # error template for the output on cards specifying a template that was not found,
     # or could not be opened
@@ -527,13 +538,6 @@ def main():
 
     # begin writing pages to the output file (overwriting any existing file)
     with open(os.path.join(output_path, 'index.html'), 'w') as result:
-        title = definitions.get(TemplateFields.TITLE, '')
-
-        if len(title) == 0:
-            title = 'cards.py: {0} {1} on {2} {3}'.format(
-                cards_total, cards_or_card,
-                pages_total, pages_or_page)
-
         # on all pages, fill any {{ cards_total }} fields
         pages = fill_template_fields(
             field_name=TemplateFields.CARDS_TOTAL,
@@ -548,32 +552,28 @@ def main():
             in_template=index)
 
         index = fill_template_fields(
-            field_name=TemplateFields.TITLE,
-            field_value=title,
+            field_name=TemplateFields.PROGRAM_VERSION,
+            field_value=__version__,
             in_template=index)
 
         # note that most of these fields could potentially be filled already when first getting the
         # page template; however, we instead do it as the very last thing to allow cards
         # using these fields (even if that might only be on rare occasions)
-        index = fill_template_fields(
-            field_name=TemplateFields.DESCRIPTION,
-            field_value=definitions.get(TemplateFields.DESCRIPTION, ''),
-            in_template=index)
+        title = definitions.get(TemplateFields.TITLE, '').strip()
 
-        index = fill_template_fields(
-            field_name=TemplateFields.COPYRIGHT,
-            field_value=definitions.get(TemplateFields.COPYRIGHT, ''),
-            in_template=index)
+        if len(title) == 0:
+            title = '{0} {1} on {2} {3}'.format(
+                cards_total, cards_or_card,
+                pages_total, pages_or_page)
 
-        index = fill_template_fields(
-            field_name=TemplateFields.VERSION,
-            field_value=definitions.get(TemplateFields.VERSION, ''),
-            in_template=index)
+        description = definitions.get(TemplateFields.DESCRIPTION, '')
+        copyright_notice = definitions.get(TemplateFields.COPYRIGHT, '')
+        version_identifier = definitions.get(TemplateFields.VERSION, '')
 
-        index = fill_template_fields(
-            field_name=TemplateFields.PROGRAM_VERSION,
-            field_value=__version__,
-            in_template=index)
+        index = fill_metadata_field(TemplateFields.TITLE, title, in_template=index)
+        index = fill_metadata_field(TemplateFields.DESCRIPTION, description, in_template=index)
+        index = fill_metadata_field(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
+        index = fill_metadata_field(TemplateFields.VERSION, version_identifier, in_template=index)
 
         result.write(index)
 

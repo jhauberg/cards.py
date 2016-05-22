@@ -128,6 +128,8 @@ html, body {
 }
 
 .page-footer-content {
+  margin-right: .5cm;
+
   float: left;
 }
 
