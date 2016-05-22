@@ -366,6 +366,12 @@ def main():
                     else:
                         template = default_template
 
+                        if template is not None and is_verbose:
+                            warn('The card did not provide a template. '
+                                 'The card will use an auto-template instead.'
+                                 .format(template_path),
+                                 in_context=WarningContext(context, row_index, card_index))
+
                     if template is None:
                         template = template_not_provided
 
