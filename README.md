@@ -1,10 +1,10 @@
 # <img width="72" src="https://rawgit.com/jhauberg/cards.py/master/cards.svg" alt="cards.py"> cards.py
 
-A tool for generating print-ready sheets of cards. Particularly useful in the early stages of prototyping a card game.
+A tool for generating print-ready sheets of cards.
 
-Feed it with a [CSV file](example/my-data.csv) containing all your card data, and it will output a single HTML file with pages of your cards laid out for easy and efficient cutting.
+Feed it with a [CSV file](example/my-data.csv) containing all your card data and it will output an HTML file with pages of your cards laid out for easy and efficient cutting. It's like a static site generator, but for cards.
 
-Use your browsers print function to save the pages to a PDF, or to print immediately.
+Use the print function of your browser to save the pages to a PDF or to print them immediately.
 
 **Currently only A4 pages with Poker-sized cards (2.5x3.5 inches) is supported.**
 
@@ -14,26 +14,36 @@ Run from command line:
 
     $ python cards.py -f example/my-data.csv
 
+## Requirements
+
+  * Python 3.5
+
 ## Browser support
 
   * Safari
   * Chrome
 
-## Why?
+# Why?
 
-The gap is too large between having all the card data, to getting a prototype on the table.
+It should be easier getting your ideas to the table.
 
-It should be easier, and this tool tries to make it so.
+There's already plenty of tools that solve this problem. Some are free ([nanDeck](http://www.nand.it/nandeck/), [Squib](https://github.com/andymeneely/squib)), some are expensive ([inDesign](http://www.adobe.com/InDesign)). Some seem really good (*but are not available yet*, [Paperize](http://paperize.io/beta)).
 
-There's already plenty of tools that try to solve this problem. Some are free ([nanDeck](http://www.nand.it/nandeck/), [Squib](https://github.com/andymeneely/squib)), some are expensive ([inDesign](www.adobe.com/InDesign)). However, common for all of them is that they are more complicated than I think they need to be (for this specific task).
+However, common for most of them is that they are more complicated than I think they need to be.
 
-Though they provide you with a wide range of options and possibilities, you first have to get past the (steep) learning curve before you can *really* use them.
+Though these tools provide you with a wide range of options and possibilities, you first have to get past the (steep) learning curve before you can *really* use them proficiently.
 
-The hope and intent of this tool is to provide a way to get a prototype built fast, with as little hassle and setup as possible, while still providing options for customizing your cards as much- or as little, as you want to.
+The hope and intent of this tool is to provide a way to get a prototype built quickly and with as little hassle and setup as possible, while still providing options for customizing your cards as much- or as little, as you want to.
+
+# Contributing
+
+If you find any problems using this software, please [open an issue](https://github.com/jhauberg/cards.py/issues/new) or submit a fix as a pull request.
+
+Please refer to [CONTRIBUTING](CONTRIBUTING.md) for further information.
 
 ## License
 
-    Copyright 2015 Jacob Hauberg Hansen.
+    Copyright 2016 Jacob Hauberg Hansen.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy of
     this software and associated documentation files (the "Software"), to deal in
