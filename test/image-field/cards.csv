@@ -1,0 +1,10 @@
+text
+"&#123;&#123; ../../cards.svg:32x32 &#125;&#125;<br /><br />{{ ../../cards.svg:32x32 }}"
+"&#123;&#123; ../../cards.svg:x32 &#125;&#125;<br /><br />{{ ../../cards.svg:x32 }}"
+"&#123;&#123; ../../cards.svg:32x &#125;&#125;<br /><br />{{ ../../cards.svg:32x }}"
+"&#123;&#123; ../../cards.svg:32 &#125;&#125;<br /><br />{{ ../../cards.svg:32 }}"
+"&#123;&#123; ../../cards.svg:small &#125;&#125;<br /><br />{{ ../../cards.svg:small }}"
+"&#123;&#123; ../../cards.svg:not-defined &#125;&#125;<br /><br />Should trigger a warning<br /><br />{{ ../../cards.svg:not-defined }}"
+"&#123;&#123; ../../cards.svg@copy-only &#125;&#125;<br /><br />{{ ../../cards.svg@copy-only }}"
+"&lt;img src=""&#123;&#123; ../../cards.svg@copy-only &#125;&#125;""&gt;<br /><br /><img src=""{{ ../../cards.svg@copy-only }}"">"
+"&#123;&#123; image/non-existing.png &#125;&#125;<br /><br />Should trigger an error<br /><br />{{ image/non-existing.png }}"
