@@ -6,7 +6,7 @@ import re
 
 from typing import List
 
-from util import most_common, warn
+from util import most_common, WarningContext, warn
 
 from constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
 
@@ -71,7 +71,7 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
             except ValueError:
                 warn('The size specification \'{0}\' has not been defined. '
                      'Image might not display as expected.'.format(width_specification),
-                     in_context=actual_image_path)
+                     in_context=WarningContext(actual_image_path))
                 explicit_width = None
             else:
                 if explicit_width < 0:
