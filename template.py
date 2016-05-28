@@ -23,7 +23,7 @@ class TemplateField(object):
 def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
     """ Constructs an HTML-compliant image tag using the specified image path. """
 
-    actual_image_path = ''
+    actual_image_path = image_path
 
     # determine whether a size has been explicitly specified; e.g. "images/name-of-image.svg:16x16"
     size_index = image_path.rfind(':')
@@ -97,6 +97,7 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
         else:
             image_tag = '<img src="{0}">'.format(actual_image_path)
     else:
+        actual_image_path = ''
         image_tag = ''
 
     return image_tag, actual_image_path
