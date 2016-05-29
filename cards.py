@@ -360,8 +360,12 @@ def main():
                                  in_context=WarningContext(context, row_index, card_index),
                                  as_error=True)
                         elif is_verbose and len(template) == 0:
+                            template = default_template
+
                             warn('The card provided a template that appears to be empty: '
-                                 '\033[4;33m\'{0}\'\033[0;33m.'.format(template_path),
+                                 '\033[4;33m\'{0}\'\033[0;33m. '
+                                 'The card will use an auto-template instead.'
+                                 .format(template_path),
                                  in_context=WarningContext(context, row_index, card_index))
                     else:
                         template = default_template
