@@ -48,10 +48,6 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
         # get rid of the size specification to have a clean image path
         actual_image_path = image_path[:size_index]
 
-        if definitions is not None and actual_image_path in definitions:
-            # the path is actually a symbol definition; e.g. "enemy" or similar.
-            actual_image_path = definitions.get(actual_image_path)
-
         # get the size specification; i.e. whatever is on the right hand size of the ':' splitter
         size = image_path[size_index + 1:].strip()
 
@@ -85,6 +81,10 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
         else:
             # default to a squared size using the width specification
             explicit_height = explicit_width
+
+    if definitions is not None and actual_image_path in definitions:
+        # the path is actually a definition; e.g. "enemy" or similar, so get the actual path.
+        actual_image_path = definitions.get(actual_image_path)
 
     if is_image(actual_image_path):
         if copy_only:
