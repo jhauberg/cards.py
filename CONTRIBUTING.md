@@ -1,6 +1,8 @@
 # Contributing
 
-I appreciate any contributions, but please refer to the following sections for guidelines. Like any true python enthusiast, I can be a bit pedantic!
+I appreciate any contributions, but please refer to the following sections for guidelines.
+
+Like any true python enthusiast, I can be a bit pedantic!
 
 ## Style
 
@@ -23,3 +25,9 @@ The message is actually more like a title and should:
  * Not end with a period
 
 If it's tough to write a good commit message, it might be a symptom of being better suited as several smaller commits.
+
+## Make a test
+
+When you fix something, make sure it doesn't break something else.
+
+Before submitting anything, you should try running the tests from the [test](test) directory (or at least the ones applicable to your fix) and ensure that everything looks right.
