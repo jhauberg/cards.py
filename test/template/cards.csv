@@ -2,3 +2,4 @@
 ,"Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once."
 "  ","Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once."
 "bad/template/path.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error."
+"bad/template/path.html bad/template/path.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error."

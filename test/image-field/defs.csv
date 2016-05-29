@@ -1,2 +1,5 @@
 @definition,@value
 small,16x16
+cards_image_path,../../cards.svg
+sized_image_path,../../cards.svg:32x32
+sized_image_path_with_definition,../../cards.svg:small
