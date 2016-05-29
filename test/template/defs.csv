@@ -1,0 +1,5 @@
+@definition,@value
+template_path,"template/template.html"
+empty_template_path,"template/empty-template.html"
+bad_template_path,"bad/template/path.html"
+blank_template_path," "

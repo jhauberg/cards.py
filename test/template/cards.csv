@@ -1,5 +1,8 @@
 @template,text
-,"Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once."
-"  ","Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once."
-"bad/template/path.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error."
-"bad/template/path.html bad/template/path.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error."
+"template/template.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once using <i>template/template.html</i>."
+"template/empty-template.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once using an auto-template instead of <i>template/empty-template.html</i>."
+,"Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once using an auto-template."
+"  ","Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once using an auto-template."
+"bad/template/path.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error template."
+"bad/template/path.html bad/template/path.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error template."
+"template/template-with-missing-fields.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn about missing fields and appear once using <i>template/template-with-missing-fields.html</i>."

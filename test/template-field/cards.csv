@@ -1,0 +1,2 @@
+@template,text,value
+template/template.html,"Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once.",5
