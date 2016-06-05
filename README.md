@@ -1,8 +1,10 @@
-# <img width="72" src="https://rawgit.com/jhauberg/cards.py/master/cards.svg" alt="cards.py"> cards.py
+<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards.svg" alt="cards.py" align="left">
+
+# cards.py
 
 A tool for generating print-ready sheets of cards.
 
-Feed it with a [CSV file](example/my-data.csv) containing all your card data and it will output an HTML file with pages of your cards laid out for easy and efficient cutting. It's like a static site generator, but for cards.
+Feed it with a [CSV file](example/love-letter/cards.csv) containing all your card data and it will output an HTML file with pages of your cards laid out for easy and efficient cutting. It's like a static site generator, but for cards.
 
 Use the print function of your browser to save the pages to a PDF or to print them immediately.
 
@@ -12,7 +14,7 @@ Use the print function of your browser to save the pages to a PDF or to print th
 
 Run from command line:
 
-    $ python cards.py -f example/my-data.csv
+    $ python cards.py -f cards.csv
 
 ## Requirements
 
@@ -23,9 +25,13 @@ Run from command line:
   * Safari
   * Chrome
 
-# Why?
+## Examples
 
-It should be easier getting your ideas to the table.
+See [Trickbook](https://github.com/jhauberg/trickbook), or [Dungeon Deck](https://github.com/jhauberg/dungeon-deck) for examples of real projects.
+
+# Why make this?
+
+I'm making this because it should be easier getting your ideas to the table.
 
 There's already plenty of tools that solve this problem. Some are free ([nanDeck](http://www.nand.it/nandeck/), [Squib](https://github.com/andymeneely/squib)), some are expensive ([inDesign](http://www.adobe.com/InDesign)). Some seem really good (*but are not available yet*, [Paperize](http://paperize.io/beta)).
 
@@ -34,6 +40,8 @@ However, common for most of them is that they are more complicated than I think 
 Though these tools provide you with a wide range of options and possibilities, you first have to get past the (steep) learning curve before you can *really* use them proficiently.
 
 The hope and intent of this tool is to provide a way to get a prototype built quickly and with as little hassle and setup as possible, while still providing options for customizing your cards as much- or as little, as you want to.
+
+It's also just a fun project to work on; so there's that.
 
 # Contributing
 
