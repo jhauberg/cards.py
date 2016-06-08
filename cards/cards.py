@@ -138,7 +138,8 @@ def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
 
 
 def get_page(page_number: int, cards: str, page_template: str) -> str:
-    numbered_page = fill_template_fields('page_number', str(page_number), page_template)
+    numbered_page = fill_template_fields(
+        TemplateFields.PAGE_NUMBER, str(page_number), page_template)
 
     return fill_template_fields(TemplateFields.CARDS, cards, numbered_page)
 

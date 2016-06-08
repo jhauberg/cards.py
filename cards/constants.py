@@ -14,6 +14,7 @@ class ColumnDescriptors:
 class TemplateFields:
     # Required fields (system fields)
     PAGES = 'pages'                             # Field in index.html to be replaced with all generated pages
+    PAGE_NUMBER = 'page_number'                 # Field in page.html to be replaced with current page number
     CARDS = 'cards'                             # Field in page.html to be replaced with all generated cards for a single page
     CARD_SIZE = 'card_size'                     # Field in card.html to be replaced with the size-type of the card
     CARD_CONTENT = 'card_content'               # Field in card.html to be replaced with the generated content of the card
@@ -23,6 +24,7 @@ class TemplateFields:
     CARD_ROW_INDEX = 'card_row_index'           # Optional field that is replaced with the index of the card in the datasource (2 being the first index, since the CSV header counts as the first row)
     CARD_TEMPLATE_PATH = 'card_template_path'   # Optional field that is replaced with the path of the template used to generate the card
     CARDS_TOTAL = 'cards_total'                 # Optional field that is replaced with the total count of all generated cards
+
     VERSION = 'version'                         # Optional field that is replaced with the version identifier of the project
     PROGRAM_VERSION = 'program_version'         # Optional field that is replaced with the version identifier of the program
     TITLE = 'title'                             # Optional field that is replaced with the title of the project
