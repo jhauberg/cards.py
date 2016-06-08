@@ -6,9 +6,9 @@ import re
 
 from typing import List
 
-from util import most_common, WarningContext, warn
+from cards.util import most_common, WarningContext, warn
 
-from constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
+from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
 
 
 class TemplateField(object):

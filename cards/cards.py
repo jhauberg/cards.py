@@ -11,23 +11,24 @@ License: MIT (see LICENSE)
 
 import os
 import sys
-import argparse
 import csv
 import shutil
 import subprocess
 
 from urllib.parse import urlparse
 
-from util import WarningContext, warn, lower_first_row, create_missing_directories_if_necessary
+from cards.template import fill_template_fields, fill_card_front, fill_card_back
+from cards.template import template_from_data, template_from_path
+from cards.template import get_column_content, get_sized_card
 
-from template import fill_template_fields, fill_card_front, fill_card_back
-from template import template_from_data, template_from_path
-from template import get_column_content, get_sized_card
+from cards.constants import Columns, TemplateFields
 
-from constants import Columns, TemplateFields
+from cards.util import (
+    WarningContext, warn, lower_first_row,
+    create_missing_directories_if_necessary
+)
 
-__version_info__ = ('0', '4', '9')
-__version__ = '.'.join(__version_info__)
+from cards.version import __version__
 
 
 def is_url(url):
@@ -152,7 +153,7 @@ def fill_metadata_field(field_name: str, field_value: str, in_template: str) -> 
     return in_template
 
 
-def main():
+def generate(args):
     # required arguments
     data_paths = args['input_paths']
 
@@ -602,7 +603,7 @@ def main():
     shutil.copyfile(os.path.join(cwd, 'templates/resources/guide.svg'),
                     os.path.join(resources_path, 'guide.svg'))
 
-    shutil.copyfile(os.path.join(cwd, 'cards.svg'),
+    shutil.copyfile(os.path.join(cwd, 'templates/resources/cards.svg'),
                     os.path.join(resources_path, 'cards.svg'))
 
     # additionally, copy all referenced images to the output directory as well
@@ -622,56 +623,3 @@ def main():
         subprocess.call(('start', output_path), shell=True)
     elif os.name == 'posix':
         subprocess.call(('xdg-open', output_path))
-
-
-def setup_arguments() -> None:
-    """ Sets up required and optional program arguments. """
-
-    # required arguments
-    parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
-                        help='One or more paths to CSV files containing card data')
-
-    # optional arguments
-    parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
-                        help='Path to a directory in which the pages will be generated '
-                             '(a sub-directory will be created)')
-
-    parser.add_argument('-O', '--output-filename', dest='output_filename', required=False,
-                        default='index.html',
-                        help='Name of the generated file')
-
-    parser.add_argument('-d', '--definitions-filename', dest='definitions_path', required=False,
-                        help='Path to a CSV file containing definitions')
-
-    parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
-                        default=False, action='store_true',
-                        help='Force a page break for each datasource')
-
-    parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
-                        default=False, action='store_true',
-                        help='Don\'t show cut guides on the margins of the cards')
-
-    parser.add_argument('--disable-footer', dest='disable_footer', required=False,
-                        default=False, action='store_true',
-                        help='Don\'t show a footer on the generated pages')
-
-    parser.add_argument('--disable-backs', dest='disable_backs', required=False,
-                        default=False, action='store_true',
-                        help='Don\'t generate card backs')
-
-    parser.add_argument('--verbose', dest='verbose', required=False,
-                        default=False, action='store_true',
-                        help='Show more information')
-
-    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__,
-                        help='Show the program\'s version')
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Generates print-ready cards for your tabletop game.')
-
-    setup_arguments()
-
-    args = vars(parser.parse_args())
-
-    main()

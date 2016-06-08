@@ -12,7 +12,7 @@ class WarningContext(object):
         self.card_index = card_index
 
 
-def warn(message: str, in_context: WarningContext=None, as_error: 'apply error color'=False) -> None:
+def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
     """ Display a command-line warning. """
 
     apply_red_color = '\033[31m'
