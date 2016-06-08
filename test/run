@@ -1,0 +1,15 @@
+#!/bin/sh
+CURRENT_DIR=$(dirname "$0")
+
+cd $CURRENT_DIR
+cd ..
+
+python3 -B -m cards -f $CURRENT_DIR/template/cards.csv -o $CURRENT_DIR -O template.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/template/cards-no-template.csv -o $CURRENT_DIR -O template-missing.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/template/cards-with-unused-fields.csv -o $CURRENT_DIR -O template-unused-fields.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/template/cards-with-defs.csv -d $CURRENT_DIR/template/defs.csv -o $CURRENT_DIR -O template-defs.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/template-field/cards.csv -o $CURRENT_DIR -O template-field.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/image-field/cards.csv -o $CURRENT_DIR -O image-field.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/image-field/cards-with-defs.csv -d $CURRENT_DIR/image-field/defs.csv -o $CURRENT_DIR -O image-field-defs.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/count/cards.csv -o $CURRENT_DIR -O count.html --verbose
+python3 -B -m cards -f $CURRENT_DIR/count/cards-no-count.csv -o $CURRENT_DIR -O count-missing.html --verbose
