@@ -1,20 +1,32 @@
-<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards.svg" alt="cards.py" align="left">
+<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards/templates/resources/cards.svg" alt="cards.py" align="left">
 
 # cards.py
 
 A tool for generating print-ready sheets of cards.
 
-Feed it with a [CSV file](example/love-letter/cards.csv) containing all your card data and it will output an HTML file with pages of your cards laid out for easy and efficient cutting. It's like a static site generator, but for cards.
+Feed it with a [CSV file](example/love-letter/cards.csv) containing all your card data and it will output an HTML file with pages of your cards laid out for easy and efficient cutting. It's like a static site generator, but for cards!
 
 Use the print function of your browser to save the pages to a PDF or to print them immediately.
 
 **Currently only A4 pages with Poker-sized cards (2.5x3.5 inches) is supported.**
 
+# Installation
+
+Install straight from the source:
+
+    $ python setup.py install
+
 # Usage
 
-Run from command line:
+When installed, you can run cards.py on the command line:
 
-    $ python cards.py -f cards.csv
+    $ cards -f cards.csv
+
+You can also run cards.py without installing it.
+
+However, in that case, you must execute the `cards` module as a script:
+
+    $ python -m cards -f cards.csv
 
 ## Requirements
 
