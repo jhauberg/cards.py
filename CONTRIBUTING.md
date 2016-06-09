@@ -28,6 +28,12 @@ If it's tough to write a good commit message, it might be a symptom of being bet
 
 ## Make a test
 
-When you fix something, make sure it doesn't break something else.
+**If you fix something, make sure it doesn't break something else.**
 
-Before submitting anything, you should try running the tests from the [test](test) directory (or at least the ones applicable to your fix) and ensure that everything looks right.
+Before submitting anything, you should try running the [tests](test) (or at least the ones applicable to your fix) and ensure that everything looks right.
+
+Each test is simply a "project" containing at least one CSV file.
+
+You can run each test individually, or you can run them all at once by executing the [run](test/run) script.
+
+When you run a test, make sure to use the current development module instead of the currently installed one (the [run](test/run) script does this).
