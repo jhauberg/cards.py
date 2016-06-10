@@ -224,17 +224,19 @@ def generate(args):
     with open(os.path.join(cwd, 'templates/error/back_not_provided.html')) as e:
         template_back_not_provided = e.read()
 
-    CARD_SIZES = {
-        '25x35': 'card-size-25x35',
-        '35x55': 'card-size-35x55'
+    card_sizes = {
+        # small tokens: 0.75x0.75 inches
+        'token': {'class': 'card-size-075x075',
+                  'cards_per_page': (5, 5)},  # (rows, columns)
+        # standard poker cards: 2.5x3.5 inches
+        'standard': {'class': 'card-size-25x35',
+                     'cards_per_page': (3, 3)},
+        # jumbo cards: 3.5x5.5 inches
+        '3.5x5.5': {'class': 'card-size-35x55',
+                    'cards_per_page': (2, 1)},
     }
 
-    default_card_size = CARD_SIZES['25x35']
-
-    # 3x3 cards is the ideal fit for standard sized cards on an A4 page
-    MAX_CARDS_PER_ROW = 3
-    MAX_CARDS_PER_COLUMN = 3
-    MAX_CARDS_PER_PAGE = MAX_CARDS_PER_ROW * MAX_CARDS_PER_COLUMN
+    default_card_size = card_sizes['standard']
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
     cards = ''
@@ -255,15 +257,13 @@ def generate(args):
     # dict of all image paths discovered for each context during card generation
     context_image_paths = {}
 
+    previous_card_size = None
+
     for data_path in data_paths:
         # define the context as the base filename of the current data- useful when troubleshooting
         context = os.path.basename(data_path)
 
         card_size = default_card_size
-
-        # empty backs may be necessary to fill in empty spots on a page to ensure
-        # that the layout remains correct
-        empty_back = get_sized_card(card, card_size, content='')
 
         image_paths = []
 
@@ -271,16 +271,93 @@ def generate(args):
             # read the csv as a dict, so that we can access each column by name
             data = csv.DictReader(lower_first_row(f))
 
+            # get a list of all column names as they are
+            column_names = [column_name.strip() for column_name in data.fieldnames]
+
+            size_identifier = None
+
+            for column_index in range(len(column_names)):
+                column_name = column_names[column_index]
+
+                # look for the '@template' column
+                if column_name.startswith(Columns.TEMPLATE):
+                    # and isn't just '@template-back'
+                    if column_name != Columns.TEMPLATE_BACK:
+                        # then determine preferred card size, if any.
+                        # it should look like e.g. '@template:standard'
+                        size_index = column_name.rfind(':')
+
+                        if size_index != -1:
+                            size_identifier = column_name[size_index + 1:]
+
+                            column_names[column_index] = column_name[:size_index]
+
+                        break
+
+            data.fieldnames = column_names
+
+            if size_identifier is not None and size_identifier in card_sizes:
+                card_size = card_sizes[size_identifier]
+
+            if card_size is not previous_card_size and cards_on_page > 0:
+                # card sizing is different for this datasource, so any remaining cards
+                # must be added to a new page at this point
+                pages += get_page(pages_total + 1, cards, page)
+                pages_total += 1
+
+                if not disable_backs:
+                    cards_on_last_row = cards_on_page % cards_per_row
+
+                    if cards_on_last_row is not 0:
+                        # less than MAX_CARDS_PER_ROW cards were added to the current line,
+                        # so we have to add additional blank filler cards to ensure a correct layout
+
+                        remaining_backs = cards_per_row - cards_on_last_row
+
+                        while remaining_backs > 0:
+                            # keep adding empty filler card backs until we've filled a row
+                            backs_row = empty_back + backs_row
+
+                            remaining_backs -= 1
+
+                    backs += backs_row
+
+                    backs_row = ''
+
+                    # fill another page with the backs
+                    pages += get_page(pages_total + 1, backs, page)
+                    pages_total += 1
+
+                    backs = ''
+
+                # reset to prepare for the next page
+                cards_on_page = 0
+                cards = ''
+
+            cards_per_row, cards_per_column = card_size['cards_per_page']
+            max_cards_per_page = cards_per_row * cards_per_column
+
+            card_size_class = card_size['class']
+
+            # empty backs may be necessary to fill in empty spots on a page to ensure
+            # that the layout remains correct
+            empty_back = get_sized_card(card, card_size_class, content='')
+
             if disable_auto_templating:
                 default_template = None
             else:
-                # get a fitting template for the first row of data
+                # get a fitting template by analyzing the content of the data
                 default_template = template_from_data(data)
 
                 # reset the iterator
                 f.seek(0)
 
-                data = csv.DictReader(lower_first_row(f))
+                # and start over
+                data = csv.DictReader(lower_first_row(f), fieldnames=column_names)
+
+                # setting fieldnames explicitly causes the first row to be treated as data,
+                # so skip it
+                next(data)
 
             if default_template is None and Columns.TEMPLATE not in data.fieldnames:
                 if is_verbose:
@@ -295,12 +372,12 @@ def generate(args):
                          'You can disable card backs by specifying the --disable-backs argument.',
                          in_context=WarningContext(context))
             else:
+                disable_backs = True
+
                 if is_verbose:
                     warn('Card backs will not be generated since '
                          '\'' + Columns.TEMPLATE_BACK + '\' does not appear in data.',
                          in_context=WarningContext(context))
-
-                disable_backs = True
 
             row_index = 1
 
@@ -408,7 +485,7 @@ def generate(args):
 
                     image_paths.extend(found_image_paths)
 
-                    current_card = get_sized_card(card, card_size, card_content)
+                    current_card = get_sized_card(card, card_size_class, card_content)
 
                     cards += current_card
 
@@ -463,7 +540,7 @@ def generate(args):
 
                         image_paths.extend(found_image_paths)
 
-                        current_card_back = get_sized_card(card, card_size, back_content)
+                        current_card_back = get_sized_card(card, card_size_class, back_content)
 
                         # prepend this card back to the current line of backs
                         backs_row = current_card_back + backs_row
@@ -471,7 +548,7 @@ def generate(args):
                         # card backs are prepended rather than appended to
                         # ensure correct layout when printing doublesided
 
-                        if cards_on_page % MAX_CARDS_PER_ROW is 0:
+                        if cards_on_page % cards_per_row is 0:
                             # a line has been filled- append the 3 card backs
                             # to the page in the right order
                             backs += backs_row
@@ -479,7 +556,7 @@ def generate(args):
                             # reset to prepare for the next line
                             backs_row = ''
 
-                    if cards_on_page == MAX_CARDS_PER_PAGE:
+                    if cards_on_page == max_cards_per_page:
                         # add another page full of cards
                         pages += get_page(pages_total + 1, cards, page)
                         pages_total += 1
@@ -503,13 +580,13 @@ def generate(args):
             pages_total += 1
 
             if not disable_backs:
-                cards_on_last_row = cards_on_page % MAX_CARDS_PER_ROW
+                cards_on_last_row = cards_on_page % cards_per_row
 
                 if cards_on_last_row is not 0:
                     # less than MAX_CARDS_PER_ROW cards were added to the current line,
                     # so we have to add additional blank filler cards to ensure a correct layout
 
-                    remaining_backs = MAX_CARDS_PER_ROW - cards_on_last_row
+                    remaining_backs = cards_per_row - cards_on_last_row
 
                     while remaining_backs > 0:
                         # keep adding empty filler card backs until we've filled a row
@@ -530,6 +607,8 @@ def generate(args):
             # reset to prepare for the next page
             cards_on_page = 0
             cards = ''
+
+        previous_card_size = card_size
 
         # ensure there are no duplicate image paths, since that would just
         # cause unnecessary copy operations

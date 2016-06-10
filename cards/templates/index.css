@@ -50,15 +50,21 @@ html, body {
   height: 100%;
 }
 
+.card-size-075x075 {
+  /* Small token */
+  width:  .75in;
+  height: .75in;
+}
+
 .card-size-25x35 {
   /* Standard card */
-  width: 2.5in;
+  width:  2.5in;
   height: 3.5in;
 }
 
 .card-size-35x55 {
   /* Jumbo card */
-  width: 3.5in;
+  width:  3.5in;
   height: 5.5in;
 }
 

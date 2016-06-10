@@ -363,10 +363,10 @@ def get_column_content(row: dict, column: str, definitions: dict, default_conten
     return column_content
 
 
-def get_sized_card(card: str, size: str, content: str) -> str:
+def get_sized_card(card: str, size_class: str, content: str) -> str:
     """ Populates and returns a card in a given size with the specified content. """
 
-    card = fill_template_fields(TemplateFields.CARD_SIZE, size, in_template=card)
+    card = fill_template_fields(TemplateFields.CARD_SIZE, size_class, in_template=card)
     card = fill_template_fields(TemplateFields.CARD_CONTENT, content, in_template=card)
 
     return card
