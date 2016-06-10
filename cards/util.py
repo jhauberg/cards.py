@@ -40,17 +40,6 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
     print(apply_color + message_content + apply_normal_color)
 
 
-def dict_from_string(string: 'a string of key-value pairs') -> dict:
-    """ Returns a dictionary object parsed from a string containing comma-separated key-value pairs.
-
-        For example: "a_key=a_value, another_key=another_value"
-    """
-    if string is None or len(string) == 0:
-        return None
-
-    return dict(kvp.strip().split('=') for kvp in string.split(','))
-
-
 def most_common(objects: list) -> object:
     """ Returns the object that occurs most frequently in a list of objects. """
 
