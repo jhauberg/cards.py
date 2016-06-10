@@ -8,8 +8,6 @@ Feed it with a [CSV file](example/love-letter/cards.csv) containing all your car
 
 Use the print function of your browser to save the pages to a PDF or to print them immediately.
 
-**Currently only A4 pages with Poker-sized cards (2.5x3.5 inches) is supported.**
-
 # Installation
 
 Install straight from the source:
