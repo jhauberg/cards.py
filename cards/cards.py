@@ -227,7 +227,7 @@ def generate(args):
     card_sizes = {
         # small tokens: 0.75x0.75 inches
         'token': {'class': 'card-size-075x075',
-                  'cards_per_page': (5, 5)},  # (rows, columns)
+                  'cards_per_page': (14, 10)},  # (rows, columns)
         # standard poker cards: 2.5x3.5 inches
         'standard': {'class': 'card-size-25x35',
                      'cards_per_page': (3, 3)},
@@ -636,6 +636,11 @@ def generate(args):
         pages = fill_template_fields(
             field_name=TemplateFields.CARDS_TOTAL,
             field_value=str(cards_total),
+            in_template=pages)
+
+        pages = fill_template_fields(
+            field_name=TemplateFields.PAGES_TOTAL,
+            field_value=str(pages_total),
             in_template=pages)
 
         # pages must be inserted prior to filling metadata fields,
