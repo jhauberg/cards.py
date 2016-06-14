@@ -38,6 +38,52 @@ html, body {
   text-align: center;
 }
 
+.ui {
+  /* We want this stuff floating around */
+  position: fixed;
+
+  margin-top: .5cm;
+}
+
+.ui-button {
+    -moz-transition-duration: 0.4s;
+    -webkit-transition-duration: 0.4s;
+    transition-duration: 0.4s;
+
+    border: none;
+
+    display: block;
+
+    margin: 12px 0 0 0;
+    padding: 12px 24px;
+
+    min-width: 110px;
+
+    text-decoration: none;
+
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: .8em;
+
+    text-align: left;
+
+    background-color: black;
+    color: white;
+
+    cursor: pointer;
+}
+
+.ui-button:hover {
+  opacity: 0.6;
+}
+
+.ui-button-print {
+  margin-top: 1cm;
+
+  font-size: 1.2em;
+
+  background-color: black;
+}
+
 .card {
   position: relative;
 }
@@ -187,6 +233,13 @@ html, body {
 @media print {
   html, body {
     background-color: #fff;
+  }
+
+  .ui {
+    /* We don't want to just hide these elements; we want to pretend they aren't even there, so that
+       they don't take up any space. Note that hiding cut guides or footer uses `visibility: hidden`
+       instead, as those *should* still take up space, but just be invisible. */
+    display: none;
   }
 
   .page {
