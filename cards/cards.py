@@ -85,6 +85,7 @@ def copy_images_to_output_directory(
     """ Copies all provided images to the specified output path, keeping the directory structure
         intact for each image.
     """
+
     context = os.path.basename(root_path)
 
     for image_path in image_paths:
@@ -145,10 +146,14 @@ def get_page(page_number: int, cards: str, page_template: str) -> str:
 
 
 def fill_metadata_field(field_name: str, field_value: str, in_template: str) -> str:
-    field_value = field_value.strip()
-    field_visibility = 'hidden' if len(field_value) == 0 else 'visible'
+    """ Fills a metadata field like e.g. `title` or `description` and determines
+        whether or not the field should be displayed or hidden.
+    """
 
-    in_template = fill_template_fields('{0}_visibility'.format(field_name), field_visibility, in_template)
+    field_value = field_value.strip()
+    field_display = 'none' if len(field_value) == 0 else 'block'
+
+    in_template = fill_template_fields('{0}_display'.format(field_name), field_display, in_template)
     in_template = fill_template_fields(field_name, field_value, in_template)
 
     return in_template
@@ -163,8 +168,6 @@ def generate(args):
     output_filename = args['output_filename']
     definitions_path = args['definitions_path']
     force_page_breaks = args['force_page_breaks']
-    disable_cut_guides = bool(args['disable_cut_guides'])
-    disable_footer = bool(args['disable_footer'])
     disable_backs = bool(args['disable_backs'])
     is_verbose = bool(args['verbose'])
 
@@ -193,17 +196,9 @@ def generate(args):
         # load the container template for a card
         card = c.read()
 
-        cut_guides_visibility = 'hidden' if disable_cut_guides else 'visible'
-
-        card = fill_template_fields('cut_guides_visibility', cut_guides_visibility, card)
-
     with open(os.path.join(cwd, 'templates/page.html')) as p:
         # load the container template for a page
         page = p.read()
-
-        footer_visibility = 'hidden' if disable_footer else 'visible'
-
-        page = fill_template_fields('footer_visibility', footer_visibility, page)
 
     with open(os.path.join(cwd, 'templates/index.html')) as i:
         # load the container template for the final html file

@@ -8,10 +8,60 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="Cards generated using https://github.com/jhauberg/cards.py {{ program_version }}">
+
+    <script type="text/javascript">
+      function toggleVisibility(className) {
+        var elements = document.getElementsByClassName(className);
+
+        if (elements.length > 0) {
+          for (var i = 0; i < elements.length; i++) {
+            var element = elements[i];
+            var previousVisibility = element.style.visibility;
+
+            element.style.visibility =
+              (!previousVisibility || previousVisibility == 'visible') ?
+                'hidden' :
+                'visible';
+          }
+
+          return elements[0].style.visibility;
+        }
+      }
+
+      function getActionFromVisibility(visibility) {
+        return (visibility == 'visible') ? 'HIDE' : 'SHOW';
+      }
+
+      function toggleFooter() {
+        visibility = toggleVisibility('page-footer');
+
+        if (visibility) {}
+          var toggleButton = document.getElementById("toggle-footer");
+
+          toggleButton.innerHTML = '<b>' + getActionFromVisibility(visibility) + '</b><br />FOOTER'
+        }
+      }
+
+      function toggleCutGuides() {
+        visibility = toggleVisibility('cut-guide');
+
+        if (visibility) {
+          var toggleButton = document.getElementById("toggle-cut-guides");
+
+          toggleButton.innerHTML = '<b>' + getActionFromVisibility(visibility) + '</b><br />CUT GUIDES'
+        }
+      }
+    </script>
   </head>
   <body>
     <div class="ui">
-      <button class="ui-button ui-button-print" onclick="javascript:window.print();">
+      <button id="toggle-footer" class="ui-button ui-button-toggle" onclick="toggleFooter();">
+        <b>HIDE</b><br />FOOTER
+      </button>
+      <button id="toggle-cut-guides" class="ui-button ui-button-toggle" onclick="toggleCutGuides();">
+        <b>HIDE</b><br />CUT GUIDES
+      </button>
+      <button class="ui-button ui-button-print" onclick="window.print();">
         <b>PRINT</b>
       </button>
     </div>

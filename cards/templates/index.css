@@ -76,6 +76,12 @@ html, body {
   opacity: 0.6;
 }
 
+.ui-button-toggle {
+  background-color: grey;
+
+  min-width: 160px;
+}
+
 .ui-button-print {
   margin-top: 1cm;
 
