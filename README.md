@@ -37,7 +37,7 @@ However, in that case, you must execute the `cards` module as a script:
 
 ## Documentation
 
-See the [wiki](wiki)
+See the [wiki](https://github.com/jhauberg/cards.py/wiki)
 
 ## Examples
 
