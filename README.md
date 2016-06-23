@@ -35,6 +35,10 @@ However, in that case, you must execute the `cards` module as a script:
   * Safari
   * Chrome
 
+## Documentation
+
+See the [wiki](wiki)
+
 ## Examples
 
 See [Trickbook](https://github.com/jhauberg/trickbook), or [Dungeon Deck](https://github.com/jhauberg/dungeon-deck) for examples of real projects.
