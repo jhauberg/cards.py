@@ -151,6 +151,7 @@ def fill_metadata_field(field_name: str, field_value: str, in_template: str) -> 
     """
 
     field_value = field_value.strip()
+    # these are css values; 'none' means hidden and taking up no space, while 'block' is the default
     field_display = 'none' if len(field_value) == 0 else 'block'
 
     in_template = fill_template_fields('{0}_display'.format(field_name), field_display, in_template)
@@ -221,14 +222,20 @@ def generate(args):
 
     card_sizes = {
         # small tokens: 0.75x0.75 inches
-        'token': {'class': 'card-size-075x075',
-                  'cards_per_page': (14, 10)},  # (rows, columns)
+        'token':
+            {'class': 'card-size-075x075', 'cards_per_page': (14, 10)},  # (rows, columns)
         # standard poker cards: 2.5x3.5 inches
-        'standard': {'class': 'card-size-25x35',
-                     'cards_per_page': (3, 3)},
+        'standard':
+            {'class': 'card-size-25x35', 'cards_per_page': (3, 3)},
+        # standard poker cards in landscape: 3.5x2.5 inches
+        'standard-landscape':
+            {'class': 'card-size-35x25', 'cards_per_page': (4, 2)},
         # jumbo cards: 3.5x5.5 inches
-        '3.5x5.5': {'class': 'card-size-35x55',
-                    'cards_per_page': (2, 1)},
+        'jumbo':
+            {'class': 'card-size-35x55', 'cards_per_page': (2, 1)},
+        # domino cards: 1.75x3.5 inches
+        'domino':
+            {'class': 'card-size-175x35', 'cards_per_page': (4, 3)},
     }
 
     default_card_size = card_sizes['standard']

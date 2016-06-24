@@ -114,10 +114,22 @@ html, body {
   height: 3.5in;
 }
 
+.card-size-35x25 {
+  /* Standard card in landscape */
+  width:  3.5in;
+  height: 2.5in;
+}
+
 .card-size-35x55 {
   /* Jumbo card */
   width:  3.5in;
   height: 5.5in;
+}
+
+.card-size-175x35 {
+  /* Domino card */
+  width:  1.75in;
+  height: 3.5in;
 }
 
 .page {
