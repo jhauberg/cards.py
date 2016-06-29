@@ -35,6 +35,19 @@ def is_url(url):
     return urlparse(url).scheme != ""
 
 
+def open_path(path: str) -> None:
+    """ Opens a path in a cross-platform manner;
+        showing e.g. Finder on MacOS or Explorer on Windows
+    """
+
+    if sys.platform.startswith('darwin'):
+        subprocess.call(('open', path))
+    elif os.name == 'nt':
+        subprocess.call(('start', path), shell=True)
+    elif os.name == 'posix':
+        subprocess.call(('xdg-open', path))
+
+
 def find_file_path(name: str, paths: list) -> (bool, str):
     """ Look for a path with 'name' in the filename in the specified paths.
 
@@ -125,7 +138,8 @@ def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
     if path is not None and len(path) > 0:
         if not os.path.isfile(path):
             if verbosely:
-                warn('No definitions file was found at: \033[4;31m\'{0}\'\033[0m'.format(path),
+                warn('No definitions file was found at: '
+                     '\033[4;31m\'{0}\'\033[0m'.format(path),
                      as_error=True)
         else:
             with open(path) as f:
@@ -339,7 +353,7 @@ def generate(args):
             cards_per_row, cards_per_column = card_size['cards_per_page']
             max_cards_per_page = cards_per_row * cards_per_column
 
-            card_size_class = card_size['class']
+            card_size_class = str(card_size['class'])
 
             # empty backs may be necessary to fill in empty spots on a page to ensure
             # that the layout remains correct
@@ -400,7 +414,7 @@ def generate(args):
                         # count could not be determined, so default to skip this card
                         count = 0
 
-                        warn('The card provided an indeterminable count and was was skipped.',
+                        warn('The card provided an indeterminable count and was skipped.',
                              in_context=WarningContext(context, row_index))
                 else:
                     # the count column did not have content, so default count to 1
@@ -470,7 +484,7 @@ def generate(args):
                         definitions)
 
                     if (template is not template_not_provided and
-                        template is not template_not_opened):
+                       template is not template_not_opened):
                         missing_fields_in_template = missing_fields[0]
                         missing_fields_in_data = missing_fields[1]
 
@@ -525,7 +539,7 @@ def generate(args):
                             definitions)
 
                         if (template_back is not template_back_not_provided and
-                            template_back is not template_not_opened):
+                           template_back is not template_not_opened):
                             missing_fields_in_template = missing_fields[0]
                             missing_fields_in_data = missing_fields[1]
 
@@ -704,9 +718,4 @@ def generate(args):
                   pages_total, pages_or_page,
                   output_path))
 
-    if sys.platform.startswith('darwin'):
-        subprocess.call(('open', output_path))
-    elif os.name == 'nt':
-        subprocess.call(('start', output_path), shell=True)
-    elif os.name == 'posix':
-        subprocess.call(('xdg-open', output_path))
+    open_path(output_path)

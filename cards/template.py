@@ -351,6 +351,8 @@ def get_back_data(row: dict) -> dict:
 
 
 def get_column_content(row: dict, column: str, definitions: dict, default_content: str=None) -> str:
+    """ Returns the content of a column with the appropriate definition fields filled. """
+
     column_content = row.get(column, default_content)
 
     if column_content is not None:
