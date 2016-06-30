@@ -90,6 +90,111 @@ def find_file_path(name: str, paths: list) -> (bool, str):
             (False, first_potential_path))
 
 
+def warn_image_not_copied(context: WarningContext, image_path: str) -> None:
+    warn('An image was not copied to the output directory since it was specified with '
+         'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path),
+         in_context=context)
+
+
+def warn_missing_image(context: WarningContext, image_path: str) -> None:
+    warn('One or more cards contain an image reference that does not exist: '
+         '\033[4;31m\'{0}\'\033[0m'.format(image_path),
+         in_context=context,
+         as_error=True)
+
+
+def warn_bad_definitions_file(definitions_path: str) -> None:
+    warn('No definitions file was found at: '
+         '\033[4;31m\'{0}\'\033[0m'.format(definitions_path),
+         as_error=True)
+
+
+def warn_using_automatically_found_definitions(definitions_path: str) -> None:
+    warn('No definitions have been specified. Using definitions automatically found at: '
+         '\033[4;33m\'{0}\'\033[0m'.format(definitions_path))
+
+
+def warn_assume_backs(context: WarningContext) -> None:
+    warn('Assuming card backs should be generated since ' +
+         '\'' + Columns.TEMPLATE_BACK + '\' appears in data. '
+         'You can disable card backs by specifying the --disable-backs argument.',
+         in_context=context)
+
+
+def warn_no_backs(context: WarningContext) -> None:
+    warn('Card backs will not be generated since \'' + Columns.TEMPLATE_BACK + '\''
+         ' does not appear in data.',
+         in_context=context)
+
+
+def warn_indeterminable_count(context: WarningContext) -> None:
+    warn('The card provided an indeterminable count and was skipped.',
+         in_context=context)
+
+
+def warn_missing_default_template(context: WarningContext) -> None:
+    warn('A template was not provided and auto-templating is not enabled.'
+         'Cards will not be generated correctly.',
+         in_context=context)
+
+
+def warn_missing_template(context: WarningContext) -> None:
+    warn('The card did not provide a template.',
+         in_context=context,
+         as_error=True)
+
+
+def warn_empty_template(context: WarningContext,
+                        template_path: str,
+                        is_back_template: bool=False) -> None:
+    warning = ('The card provided a back template that appears to be empty: '
+               '\033[4;33m\'{0}\'\033[0;33m.'
+               if is_back_template else
+               'The card provided a template that appears to be empty: '
+               '\033[4;33m\'{0}\'\033[0;33m. '
+               'The card will use an auto-template instead, if possible.')
+
+    warn(warning.format(template_path), in_context=context)
+
+
+def warn_using_auto_template(context: WarningContext) -> None:
+    warn('The card did not provide a template. The card will use an auto-template instead.',
+         in_context=context)
+
+
+def warn_unknown_fields_in_template(context: WarningContext,
+                                    unknown_fields: list,
+                                    is_back_template: bool=False) -> None:
+    warning = ('The back template contains fields that are not present for this card: {0}'
+               if is_back_template else
+               'The template contains fields that are not present for this card: {0}')
+
+    warn(warning.format(unknown_fields), in_context=context)
+
+
+def warn_missing_fields_in_template(context: WarningContext,
+                                    missing_fields: list,
+                                    is_back_template: bool=False) -> None:
+    warning = ('The back template does not contain the fields: {0}'
+               if is_back_template else
+               'The template does not contain the fields: {0}')
+
+    warn(warning.format(missing_fields), in_context=context)
+
+
+def warn_bad_template_path(context: WarningContext,
+                           template_path: str,
+                           is_back: bool=False) -> None:
+    warning = ('The card provided a back template that could not be opened: '
+               '\033[4;31m\'{0}\'\033[0m'
+               if is_back else
+               'The card provided a template that could not be opened: '
+               '\033[4;31m\'{0}\'\033[0m')
+
+    warn(warning.format(template_path), in_context=context,
+         as_error=True)
+
+
 def copy_images_to_output_directory(
         image_paths: list,
         root_path: str,
@@ -106,9 +211,7 @@ def copy_images_to_output_directory(
         # using an absolute path, assume that it should not be copied)
         if os.path.isabs(image_path) or is_url(image_path):
             if verbosely:
-                warn('An image was not copied to the output directory since it was specified with '
-                     'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path),
-                     in_context=WarningContext(context))
+                warn_image_not_copied(WarningContext(context), image_path)
         else:
             # if the image path is not an absolute path, assume
             # that it's located relative to where the data is
@@ -126,10 +229,7 @@ def copy_images_to_output_directory(
 
                 shutil.copyfile(relative_source_path, relative_destination_path)
             else:
-                warn('One or more cards contain an image reference that does not exist: '
-                     '\033[4;31m\'{0}\'\033[0m'.format(relative_source_path),
-                     in_context=WarningContext(context),
-                     as_error=True)
+                warn_missing_image(WarningContext(context), relative_source_path)
 
 
 def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
@@ -138,9 +238,7 @@ def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
     if path is not None and len(path) > 0:
         if not os.path.isfile(path):
             if verbosely:
-                warn('No definitions file was found at: '
-                     '\033[4;31m\'{0}\'\033[0m'.format(path),
-                     as_error=True)
+                warn_bad_definitions_file(path)
         else:
             with open(path) as f:
                 # skip the first row (column headers)
@@ -195,8 +293,7 @@ def generate(args):
         if found and potential_definitions_path is not None:
             definitions_path = potential_definitions_path
 
-            warn('No definitions have been specified. Using definitions automatically found at: '
-                 '\033[4;33m\'{0}\'\033[0m'.format(definitions_path))
+            warn_using_automatically_found_definitions(definitions_path)
 
     definitions = get_definitions(definitions_path)
 
@@ -371,29 +468,22 @@ def generate(args):
                 # and start over
                 data = csv.DictReader(lower_first_row(f), fieldnames=column_names)
 
-                # setting fieldnames explicitly causes the first row to be treated as data,
-                # so skip it
+                # setting fieldnames explicitly causes the first row
+                # to be treated as data, so skip it
                 next(data)
 
             if default_template is None and Columns.TEMPLATE not in data.fieldnames:
                 if is_verbose:
-                    warn('A default template was not provided and auto-templating is not enabled.'
-                         'Cards will not be generated correctly.',
-                         in_context=WarningContext(context))
+                    warn_missing_default_template(WarningContext(context))
 
             if not disable_backs and Columns.TEMPLATE_BACK in data.fieldnames:
                 if is_verbose:
-                    warn('Assuming card backs should be generated since ' +
-                         '\'' + Columns.TEMPLATE_BACK + '\' appears in data. '
-                         'You can disable card backs by specifying the --disable-backs argument.',
-                         in_context=WarningContext(context))
+                    warn_assume_backs(WarningContext(context))
             else:
                 disable_backs = True
 
                 if is_verbose:
-                    warn('Card backs will not be generated since '
-                         '\'' + Columns.TEMPLATE_BACK + '\' does not appear in data.',
-                         in_context=WarningContext(context))
+                    warn_no_backs(WarningContext(context))
 
             row_index = 1
 
@@ -414,8 +504,7 @@ def generate(args):
                         # count could not be determined, so default to skip this card
                         count = 0
 
-                        warn('The card provided an indeterminable count and was skipped.',
-                             in_context=WarningContext(context, row_index))
+                        warn_indeterminable_count(WarningContext(context, row_index))
                 else:
                     # the count column did not have content, so default count to 1
                     count = 1
@@ -450,33 +539,23 @@ def generate(args):
                         if not_found:
                             template = template_not_opened
 
-                            warn('The card provided a template that could not be opened: '
-                                 '\033[4;31m\'{0}\'\033[0m'.format(template_path),
-                                 in_context=WarningContext(context, row_index, card_index),
-                                 as_error=True)
+                            warn_bad_template_path(
+                                WarningContext(context, row_index, card_index), template_path)
                         elif is_verbose and len(template) == 0:
                             template = default_template
 
-                            warn('The card provided a template that appears to be empty: '
-                                 '\033[4;33m\'{0}\'\033[0;33m. '
-                                 'The card will use an auto-template instead.'
-                                 .format(template_path),
-                                 in_context=WarningContext(context, row_index, card_index))
+                            warn_empty_template(
+                                WarningContext(context, row_index, card_index), template_path)
                     else:
                         template = default_template
 
                         if template is not None and is_verbose:
-                            warn('The card did not provide a template. '
-                                 'The card will use an auto-template instead.'
-                                 .format(template_path),
-                                 in_context=WarningContext(context, row_index, card_index))
+                            warn_using_auto_template(WarningContext(context, row_index, card_index))
 
                     if template is None:
                         template = template_not_provided
 
-                        warn('The card did not provide a template.',
-                             in_context=WarningContext(context, row_index, card_index),
-                             as_error=True)
+                        warn_missing_template(WarningContext(context, row_index, card_index))
 
                     card_content, found_image_paths, missing_fields = fill_card_front(
                         template, template_path,
@@ -489,15 +568,14 @@ def generate(args):
                         missing_fields_in_data = missing_fields[1]
 
                         if len(missing_fields_in_template) > 0 and is_verbose:
-                            warn('The template does not contain the fields: {0}'
-                                 .format(missing_fields_in_template),
-                                 in_context=WarningContext(context, row_index, card_index))
+                            warn_missing_fields_in_template(
+                                WarningContext(context, row_index, card_index),
+                                missing_fields_in_template)
 
                         if len(missing_fields_in_data) > 0 and is_verbose:
-                            warn('The template contains fields that are not '
-                                 'present for this card: {0}'
-                                 .format(missing_fields_in_data),
-                                 in_context=WarningContext(context, row_index, card_index))
+                            warn_unknown_fields_in_template(
+                                WarningContext(context, row_index, card_index),
+                                missing_fields_in_data)
 
                     image_paths.extend(found_image_paths)
 
@@ -521,14 +599,13 @@ def generate(args):
                             if not_found:
                                 template_back = template_not_opened
 
-                                warn('The card provided a back template that could not be opened: '
-                                     '\033[4;31m\'{0}\'\033[0m'.format(template_path_back),
-                                     in_context=WarningContext(context, row_index, card_index),
-                                     as_error=True)
+                                warn_bad_template_path(
+                                    WarningContext(context, row_index, card_index),
+                                    template_path_back, is_back=True)
                             elif is_verbose and len(template_back) == 0:
-                                warn('The card provided a back template that appears to be empty: '
-                                     '\033[4;33m\'{0}\'\033[0;33m.'.format(template_path_back),
-                                     in_context=WarningContext(context, row_index, card_index))
+                                warn_empty_template(
+                                    WarningContext(context, row_index, card_index),
+                                    template_path_back, is_back_template=True)
 
                         if template_back is None:
                             template_back = template_back_not_provided
@@ -544,15 +621,14 @@ def generate(args):
                             missing_fields_in_data = missing_fields[1]
 
                             if len(missing_fields_in_template) > 0 and is_verbose:
-                                warn('The back template does not contain the fields: {0}'
-                                     .format(missing_fields_in_template),
-                                     in_context=WarningContext(context, row_index, card_index))
+                                warn_missing_fields_in_template(
+                                    WarningContext(context, row_index, card_index),
+                                    missing_fields_in_template, is_back_template=True)
 
                             if len(missing_fields_in_data) > 0 and is_verbose:
-                                warn('The back template contains fields '
-                                     'that are not present for this card: {0}'
-                                     .format(missing_fields_in_data),
-                                     in_context=WarningContext(context, row_index, card_index))
+                                warn_unknown_fields_in_template(
+                                    WarningContext(context, row_index, card_index),
+                                    missing_fields_in_data, is_back_template=True)
 
                         image_paths.extend(found_image_paths)
 
@@ -624,6 +700,8 @@ def generate(args):
             cards_on_page = 0
             cards = ''
 
+        # store the card size that was just used, so we can determine
+        # whether or not the size changes for the next datasource
         previous_card_size = card_size
 
         # ensure there are no duplicate image paths, since that would just
