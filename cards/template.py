@@ -183,7 +183,11 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set
         by any matching fields in the provided data.
     """
 
+    # any discovered image paths from image fields
     image_paths = []
+
+    # any field that is in the data, but not found in the template; for example, if there's
+    # a 'rank' column in the data, but no {{ rank }} field in the template
     missing_fields_in_template = []
 
     # go through each data field for this card (row)
@@ -213,6 +217,8 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set
 
     image_paths.extend(filled_image_paths)
 
+    # any template field visible in the template, but not found in the data; for example, if
+    # the template has a {{ rank }} field (or more), but no 'rank' column in the data
     missing_fields_in_data = []
 
     # find any remaining template fields so we can warn that they were not filled

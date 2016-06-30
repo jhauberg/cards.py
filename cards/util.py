@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import sys
 import subprocess
 import itertools
 import errno
@@ -9,6 +10,8 @@ from urllib.parse import urlparse
 
 
 class WarningContext(object):
+    """ Represents the context of a warning. """
+
     def __init__(self, name: str, row_index: int=-1, card_index: int=-1):
         self.name = name
         self.row_index = row_index
@@ -55,8 +58,9 @@ def lower_first_row(rows):
     return itertools.chain([next(rows).lower()], rows)
 
 
-def is_url(url):
-    return urlparse(url).scheme != ""
+def is_url(string: str) -> bool:
+    """ Determines whether a string is an url or not. """
+    return urlparse(string).scheme != ""
 
 
 def open_path(path: str) -> None:
