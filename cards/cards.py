@@ -10,12 +10,8 @@ License: MIT (see LICENSE)
 """
 
 import os
-import sys
 import csv
 import shutil
-import subprocess
-
-from urllib.parse import urlparse
 
 from cards.template import fill_template_fields, fill_card_front, fill_card_back
 from cards.template import template_from_data, template_from_path
@@ -25,69 +21,11 @@ from cards.constants import Columns, TemplateFields
 
 from cards.util import (
     WarningContext, warn, lower_first_row,
+    is_url, find_file_path, open_path,
     create_missing_directories_if_necessary
 )
 
 from cards.version import __version__
-
-
-def is_url(url):
-    return urlparse(url).scheme != ""
-
-
-def open_path(path: str) -> None:
-    """ Opens a path in a cross-platform manner;
-        showing e.g. Finder on MacOS or Explorer on Windows
-    """
-
-    if sys.platform.startswith('darwin'):
-        subprocess.call(('open', path))
-    elif os.name == 'nt':
-        subprocess.call(('start', path), shell=True)
-    elif os.name == 'posix':
-        subprocess.call(('xdg-open', path))
-
-
-def find_file_path(name: str, paths: list) -> (bool, str):
-    """ Look for a path with 'name' in the filename in the specified paths.
-
-        If found, returns the first discovered path to a file containing the specified name,
-        otherwise returns the first potential path to where it looked for one.
-    """
-
-    found_path = None
-    first_potential_path = None
-
-    if len(paths) > 0:
-        # first look for a file simply named exactly the specified name- we'll just use
-        # the first provided path and assume that this is the main directory
-        path_directory = os.path.dirname(paths[0])
-
-        potential_path = os.path.join(path_directory, name)
-
-        if os.path.isfile(potential_path):
-            # we found one
-            found_path = potential_path
-
-    if found_path is None:
-        # then attempt looking for a file named like 'some_file.the-name.csv' for each
-        # provided path until a file is found, if any
-        for path in paths:
-            path_components = os.path.splitext(path)
-
-            potential_path = path_components[0] + '.' + name
-
-            if first_potential_path is None:
-                first_potential_path = potential_path
-
-            if os.path.isfile(potential_path):
-                # we found one
-                found_path = potential_path
-
-                break
-
-    return ((True, found_path) if found_path is not None else
-            (False, first_potential_path))
 
 
 def warn_image_not_copied(context: WarningContext, image_path: str) -> None:
