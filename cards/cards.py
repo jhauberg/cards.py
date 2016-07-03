@@ -424,11 +424,15 @@ def generate(args):
                     warn_no_backs(WarningContext(context))
 
             row_index = 1
+            card_copy_index = 0
 
             for row in data:
                 # since the column names counts as a row, and most editors
                 # do not use a zero-based row index, the first row == 2
                 row_index += 1
+
+                # this is the shared index for any instance of this card
+                card_copy_index += 1
 
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
@@ -497,7 +501,7 @@ def generate(args):
 
                     card_content, found_image_paths, missing_fields = fill_card_front(
                         template, template_path,
-                        row, row_index, card_index,
+                        row, row_index, card_index, card_copy_index,
                         definitions)
 
                     if (template is not template_not_provided and
@@ -550,7 +554,7 @@ def generate(args):
 
                         back_content, found_image_paths, missing_fields = fill_card_back(
                             template_back, template_path_back,
-                            row, row_index, card_index,
+                            row, row_index, card_index, card_copy_index,
                             definitions)
 
                         if (template_back is not template_back_not_provided and

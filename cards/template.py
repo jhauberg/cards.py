@@ -280,6 +280,7 @@ def fill_card(
         row: dict,
         row_index: int,
         card_index: int,
+        card_copy_index: int,
         definitions: dict) -> (str, list, list):
     """ Returns the contents of a card using the specified template. """
 
@@ -305,10 +306,16 @@ def fill_card(
         field_value=str(card_index),
         in_template=template)
 
+    template = fill_template_fields(
+        field_name=TemplateFields.CARD_COPY_INDEX,
+        field_value=str(card_copy_index),
+        in_template=template)
+
     # card data might contain these three fields, but they would not have been rendered
     # during fill_template(), so make sure to remove them from the missing list if necessary
     except_fields = {TemplateFields.CARD_INDEX,
                      TemplateFields.CARD_ROW_INDEX,
+                     TemplateFields.CARD_COPY_INDEX,
                      TemplateFields.CARD_TEMPLATE_PATH}
 
     missing_fields = (missing_fields[0], missing_fields[1] - except_fields)
@@ -322,11 +329,12 @@ def fill_card_front(
         row: dict,
         row_index: int,
         card_index: int,
+        card_copy_index: int,
         definitions: dict) -> (str, list, list):
     """ Returns the contents of the front of a card using the specified template. """
 
     return fill_card(template, template_path, get_front_data(row),
-                     row_index, card_index, definitions)
+                     row_index, card_index, card_copy_index, definitions)
 
 
 def fill_card_back(
@@ -335,11 +343,12 @@ def fill_card_back(
         row: dict,
         row_index: int,
         card_index: int,
+        card_copy_index: int,
         definitions: dict) -> (str, list, list):
     """ Returns the contents of the back of a card using the specified template. """
 
     return fill_card(template, template_path, get_back_data(row),
-                     row_index, card_index, definitions)
+                     row_index, card_index, card_copy_index, definitions)
 
 
 def get_front_data(row: dict) -> dict:

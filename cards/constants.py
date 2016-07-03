@@ -22,6 +22,7 @@ class TemplateFields:
 
     # Optional fields (user fields)
     CARD_INDEX = 'card_index'                   # Optional field that is replaced with the index of the card (1 being the first index)
+    CARD_COPY_INDEX = 'card_copy_index'         # Optional field that is replaced with the copy index of the card (1 being the first index). This is the same index for any instance of this card
     CARD_ROW_INDEX = 'card_row_index'           # Optional field that is replaced with the index of the card in the datasource (2 being the first index, since the CSV header counts as the first row)
     CARD_TEMPLATE_PATH = 'card_template_path'   # Optional field that is replaced with the path of the template used to generate the card
     CARDS_TOTAL = 'cards_total'                 # Optional field that is replaced with the total amount of all generated cards
