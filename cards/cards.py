@@ -305,6 +305,8 @@ def generate(args):
     # incremented each time a page is generated
     pages_total = 0
 
+    card_copy_index = 0
+
     # dict of all image paths discovered for each context during card generation
     context_image_paths = {}
 
@@ -424,7 +426,6 @@ def generate(args):
                     warn_no_backs(WarningContext(context))
 
             row_index = 1
-            card_copy_index = 0
 
             for row in data:
                 # since the column names counts as a row, and most editors
