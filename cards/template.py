@@ -193,7 +193,7 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set
     # go through each data field for this card (row)
     for column in row:
         # fetch the content for the field
-        field_content = row.get(column, '')
+        field_content = get_column_content(row, column, definitions, default_content='')
 
         if is_image(field_content):
             # this field contains only an image path, so we have to make sure that it gets copied
@@ -376,6 +376,18 @@ def get_column_content(row: dict, column: str, definitions: dict, default_conten
                 field_name=definition,
                 field_value=value,
                 in_template=column_content)
+
+    for other_column in row:
+        if other_column is column:
+            # avoid infinite recursion
+            pass
+
+        other_column_content = row.get(other_column, default_content)
+
+        column_content = fill_template_fields(
+            field_name=other_column,
+            field_value=other_column_content,
+            in_template=column_content)
 
     return column_content
 
