@@ -366,28 +366,45 @@ def get_back_data(row: dict) -> dict:
 
 
 def get_column_content(row: dict, column: str, definitions: dict, default_content: str=None) -> str:
-    """ Returns the content of a column with the appropriate definition fields filled. """
+    """ Returns the content of a column, treating it as a template. """
 
+    # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
 
     if column_content is not None:
+        # there's at least some kind of content, so begin filling column reference fields (if any)
+        for other_column in row:
+            if other_column is column:
+                # except references to the current column, to avoid infinite recursion
+                pass
+
+            # note that this process is attempted even if there's no references; instead of first
+            # determining whether or not there actually are any occurences, we just try to
+            # do it right away- later on it might be worthwhile to actually find these fields,
+            # but for now it is not necessary
+
+            # get the raw content of the referenced column
+            other_column_content = row.get(other_column, default_content)
+
+            # and ultimately fill any occurences
+            column_content, occurences = fill_template_fields(
+                field_name=other_column,
+                field_value=other_column_content,
+                in_template=column_content,
+                counting_occurences=True)
+
+            if occurences > 0 and other_column in definitions:
+                warn('A column reference named \'{0}\' was used, '
+                     'but also found in definitions: \'{1}\''
+                     .format(other_column, list(definitions.keys())))
+
+        # similarly, begin assigning definition fields (if any)
         for definition, value in definitions.items():
+            # fill any occurences of the definition
             column_content = fill_template_fields(
                 field_name=definition,
                 field_value=value,
                 in_template=column_content)
-
-    for other_column in row:
-        if other_column is column:
-            # avoid infinite recursion
-            pass
-
-        other_column_content = row.get(other_column, default_content)
-
-        column_content = fill_template_fields(
-            field_name=other_column,
-            field_value=other_column_content,
-            in_template=column_content)
 
     return column_content
 
