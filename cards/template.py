@@ -20,6 +20,21 @@ class TemplateField(object):
         self.end_index = end_index  # the index of the last '}' wrapping character
 
 
+def warn_ambiguous_reference(reference, result) -> None:
+    truncated_result = (result if len(result) < 18 else result[:18] + '…')
+
+    warn('A reference named \'{0}\' could refer to both a column or a definition. '
+         'The column data \'{1}\' was used.'
+         .format(reference, truncated_result))
+
+
+def warn_unknown_size_specification(context: WarningContext, size_specification: str) -> None:
+    warn('The size specification \'{0}\' has not been defined. '
+         'Image might not display as expected.'
+         .format(size_specification),
+         in_context=context)
+
+
 def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
     """ Constructs an HTML-compliant image tag using the specified image path. """
 
@@ -65,10 +80,10 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
             try:
                 explicit_width = int(width_specification)
             except ValueError:
-                warn('The size specification \'{0}\' has not been defined. '
-                     'Image might not display as expected.'.format(width_specification),
-                     in_context=WarningContext(actual_image_path))
                 explicit_width = None
+
+                warn_unknown_size_specification(
+                    WarningContext(actual_image_path), width_specification)
             else:
                 if explicit_width < 0:
                     explicit_width = None
@@ -395,9 +410,7 @@ def get_column_content(row: dict, column: str, definitions: dict, default_conten
                     counting_occurences=True)
 
                 if occurences > 0 and other_column in definitions:
-                    warn('A reference named \'{0}\' could refer to both a column or a definition. '
-                         'The column data \'{1}\' was used.'
-                         .format(other_column, other_column_content))
+                    warn_ambiguous_reference(other_column, other_column_content)
 
             # similarly, begin assigning definition fields (if any)
             for definition, value in definitions.items():
