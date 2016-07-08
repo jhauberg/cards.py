@@ -373,38 +373,39 @@ def get_column_content(row: dict, column: str, definitions: dict, default_conten
 
     if column_content is not None:
         # there's at least some kind of content, so begin filling column reference fields (if any)
-        for other_column in row:
-            if other_column is column:
-                # except references to the current column, to avoid infinite recursion
-                pass
+        reference_fields = get_template_fields(column_content)
 
-            # note that this process is attempted even if there's no references; instead of first
-            # determining whether or not there actually are any occurences, we just try to
-            # do it right away- later on it might be worthwhile to actually find these fields,
-            # but for now it is not necessary
+        if len(reference_fields) > 0:
+            for reference_field in reference_fields:
+                other_column = reference_field.name
 
-            # get the raw content of the referenced column
-            other_column_content = row.get(other_column, default_content)
+                if other_column not in row:
+                    continue
 
-            # and ultimately fill any occurences
-            column_content, occurences = fill_template_fields(
-                field_name=other_column,
-                field_value=other_column_content,
-                in_template=column_content,
-                counting_occurences=True)
+                # recursively get the content of the referenced column to ensure any further
+                # references are determined and filled prior to filling the originating reference
+                other_column_content = get_column_content(
+                    row, other_column, definitions, default_content)
 
-            if occurences > 0 and other_column in definitions:
-                warn('A column reference named \'{0}\' was used, '
-                     'but also found in definitions: \'{1}\''
-                     .format(other_column, list(definitions.keys())))
+                # and ultimately fill any occurences
+                column_content, occurences = fill_template_fields(
+                    field_name=other_column,
+                    field_value=other_column_content,
+                    in_template=column_content,
+                    counting_occurences=True)
 
-        # similarly, begin assigning definition fields (if any)
-        for definition, value in definitions.items():
-            # fill any occurences of the definition
-            column_content = fill_template_fields(
-                field_name=definition,
-                field_value=value,
-                in_template=column_content)
+                if occurences > 0 and other_column in definitions:
+                    warn('A reference named \'{0}\' could refer to both a column or a definition. '
+                         'The column data \'{1}\' was used.'
+                         .format(other_column, other_column_content))
+
+            # similarly, begin assigning definition fields (if any)
+            for definition, value in definitions.items():
+                # fill any occurences of the definition
+                column_content = fill_template_fields(
+                    field_name=definition,
+                    field_value=value,
+                    in_template=column_content)
 
     return column_content
 
