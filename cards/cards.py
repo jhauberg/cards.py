@@ -17,7 +17,7 @@ from cards.template import fill_template_fields, fill_card_front, fill_card_back
 from cards.template import template_from_data, template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
-from cards.constants import Columns, TemplateFields
+from cards.constants import Columns, TemplateFields, CardSize, CardSizes
 
 from cards.util import (
     WarningContext, warn, lower_first_row,
@@ -269,25 +269,7 @@ def generate(args):
     with open(os.path.join(cwd, 'templates/error/back_not_provided.html')) as e:
         template_back_not_provided = e.read()
 
-    card_sizes = {
-        # small tokens: 0.75x0.75 inches
-        'token':
-            {'class': 'card-size-075x075', 'cards_per_page': (14, 10)},  # (rows, columns)
-        # standard poker cards: 2.5x3.5 inches
-        'standard':
-            {'class': 'card-size-25x35', 'cards_per_page': (3, 3)},
-        # standard poker cards in landscape: 3.5x2.5 inches
-        'standard-landscape':
-            {'class': 'card-size-35x25', 'cards_per_page': (4, 2)},
-        # jumbo cards: 3.5x5.5 inches
-        'jumbo':
-            {'class': 'card-size-35x55', 'cards_per_page': (2, 1)},
-        # domino cards: 1.75x3.5 inches
-        'domino':
-            {'class': 'card-size-175x35', 'cards_per_page': (4, 3)},
-    }
-
-    default_card_size = card_sizes['standard']
+    default_card_size = CardSizes.get_default_card_size()
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
     cards = ''
@@ -349,10 +331,11 @@ def generate(args):
 
             data.fieldnames = column_names
 
-            if size_identifier is not None and size_identifier in card_sizes:
-                card_size = card_sizes[size_identifier]
+            if size_identifier is not None:
+                new_card_size = CardSizes.get_card_size(size_identifier)
+                card_size = new_card_size if new_card_size is not None else default_card_size
 
-            if card_size is not previous_card_size and cards_on_page > 0:
+            if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
                 # must be added to a new page at this point
                 pages += get_page(pages_total + 1, cards, page)
@@ -387,14 +370,13 @@ def generate(args):
                 cards_on_page = 0
                 cards = ''
 
-            cards_per_row, cards_per_column = card_size['cards_per_page']
+            cards_per_row, cards_per_column = card_size.cards_per_page
             max_cards_per_page = cards_per_row * cards_per_column
-
-            card_size_class = str(card_size['class'])
 
             # empty backs may be necessary to fill in empty spots on a page to ensure
             # that the layout remains correct
-            empty_back = get_sized_card(card, card_size_class, content='')
+            empty_back = get_sized_card(
+                card, size_class=card_size.style, content='')
 
             if disable_auto_templating:
                 default_template = None
@@ -522,7 +504,8 @@ def generate(args):
 
                     image_paths.extend(found_image_paths)
 
-                    current_card = get_sized_card(card, card_size_class, card_content)
+                    current_card = get_sized_card(
+                        card, size_class=card_size.style, content=card_content)
 
                     cards += current_card
 
@@ -575,7 +558,8 @@ def generate(args):
 
                         image_paths.extend(found_image_paths)
 
-                        current_card_back = get_sized_card(card, card_size_class, back_content)
+                        current_card_back = get_sized_card(
+                            card, size_class=card_size.style, content=back_content)
 
                         # prepend this card back to the current line of backs
                         backs_row = current_card_back + backs_row

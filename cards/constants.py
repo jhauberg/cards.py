@@ -36,3 +36,42 @@ class TemplateFields:
     TITLE = '_title'                             # Optional field that is replaced with the title of the project
     DESCRIPTION = '_description'                 # Optional field that is replaced with the description of the project
     COPYRIGHT = '_copyright'                     # Optional field that is replaced with the copyright notice for the project
+
+
+class CardSize(object):
+    """ Represents a card size. """
+
+    def __init__(self, identifier: str, style: str, cards_per_page: tuple):
+        self.identifier = identifier
+        self.style = style
+        self.cards_per_page = cards_per_page
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.identifier == other.identifier
+
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+class CardSizes:
+    @staticmethod
+    def get_card_size(identifier: str) -> CardSize:
+        if identifier == 'token':
+            return CardSize(identifier, style='card-size-075x075', cards_per_page=(14, 10))
+        elif identifier == 'standard':
+            return CardSize(identifier, style='card-size-25x35', cards_per_page=(3, 3))
+        elif identifier == 'standard-landscape':
+            return CardSize(identifier, style='card-size-35x25', cards_per_page=(4, 2))
+        elif identifier == 'jumbo':
+            return CardSize(identifier, style='card-size-35x55', cards_per_page=(2, 1))
+        elif identifier == 'domino':
+            return CardSize(identifier, style='card-size-175x35', cards_per_page=(4, 3))
+
+        return None
+
+    @staticmethod
+    def get_default_card_size() -> CardSize:
+        return CardSizes.get_card_size('standard')
