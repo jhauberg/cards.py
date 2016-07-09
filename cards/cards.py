@@ -15,7 +15,7 @@ import shutil
 
 from cards.template import fill_template_fields, fill_card_front, fill_card_back
 from cards.template import template_from_data, template_from_path
-from cards.template import get_column_content, get_sized_card
+from cards.template import get_column_content, get_definition_content, get_sized_card
 
 from cards.constants import Columns, TemplateFields
 
@@ -695,16 +695,16 @@ def generate(args):
         # note that most of these fields could potentially be filled already when first getting the
         # page template; however, we instead do it as the very last thing to allow cards
         # using these fields (even if that might only be on rare occasions)
-        title = definitions.get(TemplateFields.TITLE, '').strip()
+        title = get_definition_content(definitions, definition=TemplateFields.TITLE).strip()
 
         if len(title) == 0:
             title = '{0} {1} on {2} {3}'.format(
                 cards_total, cards_or_card,
                 pages_total, pages_or_page)
 
-        description = definitions.get(TemplateFields.DESCRIPTION, '')
-        copyright_notice = definitions.get(TemplateFields.COPYRIGHT, '')
-        version_identifier = definitions.get(TemplateFields.VERSION, '')
+        description = get_definition_content(definitions, definition=TemplateFields.DESCRIPTION)
+        copyright_notice = get_definition_content(definitions, definition=TemplateFields.COPYRIGHT)
+        version_identifier = get_definition_content(definitions, definition=TemplateFields.VERSION)
 
         index = fill_metadata_field(TemplateFields.TITLE, title, in_template=index)
         index = fill_metadata_field(TemplateFields.DESCRIPTION, description, in_template=index)
