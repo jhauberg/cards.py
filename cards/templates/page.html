@@ -1,13 +1,13 @@
 <div class="page">
   <div class="page-content">
-    {{ cards }}
+    {{ _cards }}
   </div>
   <div class="page-footer">
-    <div class="page-footer-content" style="display: {{ title_display }};">{{ title }}</div>
-    <div class="page-footer-content" style="display: {{ description_display }};">{{ description }}</div>
-    <div class="page-footer-tag">Page {{ page_number }} / {{ pages_total }}</div>
-    <div class="page-footer-tag" style="margin-left: .5cm;"><img src="resources/cards.svg" width="8px"> cards.py {{ program_version }}</div>
-    <div class="page-footer-tag" style="display: {{ copyright_display }};">{{ copyright }}</div>
-    <div class="page-footer-tag" style="display: {{ version_display }};">{{ version }}</div>
+    <div class="page-footer-content" style="display: {{ title_display }};">{{ _title }}</div>
+    <div class="page-footer-content" style="display: {{ description_display }};">{{ _description }}</div>
+    <div class="page-footer-tag">Page {{ _page_number }} / {{ _pages_total }}</div>
+    <div class="page-footer-tag" style="margin-left: .5cm;"><img src="resources/cards.svg" width="8px"> cards.py {{ _program_version }}</div>
+    <div class="page-footer-tag" style="display: {{ copyright_display }};">{{ _copyright }}</div>
+    <div class="page-footer-tag" style="display: {{ version_display }};">{{ _version }}</div>
   </div>
 </div>
