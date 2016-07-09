@@ -69,7 +69,7 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
         # then, determine whether the value is a size specified in the metadata;
         # if it is, use that size specification.
         if definitions is not None and size in definitions:
-            size = definitions.get(size)
+            size = get_definition_content(definitions, definition=size)
 
         # get each size specification separately (removing blanks)
         size = list(filter(None, size.split('x')))
@@ -99,7 +99,7 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
 
     if definitions is not None and actual_image_path in definitions:
         # the path is actually a definition; e.g. "enemy" or similar, so get the actual path.
-        actual_image_path = definitions.get(actual_image_path)
+        actual_image_path = get_definition_content(definitions, definition=actual_image_path)
 
     if is_image(actual_image_path):
         if copy_only:
@@ -392,8 +392,15 @@ def get_back_data(row: dict) -> dict:
             if not is_special_column(column) and is_back_column(column)}
 
 
+def get_definition_content(definitions: dict, definition: str) -> str:
+    """ Returns the content of a definition, recursively resolving any references. """
+
+    return get_column_content(definitions, definition, definitions, default_content='')
+
+
 def get_column_content(row: dict, column: str, definitions: dict, default_content: str=None) -> str:
-    """ Returns the content of a column, treating it as a template. """
+    """ Returns the content of a column, treating it as a template and
+        recursively resolving any references. """
 
     # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
@@ -421,7 +428,7 @@ def get_column_content(row: dict, column: str, definitions: dict, default_conten
                     in_template=column_content,
                     counting_occurences=True)
 
-                if occurences > 0 and other_column in definitions:
+                if occurences > 0 and (other_column in definitions and row is not definitions):
                     warn_ambiguous_reference(other_column, other_column_content)
 
             # similarly, make sure to assign definition fields (if any)
