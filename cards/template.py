@@ -179,6 +179,10 @@ def fill_definitions(definitions: dict, in_template: str) -> str:
 def fill_template_field(field: TemplateField, field_value: str, in_template: str) -> str:
     """ Fills a single template field with a value. """
 
+    if (field.start_index < 0 or field.start_index >= len(in_template) or
+       field.end_index < 0 or field.end_index >= len(in_template)):
+        raise ValueError('Template field \'{0}\' out of range.'.format(field.name))
+
     return in_template[:field.start_index] + field_value + in_template[field.end_index:]
 
 
