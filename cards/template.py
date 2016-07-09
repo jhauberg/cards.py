@@ -161,6 +161,21 @@ def fill_image_fields(content: str, definitions: dict=None) -> (str, list):
     return content, image_paths
 
 
+def fill_definitions(definitions: dict, in_template: str) -> str:
+    """ Fill any definition fields in a given template. """
+
+    template_content = in_template
+
+    for definition, value in definitions.items():
+        # fill any occurences of the definition
+        template_content = fill_template_fields(
+            field_name=definition,
+            field_value=value,
+            in_template=template_content)
+
+    return template_content
+
+
 def fill_template_field(field: TemplateField, field_value: str, in_template: str) -> str:
     """ Fills a single template field with a value. """
 
@@ -172,7 +187,7 @@ def fill_template_fields(
         field_value: str,
         in_template: str,
         counting_occurences=False) -> (str, int):
-    """ Fills all occurences of a named template field with a value. """
+    """ Find all occurences of a named template field, then replaces it with a value. """
 
     # make sure that we have a sane value
     field_value = field_value if field_value is not None else ''
@@ -227,6 +242,10 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set
             # this field was not found anywhere in the specified template
             missing_fields_in_template.append(column)
 
+    # fill any definition fields- note that this should happen prior to filling image fields,
+    # since that allows symbol definitions to include image references
+    template = fill_definitions(definitions, in_template=template)
+
     # replace any image fields with HTML compliant <img> tags
     template, filled_image_paths = fill_image_fields(template, definitions)
 
@@ -248,13 +267,6 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set
                     # has been generated- so this field should not be treated as if missing;
                     # instead, simply ignore it at this point
                     pass
-                elif field.name in definitions:
-                    # the field is actually defined as a symbolic definition,
-                    # so fill it with the defined value
-                    template = fill_template_fields(
-                        field_name=field.name,
-                        field_value=definitions.get(field.name),
-                        in_template=template)
                 else:
                     # the field was not found in the card data, so make a warning about it
                     missing_fields_in_data.append(field.name)
@@ -412,13 +424,8 @@ def get_column_content(row: dict, column: str, definitions: dict, default_conten
                 if occurences > 0 and other_column in definitions:
                     warn_ambiguous_reference(other_column, other_column_content)
 
-            # similarly, begin assigning definition fields (if any)
-            for definition, value in definitions.items():
-                # fill any occurences of the definition
-                column_content = fill_template_fields(
-                    field_name=definition,
-                    field_value=value,
-                    in_template=column_content)
+            # similarly, make sure to assign definition fields (if any)
+            column_content = fill_definitions(definitions, in_template=column_content)
 
     return column_content
 
