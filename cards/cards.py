@@ -220,6 +220,7 @@ def generate(args):
     definitions_path = args['definitions_path']
     force_page_breaks = args['force_page_breaks']
     disable_backs = bool(args['disable_backs'])
+    default_card_size_identifier = args['size_identifier']
     is_verbose = bool(args['verbose'])
 
     disable_auto_templating = False
@@ -269,7 +270,10 @@ def generate(args):
     with open(os.path.join(cwd, 'templates/error/back_not_provided.html')) as e:
         template_back_not_provided = e.read()
 
-    default_card_size = CardSizes.get_default_card_size()
+    default_card_size = CardSizes.get_card_size(default_card_size_identifier)
+
+    if default_card_size is None:
+        default_card_size = CardSizes.get_default_card_size()
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
     cards = ''
@@ -342,6 +346,7 @@ def generate(args):
                 pages_total += 1
 
                 if not disable_backs:
+                    # using the last value of cards_per_row
                     cards_on_last_row = cards_on_page % cards_per_row
 
                     if cards_on_last_row is not 0:

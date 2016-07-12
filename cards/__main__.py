@@ -27,6 +27,10 @@ def setup_arguments(parser) -> None:
     parser.add_argument('-d', '--definitions-filename', dest='definitions_path', required=False,
                         help='Path to a CSV file containing definitions')
 
+    parser.add_argument('-s', '--size', dest='size_identifier', required=False,
+                        help='Set the default size to use for cards (default is \'standard\'. '
+                        'Other options include: \'domino\', \'jumbo\' or \'token\')')
+
     parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
                         default=False, action='store_true',
                         help='Force a page break for each datasource')

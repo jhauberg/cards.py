@@ -59,16 +59,17 @@ class CardSize(object):
 class CardSizes:
     @staticmethod
     def get_card_size(identifier: str) -> CardSize:
-        if identifier == 'token':
-            return CardSize(identifier, style='card-size-075x075', cards_per_page=(14, 10))
-        elif identifier == 'standard':
-            return CardSize(identifier, style='card-size-25x35', cards_per_page=(3, 3))
-        elif identifier == 'standard-landscape':
-            return CardSize(identifier, style='card-size-35x25', cards_per_page=(4, 2))
-        elif identifier == 'jumbo':
-            return CardSize(identifier, style='card-size-35x55', cards_per_page=(2, 1))
-        elif identifier == 'domino':
-            return CardSize(identifier, style='card-size-175x35', cards_per_page=(4, 3))
+        if identifier is not None:
+            if identifier == 'token':
+                return CardSize(identifier, style='card-size-075x075', cards_per_page=(14, 10))
+            elif identifier == 'standard':
+                return CardSize(identifier, style='card-size-25x35', cards_per_page=(3, 3))
+            elif identifier == 'standard-landscape':
+                return CardSize(identifier, style='card-size-35x25', cards_per_page=(4, 2))
+            elif identifier == 'jumbo':
+                return CardSize(identifier, style='card-size-35x55', cards_per_page=(2, 1))
+            elif identifier == 'domino':
+                return CardSize(identifier, style='card-size-175x35', cards_per_page=(4, 3))
 
         return None
 
