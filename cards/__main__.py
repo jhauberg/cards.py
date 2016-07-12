@@ -31,14 +31,6 @@ def setup_arguments(parser) -> None:
                         default=False, action='store_true',
                         help='Force a page break for each datasource')
 
-    parser.add_argument('--disable-cut-guides', dest='disable_cut_guides', required=False,
-                        default=False, action='store_true',
-                        help='Don\'t show cut guides on the margins of the cards')
-
-    parser.add_argument('--disable-footer', dest='disable_footer', required=False,
-                        default=False, action='store_true',
-                        help='Don\'t show a footer on the generated pages')
-
     parser.add_argument('--disable-backs', dest='disable_backs', required=False,
                         default=False, action='store_true',
                         help='Don\'t generate card backs')
