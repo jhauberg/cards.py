@@ -103,9 +103,16 @@ def warn_using_auto_template(context: WarningContext) -> None:
 def warn_unknown_fields_in_template(context: WarningContext,
                                     unknown_fields: list,
                                     is_back_template: bool=False) -> None:
-    warning = ('The back template contains fields that are not present for this card: {0}'
-               if is_back_template else
-               'The template contains fields that are not present for this card: {0}')
+    if len(unknown_fields) > 1:
+        warning = ('The back template contains fields that are not present for this card: {0}'
+                   if is_back_template else
+                   'The template contains fields that are not present for this card: {0}')
+    else:
+        unknown_fields = unknown_fields[0]
+
+        warning = ('The back template contains a field that is not present for this card: \'{0}\''
+                   if is_back_template else
+                   'The template contains a field that is not present for this card: \'{0}\'')
 
     warn(warning.format(unknown_fields), in_context=context)
 
@@ -113,9 +120,16 @@ def warn_unknown_fields_in_template(context: WarningContext,
 def warn_missing_fields_in_template(context: WarningContext,
                                     missing_fields: list,
                                     is_back_template: bool=False) -> None:
-    warning = ('The back template does not contain the fields: {0}'
-               if is_back_template else
-               'The template does not contain the fields: {0}')
+    if len(missing_fields) > 1:
+        warning = ('The back template does not contain the fields: {0}'
+                   if is_back_template else
+                   'The template does not contain the fields: {0}')
+    else:
+        missing_fields = missing_fields[0]
+
+        warning = ('The back template does not contain the field: \'{0}\''
+                   if is_back_template else
+                   'The template does not contain the field: \'{0}\'')
 
     warn(warning.format(missing_fields), in_context=context)
 
@@ -500,12 +514,12 @@ def generate(args):
                         if len(missing_fields_in_template) > 0 and is_verbose:
                             warn_missing_fields_in_template(
                                 WarningContext(context, row_index, card_index),
-                                missing_fields_in_template)
+                                list(missing_fields_in_template))
 
                         if len(missing_fields_in_data) > 0 and is_verbose:
                             warn_unknown_fields_in_template(
                                 WarningContext(context, row_index, card_index),
-                                missing_fields_in_data)
+                                list(missing_fields_in_data))
 
                     image_paths.extend(found_image_paths)
 
@@ -554,12 +568,12 @@ def generate(args):
                             if len(missing_fields_in_template) > 0 and is_verbose:
                                 warn_missing_fields_in_template(
                                     WarningContext(context, row_index, card_index),
-                                    missing_fields_in_template, is_back_template=True)
+                                    list(missing_fields_in_template), is_back_template=True)
 
                             if len(missing_fields_in_data) > 0 and is_verbose:
                                 warn_unknown_fields_in_template(
                                     WarningContext(context, row_index, card_index),
-                                    missing_fields_in_data, is_back_template=True)
+                                    list(missing_fields_in_data), is_back_template=True)
 
                         image_paths.extend(found_image_paths)
 
