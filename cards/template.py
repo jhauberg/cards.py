@@ -118,8 +118,21 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
     return image_tag, actual_image_path
 
 
+def get_template_field(field_name: str, in_template: str) -> TemplateField:
+    """ Returns the first matching template field, if any. """
+
+    field_search = '{{\s*' + field_name + '\s*}}'
+    field_matches = list(re.finditer(field_search, in_template, re.DOTALL))
+
+    for field_match in field_matches:
+        return TemplateField(name=field_match.group(1).strip(),
+                             start_index=field_match.start(), end_index=field_match.end())
+
+    return None
+
+
 def get_template_fields(template: str) -> List[TemplateField]:
-    """ Returns a list of all template fields (e.g. {{a_field}}) in a given template. """
+    """ Returns a list of all template fields (e.g. {{ a_field }}) in a given template. """
 
     return [TemplateField(name=field.group(1).strip(),
                           start_index=field.start(), end_index=field.end())
@@ -223,11 +236,13 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set
     # any field that is in the data, but not found in the template; for example, if there's
     # a 'rank' column in the data, but no {{ rank }} field in the template
     missing_fields_in_template = []
+    column_references_in_data = []
 
     # go through each data field for this card (row)
     for column in row:
         # fetch the content for the field
-        field_content = get_column_content(row, column, definitions, default_content='')
+        field_content, referenced_columns = get_column_content(
+            row, column, definitions, default_content='', tracking_references=True)
 
         if is_image(field_content):
             # this field contains only an image path, so we have to make sure that it gets copied
@@ -245,6 +260,17 @@ def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set
         if occurences is 0:
             # this field was not found anywhere in the specified template
             missing_fields_in_template.append(column)
+        else:
+            # this field was found and populated in the template, so save any column references
+            # made in the column content, so we can later compare that to the list of missing fields
+            column_references_in_data.extend(referenced_columns)
+
+    # make sure we only have one of each reference
+    column_references = set(column_references_in_data)
+
+    # remove any "missing fields" that are actually referenced in column content-
+    # they may not be in the template, but they are not unused/missing, so don't warn about it
+    missing_fields_in_template = list(set(missing_fields_in_template) - column_references)
 
     # fill any definition fields- note that this should happen prior to filling image fields,
     # since that allows symbol definitions to include image references
@@ -402,12 +428,18 @@ def get_definition_content(definitions: dict, definition: str) -> str:
     return get_column_content(definitions, definition, definitions, default_content='')
 
 
-def get_column_content(row: dict, column: str, definitions: dict, default_content: str=None) -> str:
+def get_column_content(row: dict,
+                       column: str,
+                       definitions: dict,
+                       default_content: str=None,
+                       tracking_references: bool=False) -> str:
     """ Returns the content of a column, treating it as a template and
         recursively resolving any references. """
 
     # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
+
+    references = []
 
     if column_content is not None:
         # there's at least some kind of content, so begin filling column reference fields (if any)
@@ -432,13 +464,16 @@ def get_column_content(row: dict, column: str, definitions: dict, default_conten
                     in_template=column_content,
                     counting_occurences=True)
 
+                if occurences > 0 and tracking_references:
+                    references.append(other_column)
+
                 if occurences > 0 and (other_column in definitions and row is not definitions):
                     warn_ambiguous_reference(other_column, other_column_content)
 
             # similarly, make sure to assign definition fields (if any)
             column_content = fill_definitions(definitions, in_template=column_content)
 
-    return column_content
+    return (column_content, references) if tracking_references else column_content
 
 
 def get_sized_card(card: str, size_class: str, content: str) -> str:
