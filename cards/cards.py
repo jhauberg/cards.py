@@ -121,15 +121,15 @@ def warn_missing_fields_in_template(context: WarningContext,
                                     missing_fields: list,
                                     is_back_template: bool=False) -> None:
     if len(missing_fields) > 1:
-        warning = ('The back template does not contain the fields: {0}'
+        warning = ('The card back has unused columns: {0}'
                    if is_back_template else
-                   'The template does not contain the fields: {0}')
+                   'The card has unused columns: {0}')
     else:
         missing_fields = missing_fields[0]
 
-        warning = ('The back template does not contain the field: \'{0}\''
+        warning = ('The card back has an unused column: \'{0}\''
                    if is_back_template else
-                   'The template does not contain the field: \'{0}\'')
+                   'The card has an unused column: \'{0}\'')
 
     warn(warning.format(missing_fields), in_context=context)
 
