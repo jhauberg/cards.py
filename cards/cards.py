@@ -11,7 +11,6 @@ License: MIT (see LICENSE)
 
 import os
 import csv
-import shutil
 
 from cards.template import fill_template_fields, fill_card_front, fill_card_back
 from cards.template import template_from_data, template_from_path
@@ -22,7 +21,7 @@ from cards.constants import Columns, TemplateFields, CardSize, CardSizes
 from cards.util import (
     WarningContext, warn, lower_first_row,
     is_url, find_file_path, open_path,
-    create_missing_directories_if_necessary
+    copy_file_if_necessary, create_missing_directories_if_necessary
 )
 
 from cards.version import __version__
@@ -179,7 +178,7 @@ def copy_images_to_output_directory(
                 create_missing_directories_if_necessary(
                     os.path.dirname(relative_destination_path))
 
-                shutil.copyfile(relative_source_path, relative_destination_path)
+                copy_file_if_necessary(relative_source_path, relative_destination_path)
             else:
                 warn_missing_image(WarningContext(context), relative_source_path)
 
@@ -717,19 +716,19 @@ def generate(args):
         result.write(index)
 
     # make sure to copy the css file to the output directory
-    shutil.copyfile(os.path.join(cwd, 'templates/index.css'),
-                    os.path.join(output_path, 'index.css'))
+    copy_file_if_necessary(os.path.join(cwd, 'templates/index.css'),
+                           os.path.join(output_path, 'index.css'))
 
     # and copy the additional image resources
     resources_path = os.path.join(output_path, 'resources')
     # creating the directory if needed
     create_missing_directories_if_necessary(resources_path)
 
-    shutil.copyfile(os.path.join(cwd, 'templates/resources/guide.svg'),
-                    os.path.join(resources_path, 'guide.svg'))
+    copy_file_if_necessary(os.path.join(cwd, 'templates/resources/guide.svg'),
+                           os.path.join(resources_path, 'guide.svg'))
 
-    shutil.copyfile(os.path.join(cwd, 'templates/resources/cards.svg'),
-                    os.path.join(resources_path, 'cards.svg'))
+    copy_file_if_necessary(os.path.join(cwd, 'templates/resources/cards.svg'),
+                           os.path.join(resources_path, 'cards.svg'))
 
     # additionally, copy all referenced images to the output directory as well
     # (making sure to keep their original directory structure in relation to their context)

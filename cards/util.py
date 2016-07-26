@@ -3,6 +3,8 @@
 import os
 import sys
 import subprocess
+import filecmp
+import shutil
 import itertools
 import errno
 
@@ -118,11 +120,33 @@ def find_file_path(name: str, paths: list) -> (bool, str):
             (False, first_potential_path))
 
 
-def create_missing_directories_if_necessary(path: str) -> None:
-    """ Mimics the command 'mkdir -p'. """
+def copy_file_if_necessary(source_path: str, destination_path: str) -> bool:
+    """ Attempts to copy a file to a destination path.
+        If the file already exists at the destination path, the destination file is only
+        overwritten if it is different from the source.
+    """
+
+    if not os.path.exists(destination_path) or not filecmp.cmp(source_path, destination_path):
+        # the file doesn't already exist, or it does exist, but is different
+        try:
+            shutil.copyfile(source_path, destination_path)
+
+            return True
+        except:
+            return False
+
+    return False
+
+
+def create_missing_directories_if_necessary(path: str) -> bool:
+    """ Attempts to create any missing directories in a path.
+        Essentially mimics the command 'mkdir -p'.
+    """
 
     try:
         os.makedirs(path)
+
+        return True
     except OSError as exc:
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
