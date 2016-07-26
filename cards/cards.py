@@ -12,7 +12,7 @@ License: MIT (see LICENSE)
 import os
 import csv
 
-from cards.template import fill_template_fields, fill_card_front, fill_card_back
+from cards.template import fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
 from cards.template import template_from_data, template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
@@ -669,8 +669,10 @@ def generate(args):
     pages_or_page = 'pages' if pages_total > 1 else 'page'
     cards_or_card = 'cards' if cards_total > 1 else 'card'
 
+    output_filepath = os.path.join(output_path, output_filename)
+
     # begin writing pages to the output file (overwriting any existing file)
-    with open(os.path.join(output_path, output_filename), 'w') as result:
+    with open(output_filepath, 'w') as result:
         # on all pages, fill any {{ cards_total }} fields
         pages = fill_template_fields(
             field_name=TemplateFields.CARDS_TOTAL,
@@ -712,6 +714,11 @@ def generate(args):
         index = fill_metadata_field(TemplateFields.DESCRIPTION, description, in_template=index)
         index = fill_metadata_field(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
         index = fill_metadata_field(TemplateFields.VERSION, version_identifier, in_template=index)
+
+        index, filled_image_paths = fill_image_fields(index, definitions)
+
+        if len(filled_image_paths) > 0:
+            context_image_paths[output_filepath] = list(set(filled_image_paths))
 
         result.write(index)
 
