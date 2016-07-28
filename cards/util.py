@@ -60,6 +60,18 @@ def lower_first_row(rows):
     return itertools.chain([next(rows).lower()], rows)
 
 
+def dequote(s):
+    """
+    If a string has single or double quotes around it, remove them.
+    Make sure the pair of quotes match.
+    If a matching pair of quotes is not found, return the string unchanged.
+    """
+    if (s[0] == s[-1]) and s.startswith(('\'', '"')):
+        return s[1:-1]
+
+    return s
+
+
 def is_url(string: str) -> bool:
     """ Determines whether a string is an url or not. """
     return urlparse(string).scheme != ""

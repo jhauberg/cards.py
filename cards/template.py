@@ -6,7 +6,7 @@ import re
 
 from typing import List
 
-from cards.util import most_common, WarningContext, warn
+from cards.util import most_common, WarningContext, warn, dequote
 
 from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
 
@@ -15,7 +15,7 @@ class TemplateField(object):
     """ Represents a data field in a template. """
 
     def __init__(self, name: str, start_index: int, end_index: int):
-        self.name = name  # the inner value of the template field; i.e. the name
+        self.name = name  # the inner value of the template field; i.e. the field name
         self.start_index = start_index  # the index of the first '{' wrapping character
         self.end_index = end_index  # the index of the last '}' wrapping character
 
@@ -225,10 +225,51 @@ def fill_template_fields(
     return (content, occurences) if counting_occurences else content
 
 
-def fill_template(template: str, row: dict, definitions: dict) -> (str, set, set):
+def fill_include_fields(from_template_path: str, in_template: str) -> str:
+    """ Populates any {{ include 'filepath' }} fields in the template. """
+
+    template_content = in_template
+
+    for field in get_template_fields(template_content):
+        include = field.name.split(' ', 1)
+
+        if len(include) > 0 and include[0] == 'include':
+            if len(include) > 1:
+                include_path = dequote(include[1])
+                include_content = ''
+
+                if not os.path.isabs(include_path):
+                    if from_template_path is not None:
+                        include_path = os.path.join(
+                            os.path.dirname(from_template_path), include_path)
+
+                if os.path.isfile(include_path):
+                    with open(include_path) as f:
+                        include_content = f.read()
+
+                template_content = fill_template_field(
+                    field, include_content, template_content)
+
+                fill_include_fields(from_template_path, in_template=template_content)
+
+                break
+
+    return template_content
+
+
+def fill_template(template: str,
+                  template_path: str,
+                  row: dict,
+                  definitions: dict) -> (str, set, set):
     """ Returns the contents of the template with all template fields replaced
         by any matching fields in the provided data.
     """
+
+    # first of all, find any {{ include }} fields and populate those,
+    # as they might contribute even more template fields to populate
+    template = fill_include_fields(
+        from_template_path=template_path,
+        in_template=template)
 
     # any discovered image paths from image fields
     image_paths = []
@@ -343,7 +384,7 @@ def fill_card(
 
     # attempt to fill all fields discovered in the template using the data for this card
     template, discovered_image_paths, missing_fields = fill_template(
-        template, row, definitions)
+        template, template_path, row, definitions)
 
     # fill all row index fields (usually used for error templates)
     template = fill_template_fields(
