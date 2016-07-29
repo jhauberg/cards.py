@@ -49,13 +49,13 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
 
 
 def most_common(objects: list) -> object:
-    """ Returns the object that occurs most frequently in a list of objects. """
+    """ Return the object that occurs most frequently in a list of objects. """
 
     return max(set(objects), key=objects.count)
 
 
 def lower_first_row(rows):
-    """ Returns rows where the first row is all lower-case. """
+    """ Return rows where the first row is all lower-case. """
 
     return itertools.chain([next(rows).lower()], rows)
 
@@ -133,7 +133,8 @@ def find_file_path(name: str, paths: list) -> (bool, str):
 
 
 def copy_file_if_necessary(source_path: str, destination_path: str) -> bool:
-    """ Attempts to copy a file to a destination path.
+    """ Attempt copying a file to a destination path.
+
         If the file already exists at the destination path, the destination file is only
         overwritten if it is different from the source.
     """
@@ -151,7 +152,8 @@ def copy_file_if_necessary(source_path: str, destination_path: str) -> bool:
 
 
 def create_missing_directories_if_necessary(path: str) -> bool:
-    """ Attempts to create any missing directories in a path.
+    """ Attempt to create any missing directories in a path.
+
         Essentially mimics the command 'mkdir -p'.
     """
 

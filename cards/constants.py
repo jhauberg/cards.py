@@ -59,6 +59,8 @@ class CardSize(object):
 class CardSizes:
     @staticmethod
     def get_card_size(identifier: str) -> CardSize:
+        """ Return the card size that matches the identifier. """
+
         if identifier is not None:
             if identifier == 'token':
                 return CardSize(identifier, style='card-size-075x075', cards_per_page=(14, 10))
@@ -75,4 +77,6 @@ class CardSizes:
 
     @staticmethod
     def get_default_card_size() -> CardSize:
+        """ Return the default card size: standard (2.5x3.5 inches). """
+
         return CardSizes.get_card_size('standard')

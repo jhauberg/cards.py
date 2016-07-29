@@ -12,7 +12,7 @@ from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDesc
 
 
 class TemplateField(object):
-    """ Represents a data field in a template. """
+    """ Represents a field in a template. """
 
     def __init__(self, name: str, start_index: int, end_index: int):
         self.name = name  # the inner value of the template field; i.e. the field name
@@ -36,7 +36,7 @@ def warn_unknown_size_specification(context: WarningContext, size_specification:
 
 
 def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
-    """ Constructs an HTML-compliant image tag using the specified image path. """
+    """ Return a HTML-compliant image tag using the specified image path. """
 
     actual_image_path = image_path
 
@@ -119,7 +119,7 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
 
 
 def get_template_field(field_name: str, in_template: str) -> TemplateField:
-    """ Returns the first matching template field, if any. """
+    """ Return the first matching template field in a template, if any. """
 
     field_search = '{{\s*' + field_name + '\s*}}'
     field_matches = list(re.finditer(field_search, in_template, re.DOTALL))
@@ -132,7 +132,7 @@ def get_template_field(field_name: str, in_template: str) -> TemplateField:
 
 
 def get_template_fields(template: str) -> List[TemplateField]:
-    """ Returns a list of all template fields (e.g. {{ a_field }}) in a given template. """
+    """ Return a list of all template fields (e.g. '{{ a_field }}') in a template. """
 
     return [TemplateField(name=field.group(1).strip(),
                           start_index=field.start(), end_index=field.end())
@@ -140,8 +140,11 @@ def get_template_fields(template: str) -> List[TemplateField]:
 
 
 def fill_image_fields(content: str, definitions: dict=None) -> (str, list):
-    """ Recursively finds all {{ image:size }} fields and returns a string
-        replaced with HTML compliant <img> tags.
+    """ Populate all image fields in the template.
+
+        An image field provides a way of transforming an image path into a HTML-compliant image tag.
+
+        An image field should look like this: '{{ my-image.png:16x16 }}'.
     """
 
     image_paths = []
@@ -175,7 +178,7 @@ def fill_image_fields(content: str, definitions: dict=None) -> (str, list):
 
 
 def fill_definitions(definitions: dict, in_template: str) -> str:
-    """ Fill any definition fields in a given template. """
+    """ Populate all definition fields in the template. """
 
     template_content = in_template
 
@@ -190,7 +193,7 @@ def fill_definitions(definitions: dict, in_template: str) -> str:
 
 
 def fill_template_field(field: TemplateField, field_value: str, in_template: str) -> str:
-    """ Fills a single template field with a value. """
+    """ Populate a single template field in the template. """
 
     if (field.start_index < 0 or field.start_index >= len(in_template) or
        field.end_index < 0 or field.end_index >= len(in_template)):
@@ -204,7 +207,7 @@ def fill_template_fields(
         field_value: str,
         in_template: str,
         counting_occurences=False) -> (str, int):
-    """ Find all occurences of a named template field, then replaces it with a value. """
+    """ Populate all template fields with a given name in the template. """
 
     # make sure that we have a sane value
     field_value = field_value if field_value is not None else ''
@@ -226,30 +229,49 @@ def fill_template_fields(
 
 
 def fill_include_fields(from_template_path: str, in_template: str) -> str:
-    """ Populates any {{ include 'filepath' }} fields in the template. """
+    """ Populate all include fields in the template.
+
+        An 'include' field provides a way of putting re-usable template components/content into a
+        separate file, and including it in place of the field.
+
+        An include field should look like this: '{{ include 'path/to/file.html' }}'.
+    """
 
     template_content = in_template
 
+    # find all template fields and go through each, determining whether it's an include field or not
     for field in get_template_fields(template_content):
-        include = field.name.split(' ', 1)
+        # include fields should strictly separate the keyword and path by a single whitespace
+        field_components = field.name.split(' ', 1)
 
-        if len(include) > 0 and include[0] == 'include':
-            if len(include) > 1:
-                include_path = dequote(include[1])
+        if len(field_components) > 0 and field_components[0] == 'include':
+            # the field at least contains the include keyword
+            if len(field_components) > 1:
+                # the field might also contain a path
+                include_path = dequote(field_components[1])
+                # default to blank
                 include_content = ''
 
                 if not os.path.isabs(include_path):
+                    # it's not an absolute path, so we should make it a relative path
                     if from_template_path is not None:
+                        # make the path relative to the path of the containing template
                         include_path = os.path.join(
                             os.path.dirname(from_template_path), include_path)
 
                 if os.path.isfile(include_path):
+                    # we've ended up with a path that can be opened
                     with open(include_path) as f:
+                        # so we open it and read in the entire content
                         include_content = f.read()
 
+                # populate the include field with the content; or blank if unresolved
                 template_content = fill_template_field(
                     field, include_content, template_content)
 
+                # since we're using fill_template_field, we have to recursively start over,
+                # otherwise the next field objects would have invalid indices and would not be
+                # resolved properly
                 fill_include_fields(from_template_path, in_template=template_content)
 
                 break
@@ -261,8 +283,21 @@ def fill_template(template: str,
                   template_path: str,
                   row: dict,
                   definitions: dict) -> (str, set, set):
-    """ Returns the contents of the template with all template fields replaced
-        by any matching fields in the provided data.
+    """ Populate all template fields in the template.
+
+        Populating a template is done in 4 steps:
+
+        First, an attempt is made at filling any include fields, since they might provide
+        additional fields that needs to be resolved.
+
+        Secondly, for each column in the row, a pass is made in an attempt to fill any matching
+        column fields; recursively resolving any contained column references or definitions.
+
+        Thirdly, for each definition, a pass is made in an attempt to fill any matching definition
+        fields; recursively resolving any contained definition references.
+
+        Finally, once all fields and references have been resolved, any remaining fields will be
+        attempted resolved as image fields.
     """
 
     # first of all, find any {{ include }} fields and populate those,
@@ -346,7 +381,8 @@ def fill_template(template: str,
 
 
 def template_from_path(template_path: str, relative_to_path: str=None) -> (str, bool, str):
-    """ Attempts returning the template contents of the given path.
+    """ Return the template contents of the given path, if possible.
+
         If specified, path is made relative to another path.
     """
 
@@ -380,7 +416,7 @@ def fill_card(
         card_index: int,
         card_copy_index: int,
         definitions: dict) -> (str, list, list):
-    """ Returns the contents of a card using the specified template. """
+    """ Return the contents of a card using the specified template. """
 
     # attempt to fill all fields discovered in the template using the data for this card
     template, discovered_image_paths, missing_fields = fill_template(
@@ -429,7 +465,7 @@ def fill_card_front(
         card_index: int,
         card_copy_index: int,
         definitions: dict) -> (str, list, list):
-    """ Returns the contents of the front of a card using the specified template. """
+    """ Return the contents of the front of a card using the specified template. """
 
     return fill_card(template, template_path, get_front_data(row),
                      row_index, card_index, card_copy_index, definitions)
@@ -443,28 +479,28 @@ def fill_card_back(
         card_index: int,
         card_copy_index: int,
         definitions: dict) -> (str, list, list):
-    """ Returns the contents of the back of a card using the specified template. """
+    """ Return the contents of the back of a card using the specified template. """
 
     return fill_card(template, template_path, get_back_data(row),
                      row_index, card_index, card_copy_index, definitions)
 
 
 def get_front_data(row: dict) -> dict:
-    """ Returns a dict containing only fields fit for the front of a card. """
+    """ Return a dict containing only fields fit for the front of a card. """
 
     return {column: value for column, value in row.items()
             if not is_special_column(column) and not is_back_column(column)}
 
 
 def get_back_data(row: dict) -> dict:
-    """ Returns a dict containing only fields fit for the back of a card. """
+    """ Return a dict containing only fields fit for the back of a card. """
 
     return {column[:-len(ColumnDescriptors.BACK_ONLY)]: value for column, value in row.items()
             if not is_special_column(column) and is_back_column(column)}
 
 
 def get_definition_content(definitions: dict, definition: str) -> str:
-    """ Returns the content of a definition, recursively resolving any references. """
+    """ Return the content of a definition, recursively resolving any references. """
 
     return get_column_content(definitions, definition, definitions, default_content='')
 
@@ -474,8 +510,7 @@ def get_column_content(row: dict,
                        definitions: dict,
                        default_content: str=None,
                        tracking_references: bool=False) -> str:
-    """ Returns the content of a column, treating it as a template and
-        recursively resolving any references. """
+    """ Return the content of a column, recursively resolving any column/definition references. """
 
     # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
@@ -518,7 +553,7 @@ def get_column_content(row: dict,
 
 
 def get_sized_card(card: str, size_class: str, content: str) -> str:
-    """ Populates and returns a card in a given size with the specified content. """
+    """ Populate and return a card in a given size with the specified content. """
 
     card = fill_template_fields(TemplateFields.CARD_SIZE, size_class, in_template=card)
     card = fill_template_fields(TemplateFields.CARD_CONTENT, content, in_template=card)
@@ -527,19 +562,19 @@ def get_sized_card(card: str, size_class: str, content: str) -> str:
 
 
 def is_image(image_path: str) -> bool:
-    """ Determines whether a path points to an image. """
+    """ Determine whether a path points to an image. """
 
     return image_path.strip().lower().endswith(('.svg', '.png', '.jpg', '.jpeg'))
 
 
 def is_special_column(column: str) -> bool:
-    """ Determines whether a column is to be treated as a special column. """
+    """ Determine whether a column is to be treated as a special column. """
 
     return column.startswith('@') if column is not None else False
 
 
 def is_back_column(column: str) -> bool:
-    """ Determines whether a column is only intended for the back of a card. """
+    """ Determine whether a column is only intended for the back of a card. """
 
     return column.endswith(ColumnDescriptors.BACK_ONLY) if column is not None else False
 
@@ -593,7 +628,7 @@ def field_type_from_value(value: str) -> str:
 
 
 def template_from_data(data: csv.DictReader) -> str:
-    """ Returns a template that is fit for the provided data. """
+    """ Return a template that is fit for the provided data. """
 
     analysis = {}
 
