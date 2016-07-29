@@ -271,7 +271,8 @@ def fill_include_fields(from_template_path: str, in_template: str) -> str:
                 # since we're using fill_template_field, we have to recursively start over,
                 # otherwise the next field objects would have invalid indices and would not be
                 # resolved properly
-                fill_include_fields(from_template_path, in_template=template_content)
+                template_content = fill_include_fields(
+                    from_template_path, in_template=template_content)
 
                 break
 
