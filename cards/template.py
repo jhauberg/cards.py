@@ -34,6 +34,13 @@ def warn_unknown_size_specification(context: WarningContext, size_specification:
          in_context=context)
 
 
+def warn_included_file_not_found(context: WarningContext, included_file_path: str) -> None:
+    warn('An included file was not found: \033[4;31m\'{0}\'\033[0m'
+         .format(included_file_path),
+         in_context=context,
+         as_error=True)
+
+
 def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str):
     """ Return a HTML-compliant image tag using the specified image path. """
 
@@ -263,6 +270,9 @@ def fill_include_fields(from_template_path: str, in_template: str) -> str:
                     with open(include_path) as f:
                         # so we open it and read in the entire content
                         include_content = f.read()
+                else:
+                    warn_included_file_not_found(
+                        WarningContext(os.path.basename(from_template_path)), include_path)
 
                 # populate the include field with the content; or blank if unresolved
                 template_content = fill_template_field(
