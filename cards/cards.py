@@ -13,10 +13,12 @@ import os
 import csv
 
 from cards.template import fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
-from cards.template import template_from_data, template_from_path
+from cards.template import template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
-from cards.constants import Columns, TemplateFields, CardSize, CardSizes
+from cards.autotemplate import template_from_data
+
+from cards.constants import Columns, TemplateFields, CardSizes
 
 from cards.util import (
     WarningContext, warn, lower_first_row,
