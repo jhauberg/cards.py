@@ -188,11 +188,14 @@ def fill_definitions(definitions: dict, in_template: str) -> str:
 
     template_content = in_template
 
-    for definition, value in definitions.items():
+    for definition, raw_value in definitions.items():
+        # recursively resolve the content of the definition
+        resolved_value = get_definition_content(definitions, definition)
+
         # fill any occurences of the definition
         template_content = fill_template_fields(
             field_name=definition,
-            field_value=value,
+            field_value=resolved_value,
             in_template=template_content)
 
     return template_content
@@ -535,13 +538,26 @@ def get_column_content(row: dict,
             for reference_field in reference_fields:
                 other_column = reference_field.name
 
-                if other_column not in row:
+                is_definition = other_column in definitions
+                is_column = other_column in row
+
+                if not is_column and not is_definition:
+                    # the field is not a reference that can be resolved right now, so skip it
+                    # (it might be an image reference)
                     continue
 
                 # recursively get the content of the referenced column to ensure any further
                 # references are determined and filled prior to filling the originating reference
-                other_column_content = get_column_content(
-                    row, other_column, definitions, default_content)
+
+                if is_column:
+                    # prioritize the column column reference by resolving it first,
+                    # even if it could also be a definition instead (warn about it later)
+                    other_column_content = get_column_content(
+                        row, other_column, definitions, default_content)
+                elif is_definition:
+                    # resolve the definition reference
+                    other_column_content = get_definition_content(
+                        definitions, definition=other_column)
 
                 # and ultimately fill any occurences
                 column_content, occurences = fill_template_fields(
@@ -553,11 +569,9 @@ def get_column_content(row: dict,
                 if occurences > 0 and tracking_references:
                     references.append(other_column)
 
-                if occurences > 0 and (other_column in definitions and row is not definitions):
+                if occurences > 0 and (is_definition and is_column and row is not definitions):
+                    # the reference appears multiple places
                     warn_ambiguous_reference(other_column, other_column_content)
-
-            # similarly, make sure to assign definition fields (if any)
-            column_content = fill_definitions(definitions, in_template=column_content)
 
     return (column_content, references) if tracking_references else column_content
 
