@@ -137,12 +137,21 @@ def get_template_field(field_name: str, in_template: str) -> TemplateField:
     return None
 
 
-def get_template_fields(template: str) -> List[TemplateField]:
-    """ Return a list of all template fields (e.g. '{{ a_field }}') in a template. """
+def get_template_fields(in_template: str) -> List[TemplateField]:
+    """ Return a list of all template fields (e.g. '{{ a_field }}') that occur in a template. """
 
     return [TemplateField(name=field.group(1).strip(),
                           start_index=field.start(), end_index=field.end())
-            for field in list(re.finditer('{{(.*?)}}', template, re.DOTALL))]
+            for field in list(re.finditer('{{(.*?)}}', in_template, re.DOTALL))]
+
+
+def get_template_field_names(in_template: str) -> List[str]:
+    """ Return a list of all template field names that occur in a template. """
+
+    template_fields = get_template_fields(in_template)
+    template_field_names = {field.name for field in template_fields}
+
+    return list(template_field_names)
 
 
 def fill_image_fields(content: str, definitions: dict=None) -> (str, list):
@@ -188,13 +197,22 @@ def fill_definitions(definitions: dict, in_template: str) -> str:
 
     template_content = in_template
 
-    for definition, raw_value in definitions.items():
+    # find all the visible template fields, but because we're going to be populating all occurences
+    # of a field in one fell swoop, we only need a list of unique field names-
+    # we don't need to go through each field instance
+    field_names = get_template_field_names(in_template)
+
+    for field_name in field_names:
+        if field_name not in definitions:
+            # this field is not a definition- so skip it
+            continue
+
         # recursively resolve the content of the definition
-        resolved_value = get_definition_content(definitions, definition)
+        resolved_value = get_definition_content(definitions, definition=field_name)
 
         # fill any occurences of the definition
         template_content = fill_template_fields(
-            field_name=definition,
+            field_name=field_name,
             field_value=resolved_value,
             in_template=template_content)
 
@@ -532,11 +550,11 @@ def get_column_content(row: dict,
 
     if column_content is not None:
         # there's at least some kind of content, so begin filling column reference fields (if any)
-        reference_fields = get_template_fields(column_content)
+        reference_field_names = get_template_field_names(column_content)
 
-        if len(reference_fields) > 0:
-            for reference_field in reference_fields:
-                other_column = reference_field.name
+        if len(reference_field_names) > 0:
+            for reference_field_name in reference_field_names:
+                other_column = reference_field_name
 
                 is_definition = other_column in definitions
                 is_column = other_column in row
