@@ -167,10 +167,11 @@ html, body {
 
 .page-footer {
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.8em;
 
   margin-top: 0.5cm;
   height: 0.4cm;
+
+  font-size: 0.7em;
 
   position: relative;
 
@@ -198,7 +199,7 @@ html, body {
 }
 
 .page-footer-content {
-  margin-right: .5cm;
+  margin-right: .4cm;
 
   float: left;
 }
