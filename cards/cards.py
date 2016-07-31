@@ -717,10 +717,11 @@ def generate(args):
         index = fill_metadata_field(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
         index = fill_metadata_field(TemplateFields.VERSION, version_identifier, in_template=index)
 
+        # fill any image fields that might have appeared by populating the metadata fields
         index, filled_image_paths = fill_image_fields(index, definitions)
 
         if len(filled_image_paths) > 0:
-            context_image_paths[output_filepath] = list(set(filled_image_paths))
+            context_image_paths[definitions_path] = list(set(filled_image_paths))
 
         result.write(index)
 
