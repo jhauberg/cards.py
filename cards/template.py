@@ -250,7 +250,7 @@ def fill_include_fields(from_template_path: str, in_template: str) -> str:
         # include fields should strictly separate the keyword and path by a single whitespace
         field_components = field.name.split(' ', 1)
 
-        if len(field_components) > 0 and field_components[0] == 'include':
+        if len(field_components) > 0 and field_components[0] == TemplateFields.INCLUDE:
             # the field at least contains the include keyword
             if len(field_components) > 1:
                 # the field might also contain a path

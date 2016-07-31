@@ -31,6 +31,8 @@ class TemplateFields:
     CARD_TEMPLATE_PATH = '_card_template_path'   # Optional field that is replaced with the path of the template used to generate the card
     CARDS_TOTAL = '_cards_total'                 # Optional field that is replaced with the total amount of all generated cards
 
+    INCLUDE = 'include'
+
     VERSION = '_version'                         # Optional field that is replaced with the version identifier of the project
     PROGRAM_VERSION = '_program_version'         # Optional field that is replaced with the version identifier of the program
     TITLE = '_title'                             # Optional field that is replaced with the title of the project
