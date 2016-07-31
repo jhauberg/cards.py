@@ -117,7 +117,7 @@ def find_file_path(name: str, paths: list) -> (bool, str):
         for path in paths:
             path_components = os.path.splitext(path)
 
-            potential_path = path_components[0] + '.' + name
+            potential_path = str(path_components[0]) + '.' + name
 
             if first_potential_path is None:
                 first_potential_path = potential_path
@@ -145,7 +145,7 @@ def copy_file_if_necessary(source_path: str, destination_path: str) -> bool:
             shutil.copyfile(source_path, destination_path)
 
             return True
-        except:
+        except IOError:
             return False
 
     return False
