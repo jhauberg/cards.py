@@ -1,2 +1,2 @@
 @template,text,some_value,another_value
-"template/template.html","Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn about unused fields and appear once using <i>template/template.html</i>.",2,5
+"template/template.html","Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should warn about unused fields and appear once using <i>template/template.html</i>.",2,5

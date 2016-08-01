@@ -1,7 +1,7 @@
 @template,text
-{{ template_path }},"Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once."
-"  {{ template_path }} ","Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once."
-{{ empty_template_path }},"Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once using an auto-template instead of <i>template/empty-template.html</i>."
-{{ bad_template_path }},"Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error template."
-{{ blank_template_path }},"Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once using an auto-template."
-{{ not-defined }},"Row {{ card_row_index }}#{{ card_index }}<br/>This card should appear once showing an error template."
+{{ template_path }},"Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should appear once."
+"  {{ template_path }} ","Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should appear once."
+{{ empty_template_path }},"Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should appear once using an auto-template instead of <i>template/empty-template.html</i>."
+{{ bad_template_path }},"Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should appear once showing an error template."
+{{ blank_template_path }},"Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should warn and appear once using an auto-template."
+{{ not-defined }},"Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should appear once showing an error template."

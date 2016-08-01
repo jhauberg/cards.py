@@ -1,2 +1,2 @@
 text
-"Row {{ card_row_index }}#{{ card_index }}<br/>This card should warn and appear once."
+"Row {{ _card_row_index }}#{{ _card_copy_index }}<br/>This card should warn and appear once."
