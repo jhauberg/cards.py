@@ -148,6 +148,21 @@ def warn_bad_template_path(context: WarningContext,
          as_error=True)
 
 
+def warn_abort_unusually_high_count(context: WarningContext, count: int) -> None:
+    # arbitrarily determined amount- but if the count is really high
+    # it might just be an error
+    warn('The card has specified a high count: {0}. '
+         'Are you sure you want to continue?'.format(count),
+         in_context=context)
+
+    answer = input('(Y)es or (n)o?').strip().lower()
+
+    if answer == 'n' or answer == 'no':
+        return True
+
+    return False
+
+
 def copy_images_to_output_directory(
         image_paths: list,
         root_path: str,
@@ -185,7 +200,7 @@ def copy_images_to_output_directory(
                 warn_missing_image(WarningContext(context), relative_source_path)
 
 
-def get_definitions(path: str, verbosely: 'show warnings'=False) -> dict:
+def get_definitions_from_file(path: str, verbosely: 'show warnings'=False) -> dict:
     definitions = {}
 
     if path is not None and len(path) > 0:
@@ -225,6 +240,34 @@ def fill_metadata_field(field_name: str, field_value: str, in_template: str) -> 
     return in_template
 
 
+def get_size_identifier_from_columns(column_names: list) -> (str, list):
+    size_identifier = None
+
+    parsed_column_names = column_names
+
+    for column_index in range(len(column_names)):
+        column_name = column_names[column_index]
+
+        # look for the '@template' column
+        if column_name.startswith(Columns.TEMPLATE):
+            # and isn't just '@template-back'
+            if column_name != Columns.TEMPLATE_BACK:
+                # then determine preferred card size, if any.
+                # it should look like e.g. '@template:standard'
+                size_index = column_name.rfind(':')
+
+                if size_index != -1:
+                    # a size identifier was found- so isolate it from the rest of the column
+                    size_identifier = column_name[size_index + 1:]
+                    # and remove it so we have a clean column name (important for any column
+                    # references to resolve properly)
+                    parsed_column_names[column_index] = column_name[:size_index]
+
+                break
+
+    return size_identifier, parsed_column_names
+
+
 def generate(args):
     # required arguments
     data_paths = args['input_paths']
@@ -249,7 +292,7 @@ def generate(args):
 
             warn_using_automatically_found_definitions(definitions_path)
 
-    definitions = get_definitions(definitions_path)
+    definitions = get_definitions_from_file(definitions_path)
 
     # get the current working directory (though not the ACTUAL working directory,
     # we pretend that the location of this script file is the working directory and base path.
@@ -325,30 +368,13 @@ def generate(args):
             # read the csv as a dict, so that we can access each column by name
             data = csv.DictReader(lower_first_row(f))
 
-            # get a list of all column names as they are
+            # make a list of all column names as they are (but stripped of excess whitespace)
             column_names = [column_name.strip() for column_name in data.fieldnames]
-
-            size_identifier = None
-
-            for column_index in range(len(column_names)):
-                column_name = column_names[column_index]
-
-                # look for the '@template' column
-                if column_name.startswith(Columns.TEMPLATE):
-                    # and isn't just '@template-back'
-                    if column_name != Columns.TEMPLATE_BACK:
-                        # then determine preferred card size, if any.
-                        # it should look like e.g. '@template:standard'
-                        size_index = column_name.rfind(':')
-
-                        if size_index != -1:
-                            size_identifier = column_name[size_index + 1:]
-
-                            column_names[column_index] = column_name[:size_index]
-
-                        break
-
-            data.fieldnames = column_names
+            # then determine the size identifier (if any; e.g. '@template:jumbo')
+            size_identifier, stripped_column_names = get_size_identifier_from_columns(column_names)
+            # replace the column keys with stripped/parsed representations
+            # (e.g. '@template:jumbo' becomes just '@template')
+            data.fieldnames = stripped_column_names
 
             if size_identifier is not None:
                 new_card_size = CardSizes.get_card_size(size_identifier)
@@ -408,7 +434,7 @@ def generate(args):
                 f.seek(0)
 
                 # and start over
-                data = csv.DictReader(lower_first_row(f), fieldnames=column_names)
+                data = csv.DictReader(lower_first_row(f), fieldnames=stripped_column_names)
 
                 # setting fieldnames explicitly causes the first row
                 # to be treated as data, so skip it
@@ -458,15 +484,7 @@ def generate(args):
                 count = count if count > 0 else 0
 
                 if count > 1000:
-                    # arbitrarily determined amount- but if the count is really high
-                    # it might just be an error
-                    warn('The card has specified a high count: {0}. '
-                         'Are you sure you want to continue?'.format(count),
-                         in_context=WarningContext(context, row_index))
-
-                    answer = input('(Y)es or (n)o?').strip().lower()
-
-                    if answer == 'n' or answer == 'no':
+                    if warn_abort_unusually_high_count(WarningContext(context, row_index), count):
                         # break out and continue with the next card
                         continue
 
@@ -731,6 +749,7 @@ def generate(args):
 
     # and copy the additional image resources
     resources_path = os.path.join(output_path, 'resources')
+
     # creating the directory if needed
     create_missing_directories_if_necessary(resources_path)
 
