@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+"""
+Setup script for cards.py.
+
+https://github.com/jhauberg/cards.py
+
+Copyright 2015 Jacob Hauberg Hansen.
+License: MIT (see LICENSE)
+"""
+
 import sys
 import re
 
@@ -17,7 +26,7 @@ matches = re.search(version_search, version, re.M)
 if matches:
     version_identifier = matches.group(1)
 else:
-    raise RuntimeError('Version could not be determined')
+    sys.exit('Version could not be determined')
 
 setup(
     name='cards.py',

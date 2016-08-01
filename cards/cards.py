@@ -1,7 +1,7 @@
 # coding=utf-8
 
 """
-Generates print-ready cards for your tabletop game.
+Generate print-ready cards for your tabletop game.
 
 https://github.com/jhauberg/cards.py
 

@@ -148,7 +148,9 @@ def get_template_fields(in_template: str) -> List[TemplateField]:
 def get_template_field_names(in_template: str) -> List[str]:
     """ Return a list of all template field names that occur in a template. """
 
+    # get all the fields
     template_fields = get_template_fields(in_template)
+    # adding each field name to a set ensures we only get unique fields
     template_field_names = {field.name for field in template_fields}
 
     return list(template_field_names)
