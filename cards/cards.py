@@ -364,9 +364,9 @@ def generate(args):
 
         image_paths = []
 
-        with open(data_path) as f:
+        with open(data_path) as data_file:
             # read the csv as a dict, so that we can access each column by name
-            data = csv.DictReader(lower_first_row(f))
+            data = csv.DictReader(lower_first_row(data_file))
 
             # make a list of all column names as they are (but stripped of excess whitespace)
             column_names = [column_name.strip() for column_name in data.fieldnames]
@@ -431,10 +431,10 @@ def generate(args):
                 default_template = template_from_data(data)
 
                 # reset the iterator
-                f.seek(0)
+                data_file.seek(0)
 
                 # and start over
-                data = csv.DictReader(lower_first_row(f), fieldnames=stripped_column_names)
+                data = csv.DictReader(lower_first_row(data_file), fieldnames=stripped_column_names)
 
                 # setting fieldnames explicitly causes the first row
                 # to be treated as data, so skip it
@@ -493,7 +493,7 @@ def generate(args):
 
                     # determine which template to use for this card, if any
                     template_path = get_column_content(
-                        row, Columns.TEMPLATE, definitions, default_content='').strip()
+                        row, Columns.TEMPLATE, data_path, definitions, default_content='').strip()
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
@@ -522,7 +522,8 @@ def generate(args):
 
                     card_content, found_image_paths, missing_fields = fill_card_front(
                         template, template_path,
-                        row, row_index, card_index, card_copy_index,
+                        row, row_index, data_path,
+                        card_index, card_copy_index,
                         definitions)
 
                     if (template is not template_not_provided and
@@ -552,7 +553,7 @@ def generate(args):
 
                     if not disable_backs:
                         template_path_back = get_column_content(
-                            row, Columns.TEMPLATE_BACK, definitions, default_content='').strip()
+                            row, Columns.TEMPLATE_BACK, data_path, definitions, default_content='').strip()
 
                         template_back = None
 
@@ -576,7 +577,8 @@ def generate(args):
 
                         back_content, found_image_paths, missing_fields = fill_card_back(
                             template_back, template_path_back,
-                            row, row_index, card_index, card_copy_index,
+                            row, row_index, data_path,
+                            card_index, card_copy_index,
                             definitions)
 
                         if (template_back is not template_back_not_provided and

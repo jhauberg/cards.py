@@ -2,10 +2,12 @@
 
 import os
 import re
+import csv
+import itertools
 
 from typing import List
 
-from cards.util import WarningContext, warn, dequote
+from cards.util import WarningContext, warn, dequote, lower_first_row
 
 from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
 
@@ -315,6 +317,7 @@ def fill_include_fields(from_template_path: str, in_template: str) -> str:
 def fill_template(template: str,
                   template_path: str,
                   row: dict,
+                  in_data_path: str,
                   definitions: dict) -> (str, set, set):
     """ Populate all template fields in the template.
 
@@ -351,7 +354,7 @@ def fill_template(template: str,
     for column in row:
         # fetch the content for the field
         field_content, referenced_columns = get_column_content(
-            row, column, definitions, default_content='', tracking_references=True)
+            row, column, in_data_path, definitions, default_content='', tracking_references=True)
 
         if is_image(field_content):
             # this field contains only an image path, so we have to make sure that it gets copied
@@ -446,6 +449,7 @@ def fill_card(
         template_path: str,
         row: dict,
         row_index: int,
+        in_data_path: str,
         card_index: int,
         card_copy_index: int,
         definitions: dict) -> (str, list, list):
@@ -453,7 +457,7 @@ def fill_card(
 
     # attempt to fill all fields discovered in the template using the data for this card
     template, discovered_image_paths, missing_fields = fill_template(
-        template, template_path, row, definitions)
+        template, template_path, row, in_data_path, definitions)
 
     # fill all row index fields (usually used for error templates)
     template = fill_template_fields(
@@ -495,13 +499,14 @@ def fill_card_front(
         template_path: str,
         row: dict,
         row_index: int,
+        in_data_path: str,
         card_index: int,
         card_copy_index: int,
         definitions: dict) -> (str, list, list):
     """ Return the contents of the front of a card using the specified template. """
 
-    return fill_card(template, template_path, get_front_data(row),
-                     row_index, card_index, card_copy_index, definitions)
+    return fill_card(template, template_path, get_front_data(row), row_index, in_data_path,
+                     card_index, card_copy_index, definitions)
 
 
 def fill_card_back(
@@ -509,13 +514,14 @@ def fill_card_back(
         template_path: str,
         row: dict,
         row_index: int,
+        in_data_path: str,
         card_index: int,
         card_copy_index: int,
         definitions: dict) -> (str, list, list):
     """ Return the contents of the back of a card using the specified template. """
 
-    return fill_card(template, template_path, get_back_data(row),
-                     row_index, card_index, card_copy_index, definitions)
+    return fill_card(template, template_path, get_back_data(row), row_index, in_data_path,
+                     card_index, card_copy_index, definitions)
 
 
 def get_front_data(row: dict) -> dict:
@@ -535,11 +541,13 @@ def get_back_data(row: dict) -> dict:
 def get_definition_content(definitions: dict, definition: str) -> str:
     """ Return the content of a definition, recursively resolving any references. """
 
-    return get_column_content(definitions, definition, definitions, default_content='')
+    return get_column_content(
+        definitions, definition, in_data_path=None, definitions=definitions, default_content='')
 
 
 def get_column_content(row: dict,
                        column: str,
+                       in_data_path: str,
                        definitions: dict,
                        default_content: str=None,
                        tracking_references: bool=False) -> str:
@@ -547,6 +555,13 @@ def get_column_content(row: dict,
 
     # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
+
+    # todo: if 'include' should also work for column content, then this is the place to run fill_include_fields
+    # however, that would require the path of the current csv to be passed to get_column_content
+    # it seems as if, maybe get_column_content should instead be resolve_column_content, and "getting" the content is separate
+
+    # simplest solution is to just add another parameter: from_base_path: str
+    # important to note tho, is that the path should be the CSV file- not the template
 
     references = []
 
@@ -556,10 +571,44 @@ def get_column_content(row: dict,
 
         if len(reference_field_names) > 0:
             for reference_field_name in reference_field_names:
+                # set default field name
                 other_column = reference_field_name
 
+                reference_row = row
+                reference_field_components = reference_field_name.split(' ', 1)
+
+                if len(reference_field_components) > 0:
+                    # field name is only the first part
+                    other_column = reference_field_components[0]
+
+                    if len(reference_field_components) > 1 and reference_field_components[1].startswith('#'):
+                        row_number = reference_field_components[1][1:]
+
+                        try:
+                            row_number = int(row_number)
+                        except ValueError:
+                            row_number = None
+
+                        # when looking at rows in a CSV they are not zero-based, and the first row
+                        # is always the headers, which makes the first row of actual data (that
+                        # you see) appear visually at row #2, like for example:
+                        #   #1 'rank,title'
+                        #   #2 '2,My Card'
+                        #   #2 '4,My Other Card'
+                        # however, of course, when reading from the file, the first row is
+                        # actually at index 0, so we have to take this into account
+                        row_number -= 2
+
+                        if row_number is not None and row_number >= 0:
+                            # open a new instance of the current data file
+                            with open(in_data_path) as data_file:
+                                # read data appropriately
+                                data = csv.DictReader(lower_first_row(data_file))
+                                # then read rows until reaching the target row_number
+                                reference_row = next(itertools.islice(data, row_number, None))
+
                 is_definition = other_column in definitions
-                is_column = other_column in row
+                is_column = other_column in reference_row
 
                 if not is_column and not is_definition:
                     # the field is not a reference that can be resolved right now, so skip it
@@ -570,10 +619,10 @@ def get_column_content(row: dict,
                 # references are determined and filled prior to filling the originating reference
 
                 if is_column:
-                    # prioritize the column column reference by resolving it first,
-                    # even if it could also be a definition instead (warn about it later)
+                    # prioritize the column reference by resolving it first,
+                    # even if it could also be a definition instead (but warn about it later)
                     other_column_content = get_column_content(
-                        row, other_column, definitions, default_content)
+                        reference_row, other_column, in_data_path, definitions, default_content)
                 elif is_definition:
                     # resolve the definition reference
                     other_column_content = get_definition_content(
@@ -581,7 +630,7 @@ def get_column_content(row: dict,
 
                 # and ultimately fill any occurences
                 column_content, occurences = fill_template_fields(
-                    field_name=other_column,
+                    field_name=reference_field_name,
                     field_value=other_column_content,
                     in_template=column_content,
                     counting_occurences=True)
@@ -589,7 +638,7 @@ def get_column_content(row: dict,
                 if occurences > 0 and tracking_references:
                     references.append(other_column)
 
-                if occurences > 0 and (is_definition and is_column and row is not definitions):
+                if occurences > 0 and (is_definition and is_column and reference_row is not definitions):
                     # the reference appears multiple places
                     warn_ambiguous_reference(other_column, other_column_content)
 
