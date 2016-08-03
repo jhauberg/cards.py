@@ -226,9 +226,10 @@ def fill_definitions(definitions: dict, in_template: str) -> str:
 def fill_template_field(field: TemplateField, field_value: str, in_template: str) -> str:
     """ Populate a single template field in the template. """
 
-    if (field.start_index < 0 or field.start_index >= len(in_template) or
-       field.end_index < 0 or field.end_index >= len(in_template)):
-        raise ValueError('Template field \'{0}\' out of range.'.format(field.name))
+    if (field.start_index < 0 or field.start_index > len(in_template) or
+       field.end_index < 0 or field.end_index > len(in_template)):
+        raise ValueError('Template field \'{0}\' out of range ({1}-{2}).'
+                         .format(field.name, field.start_index, field.end_index))
 
     return in_template[:field.start_index] + field_value + in_template[field.end_index:]
 
@@ -259,7 +260,7 @@ def fill_template_fields(
     return (content, occurences) if counting_occurences else content
 
 
-def fill_include_fields(from_template_path: str, in_template: str) -> str:
+def fill_include_fields(from_base_path: str, in_template: str) -> str:
     """ Populate all include fields in the template.
 
         An 'include' field provides a way of putting re-usable template components/content into a
@@ -285,10 +286,10 @@ def fill_include_fields(from_template_path: str, in_template: str) -> str:
 
                 if not os.path.isabs(include_path):
                     # it's not an absolute path, so we should make it a relative path
-                    if from_template_path is not None:
+                    if from_base_path is not None:
                         # make the path relative to the path of the containing template
                         include_path = os.path.join(
-                            os.path.dirname(from_template_path), include_path)
+                            os.path.dirname(from_base_path), include_path)
 
                 if os.path.isfile(include_path):
                     # we've ended up with a path that can be opened
@@ -297,7 +298,7 @@ def fill_include_fields(from_template_path: str, in_template: str) -> str:
                         include_content = f.read()
                 else:
                     warn_included_file_not_found(
-                        WarningContext(os.path.basename(from_template_path)), include_path)
+                        WarningContext(os.path.basename(from_base_path)), include_path)
 
                 # populate the include field with the content; or blank if unresolved
                 template_content = fill_template_field(
@@ -307,7 +308,7 @@ def fill_include_fields(from_template_path: str, in_template: str) -> str:
                 # otherwise the next field objects would have invalid indices and would not be
                 # resolved properly
                 template_content = fill_include_fields(
-                    from_template_path, in_template=template_content)
+                    from_base_path, in_template=template_content)
 
                 break
 
@@ -339,7 +340,7 @@ def fill_template(template: str,
     # first of all, find any {{ include }} fields and populate those,
     # as they might contribute even more template fields to populate
     template = fill_include_fields(
-        from_template_path=template_path,
+        from_base_path=template_path,
         in_template=template)
 
     # any discovered image paths from image fields
