@@ -609,6 +609,8 @@ def get_column_content(row: dict,
     # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
 
+    column_content = fill_include_fields(in_data_path, column_content)
+
     references = []
 
     if column_content is not None:
