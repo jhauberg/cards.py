@@ -545,6 +545,58 @@ def get_definition_content(definitions: dict, definition: str) -> str:
         definitions, definition, in_data_path=None, definitions=definitions, default_content='')
 
 
+def get_column_reference(field_name: str, in_reference_row: dict, in_data_path: str) -> (str, dict):
+    """ Return the field name and the row of data that it references.
+
+        If a field name like 'title #6' is passed, then 'title' and row number 6 is returned.
+    """
+
+    # set default field name and row to whatever is passed
+    reference_column = field_name
+    reference_row = in_reference_row
+
+    if in_data_path is not None:
+        # a data path has been supplied, so we can attempt determining whether this
+        # field is a reference to a column in another row
+        field_components = field_name.split(' ', 1)
+
+        if len(field_components) > 0:
+            # it might be, because there's multiple components in the field name
+            if len(field_components) > 1 and field_components[1].startswith('#'):
+                # we've determined that this is probably a reference to another row
+                # so get the row number
+                row_number = field_components[1][1:]
+
+                try:
+                    row_number = int(row_number)
+                except ValueError:
+                    row_number = None
+
+                if row_number is not None:
+                    # when looking at rows in a CSV they are not zero-based, and the first row
+                    # is always the headers, which makes the first row of actual data (that
+                    # you see) appear visually at row #2, like for example:
+                    #   #1 'rank,title'
+                    #   #2 '2,My Card'
+                    #   #2 '4,My Other Card'
+                    # however, of course, when reading from the file, the first row is
+                    # actually at index 0, so we have to take this into account
+                    row_number -= 2
+
+                    # the above logic essentially makes '#0' and '#1' invalid row numbers
+                    if row_number >= 0:
+                        # open a new instance of the current data file
+                        with open(in_data_path) as data_file:
+                            # actual field name is only the first part
+                            reference_column = field_components[0]
+                            # read data appropriately
+                            data = csv.DictReader(lower_first_row(data_file))
+                            # then read rows until reaching the target row_number
+                            reference_row = next(itertools.islice(data, row_number, None))
+
+    return reference_column, reference_row
+
+
 def get_column_content(row: dict,
                        column: str,
                        in_data_path: str,
@@ -556,13 +608,6 @@ def get_column_content(row: dict,
     # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
 
-    # todo: if 'include' should also work for column content, then this is the place to run fill_include_fields
-    # however, that would require the path of the current csv to be passed to get_column_content
-    # it seems as if, maybe get_column_content should instead be resolve_column_content, and "getting" the content is separate
-
-    # simplest solution is to just add another parameter: from_base_path: str
-    # important to note tho, is that the path should be the CSV file- not the template
-
     references = []
 
     if column_content is not None:
@@ -571,41 +616,8 @@ def get_column_content(row: dict,
 
         if len(reference_field_names) > 0:
             for reference_field_name in reference_field_names:
-                # set default field name
-                other_column = reference_field_name
-
-                reference_row = row
-                reference_field_components = reference_field_name.split(' ', 1)
-
-                if len(reference_field_components) > 0:
-                    # field name is only the first part
-                    other_column = reference_field_components[0]
-
-                    if len(reference_field_components) > 1 and reference_field_components[1].startswith('#'):
-                        row_number = reference_field_components[1][1:]
-
-                        try:
-                            row_number = int(row_number)
-                        except ValueError:
-                            row_number = None
-
-                        # when looking at rows in a CSV they are not zero-based, and the first row
-                        # is always the headers, which makes the first row of actual data (that
-                        # you see) appear visually at row #2, like for example:
-                        #   #1 'rank,title'
-                        #   #2 '2,My Card'
-                        #   #2 '4,My Other Card'
-                        # however, of course, when reading from the file, the first row is
-                        # actually at index 0, so we have to take this into account
-                        row_number -= 2
-
-                        if row_number is not None and row_number >= 0:
-                            # open a new instance of the current data file
-                            with open(in_data_path) as data_file:
-                                # read data appropriately
-                                data = csv.DictReader(lower_first_row(data_file))
-                                # then read rows until reaching the target row_number
-                                reference_row = next(itertools.islice(data, row_number, None))
+                other_column, reference_row = get_column_reference(
+                    reference_field_name, in_reference_row=row, in_data_path=in_data_path)
 
                 is_definition = other_column in definitions
                 is_column = other_column in reference_row
