@@ -1,5 +1,6 @@
 @definition,@value
 small,16x16
 cards_image_path,image/cards.svg
-sized_image_path,image/cards.svg:32x32
-sized_image_path_with_definition,image/cards.svg:small
+cards_image,{{ image/cards.svg }}
+sized_image,{{ image/cards.svg:32x32 }}
+sized_image_with_definition,{{ image/cards.svg:small }}
