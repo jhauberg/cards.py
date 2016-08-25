@@ -135,6 +135,17 @@ def warn_missing_fields_in_template(context: WarningContext,
     warn(warning.format(missing_fields), in_context=context)
 
 
+def warn_unused_definitions(unused_definitions: list) -> None:
+    if len(unused_definitions) > 1:
+        warning = 'You have definitions that seem to be unused: {0}'
+    else:
+        unused_definitions = unused_definitions[0]
+
+        warning = 'You have a definition that seem to be unused: \'{0}\''
+
+    warn(warning.format(unused_definitions))
+
+
 def warn_bad_template_path(context: WarningContext,
                            template_path: str,
                            is_back: bool=False) -> None:
@@ -356,6 +367,12 @@ def generate(args):
 
     previous_card_size = None
 
+    # some definitions are always guaranteed to be referenced, if not by cards, then by the final page output
+    all_referenced_definitions = {TemplateFields.TITLE,
+                                  TemplateFields.DESCRIPTION,
+                                  TemplateFields.COPYRIGHT,
+                                  TemplateFields.VERSION}
+
     for data_path in data_paths:
         # define the context as the base filename of the current data- useful when troubleshooting
         context = os.path.basename(data_path)
@@ -474,7 +491,7 @@ def generate(args):
                     except ValueError:
                         # count could not be determined, so default to skip this card
                         count = 0
-
+                        # and warn about it
                         warn_indeterminable_count(WarningContext(context, row_index))
                 else:
                     # the count column did not have content, so default count to 1
@@ -484,8 +501,9 @@ def generate(args):
                 count = count if count > 0 else 0
 
                 if count > 1000:
+                    # the count was unusually high; ask whether it's an error or not
                     if warn_abort_unusually_high_count(WarningContext(context, row_index), count):
-                        # break out and continue with the next card
+                        # it was an error, so break out and continue with the next card
                         continue
 
                 for i in range(count):
@@ -520,7 +538,7 @@ def generate(args):
 
                         warn_missing_template(WarningContext(context, row_index, card_index))
 
-                    card_content, found_image_paths, missing_fields = fill_card_front(
+                    card_content, found_image_paths, missing_fields, referenced_definitions = fill_card_front(
                         template, template_path,
                         row, row_index, data_path,
                         card_index, card_copy_index,
@@ -540,6 +558,8 @@ def generate(args):
                             warn_unknown_fields_in_template(
                                 WarningContext(context, row_index, card_index),
                                 list(missing_fields_in_data))
+
+                    all_referenced_definitions |= referenced_definitions
 
                     image_paths.extend(found_image_paths)
 
@@ -575,7 +595,7 @@ def generate(args):
                         if template_back is None:
                             template_back = template_back_not_provided
 
-                        back_content, found_image_paths, missing_fields = fill_card_back(
+                        back_content, found_image_paths, missing_fields, referenced_definitions = fill_card_back(
                             template_back, template_path_back,
                             row, row_index, data_path,
                             card_index, card_copy_index,
@@ -595,6 +615,8 @@ def generate(args):
                                 warn_unknown_fields_in_template(
                                     WarningContext(context, row_index, card_index),
                                     list(missing_fields_in_data), is_back_template=True)
+
+                        all_referenced_definitions |= referenced_definitions
 
                         image_paths.extend(found_image_paths)
 
@@ -674,6 +696,13 @@ def generate(args):
         # ensure there are no duplicate image paths, since that would just
         # cause unnecessary copy operations
         context_image_paths[data_path] = list(set(image_paths))
+
+    # determine unused definitions, if any
+    unused_definitions = list(set(definitions.keys()) - all_referenced_definitions)
+
+    if len(unused_definitions) > 0:
+        if is_verbose:
+            warn_unused_definitions(unused_definitions)
 
     if output_path is None:
         # output to current working directory unless otherwise specified
