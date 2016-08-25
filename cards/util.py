@@ -21,7 +21,7 @@ class WarningContext(object):
 
 
 def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
-    """ Display a command-line warning. """
+    """ Display a command-line warning, optionally showing its context. """
 
     apply_red_color = '\033[31m'
     apply_yellow_color = '\033[33m'
@@ -29,21 +29,21 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
 
     apply_color = apply_yellow_color if not as_error else apply_red_color
 
-    message_content = '[{0}]'.format('!' if as_error else '-')
+    message_context = '[{0}]'.format('!' if as_error else '-')
 
     if in_context is not None:
         if in_context.row_index > -1:
-            if in_context.card_index > -1:
-                message_content = '{0} [{1}:{2}#{3}]'.format(
-                    message_content, in_context.name, in_context.row_index, in_context.card_index)
+            if in_context.card_index > -1 and in_context.card_index != in_context.row_index:
+                message_context = '{0} [{1}:#{2}.{3}]'.format(
+                    message_context, in_context.name, in_context.row_index, in_context.card_index)
             else:
-                message_content = '{0} [{1}:{2}]'.format(
-                    message_content, in_context.name, in_context.row_index)
+                message_context = '{0} [{1}:#{2}]'.format(
+                    message_context, in_context.name, in_context.row_index)
         else:
-            message_content = '{0} [{1}]'.format(
-                message_content, in_context.name)
+            message_context = '{0} [{1}]'.format(
+                message_context, in_context.name)
 
-    message_content = message_content + ' ' + message
+    message_content = message_context + ' ' + message
 
     print(apply_color + message_content + apply_normal_color)
 
