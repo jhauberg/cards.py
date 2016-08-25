@@ -36,6 +36,13 @@ def warn_unknown_size_specification(context: WarningContext, size_specification:
          in_context=context)
 
 
+def warn_unresolved_image_reference(image_reference: str, closest_resolution_value: str) -> None:
+    warn('An image reference could not be resolved: \033[4;31m\'{0}\'\033[31m. '
+         'Was it supposed to be: \'{1}\'?\033[0m'
+         .format(image_reference, closest_resolution_value),
+         as_error=True)
+
+
 def warn_included_file_not_found(context: WarningContext, included_file_path: str) -> None:
     warn('An included file was not found: \033[4;31m\'{0}\'\033[0m'
          .format(included_file_path),
@@ -69,7 +76,7 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str, l
     explicit_width = None
     explicit_height = None
 
-    if size_index is not -1:
+    if size_index != -1:
         # get rid of the size specification to have a clean image path
         actual_image_path = image_path[:size_index]
 
@@ -126,6 +133,11 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str, l
         else:
             image_tag = '<img src="{0}">'.format(actual_image_path)
     else:
+        if size_index != -1 or copy_only:
+            warn_unresolved_image_reference(
+                image_reference=image_path,
+                closest_resolution_value=actual_image_path)
+
         actual_image_path = ''
         image_tag = ''
 
@@ -178,7 +190,9 @@ def fill_image_fields(content: str,
 
     found_definition_references = []
 
-    for field in get_template_fields(content):
+    template_fields = get_template_fields(content)
+
+    for field in template_fields:
         # at this point we don't know that it's actually an image field - we only know that it's
         # a template field, so we just attempt to create an <img> tag from the field.
         # if it turns out to not be an image, we just ignore the field entirely and proceed
@@ -196,18 +210,19 @@ def fill_image_fields(content: str,
             # the field was transformed to either an <img> tag, or just the path (for copying only)
             content = fill_template_field(field, image_tag, content)
 
-            # so since the content we're finding matches on has just changed, we can no longer
-            # rely on the match indices, so we have to recursively "start over" again
-            content, filled_image_paths, referenced_definitions = fill_image_fields(
-                content, definitions, tracking_references=True)
+            if len(template_fields) > 1:
+                # so since the content we're finding matches on has just changed, we can no longer
+                # rely on the match indices, so we have to recursively "start over" again
+                content, filled_image_paths, referenced_definitions = fill_image_fields(
+                    content, definitions, tracking_references=True)
 
-            if len(filled_image_paths) > 0:
-                image_paths.extend(filled_image_paths)
+                if len(filled_image_paths) > 0:
+                    image_paths.extend(filled_image_paths)
 
-            if len(referenced_definitions) > 0:
-                found_definition_references.extend(referenced_definitions)
+                if len(referenced_definitions) > 0:
+                    found_definition_references.extend(referenced_definitions)
 
-            break
+                break
 
     return ((content, image_paths, list(set(found_definition_references))) if tracking_references
             else (content, image_paths))
