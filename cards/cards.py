@@ -367,7 +367,8 @@ def generate(args):
 
     previous_card_size = None
 
-    # some definitions are always guaranteed to be referenced, if not by cards, then by the final page output
+    # some definitions are always guaranteed to be referenced,
+    # if not by cards, then by the final page output
     all_referenced_definitions = {TemplateFields.TITLE,
                                   TemplateFields.DESCRIPTION,
                                   TemplateFields.COPYRIGHT,
@@ -511,7 +512,9 @@ def generate(args):
 
                     # determine which template to use for this card, if any
                     template_path = get_column_content(
-                        row, Columns.TEMPLATE, data_path, definitions, default_content='').strip()
+                        row, Columns.TEMPLATE, data_path, definitions, default_content='')
+
+                    template_path = template_path.strip()
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
@@ -538,7 +541,7 @@ def generate(args):
 
                         warn_missing_template(WarningContext(context, row_index, card_index))
 
-                    card_content, found_image_paths, missing_fields, referenced_definitions = fill_card_front(
+                    card_content, render_data = fill_card_front(
                         template, template_path,
                         row, row_index, data_path,
                         card_index, card_copy_index,
@@ -546,22 +549,19 @@ def generate(args):
 
                     if (template is not template_not_provided and
                        template is not template_not_opened):
-                        missing_fields_in_template = missing_fields[0]
-                        missing_fields_in_data = missing_fields[1]
-
-                        if len(missing_fields_in_template) > 0 and is_verbose:
+                        if len(render_data.unused_fields) > 0 and is_verbose:
                             warn_missing_fields_in_template(
                                 WarningContext(context, row_index, card_index),
-                                list(missing_fields_in_template))
+                                list(render_data.unused_fields))
 
-                        if len(missing_fields_in_data) > 0 and is_verbose:
+                        if len(render_data.unknown_fields) > 0 and is_verbose:
                             warn_unknown_fields_in_template(
                                 WarningContext(context, row_index, card_index),
-                                list(missing_fields_in_data))
+                                list(render_data.unknown_fields))
 
-                    all_referenced_definitions |= referenced_definitions
+                    all_referenced_definitions |= render_data.referenced_definitions
 
-                    image_paths.extend(found_image_paths)
+                    image_paths.extend(render_data.image_paths)
 
                     current_card = get_sized_card(
                         card, size_class=card_size.style, content=card_content)
@@ -573,8 +573,9 @@ def generate(args):
 
                     if not disable_backs:
                         template_path_back = get_column_content(
-                            row, Columns.TEMPLATE_BACK, data_path, definitions, default_content='').strip()
+                            row, Columns.TEMPLATE_BACK, data_path, definitions, default_content='')
 
+                        template_path_back = template_path_back.strip()
                         template_back = None
 
                         if template_path_back is not None and len(template_path_back) > 0:
@@ -595,7 +596,7 @@ def generate(args):
                         if template_back is None:
                             template_back = template_back_not_provided
 
-                        back_content, found_image_paths, missing_fields, referenced_definitions = fill_card_back(
+                        back_content, render_data = fill_card_back(
                             template_back, template_path_back,
                             row, row_index, data_path,
                             card_index, card_copy_index,
@@ -603,22 +604,19 @@ def generate(args):
 
                         if (template_back is not template_back_not_provided and
                            template_back is not template_not_opened):
-                            missing_fields_in_template = missing_fields[0]
-                            missing_fields_in_data = missing_fields[1]
-
-                            if len(missing_fields_in_template) > 0 and is_verbose:
+                            if len(render_data.unused_fields) > 0 and is_verbose:
                                 warn_missing_fields_in_template(
                                     WarningContext(context, row_index, card_index),
-                                    list(missing_fields_in_template), is_back_template=True)
+                                    list(render_data.unused_fields), is_back_template=True)
 
-                            if len(missing_fields_in_data) > 0 and is_verbose:
+                            if len(render_data.unknown_fields) > 0 and is_verbose:
                                 warn_unknown_fields_in_template(
                                     WarningContext(context, row_index, card_index),
-                                    list(missing_fields_in_data), is_back_template=True)
+                                    list(render_data.unknown_fields), is_back_template=True)
 
-                        all_referenced_definitions |= referenced_definitions
+                        all_referenced_definitions |= render_data.referenced_definitions
 
-                        image_paths.extend(found_image_paths)
+                        image_paths.extend(render_data.image_paths)
 
                         current_card_back = get_sized_card(
                             card, size_class=card_size.style, content=back_content)

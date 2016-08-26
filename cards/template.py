@@ -50,7 +50,61 @@ def warn_included_file_not_found(context: WarningContext, included_file_path: st
          as_error=True)
 
 
-def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str, list):
+class TemplateRenderData(object):
+    """ Provides additional data about the rendering of a template. """
+
+    def __init__(self,
+                 image_paths: set,
+                 unknown_fields: set,
+                 unused_fields: set,
+                 referenced_definitions: set):
+        self.image_paths = image_paths
+        self.unknown_fields = unknown_fields
+        self.unused_fields = unused_fields
+        self.referenced_definitions = referenced_definitions
+
+
+class ColumnResolutionData(object):
+    """ Provides additional data about the resolution of a column. """
+
+    def __init__(self,
+                 column_references: set,
+                 definition_references: set):
+        self.column_references = column_references
+        self.definition_references = definition_references
+
+
+def template_from_path(template_path: str,
+                       relative_to_path: str=None) -> (str, bool, str):
+    """ Return the template contents of the given path, if possible.
+
+        If specified, path is made relative to another path.
+    """
+
+    template = None
+    template_not_found = False
+
+    if template_path is not None and len(template_path) > 0:
+        if not os.path.isabs(template_path):
+            # the path is not an absolute path; assume that it's located relative to the data
+            if relative_to_path is not None:
+                template_path = os.path.join(
+                    os.path.dirname(relative_to_path),
+                    template_path)
+
+        try:
+            with open(template_path) as t:
+                template = t.read().strip()
+        except IOError:
+            template_not_found = True
+    else:
+        template_not_found = True
+
+    return template, template_not_found, template_path
+
+
+def image_tag_from_path(image_path: str,
+                        definitions: dict=None) -> (str, str, list):
     """ Return a HTML-compliant image tag using the specified image path. """
 
     actual_image_path = image_path
@@ -144,7 +198,8 @@ def image_tag_from_path(image_path: str, definitions: dict=None) -> (str, str, l
     return image_tag, actual_image_path, list(set(definition_references))
 
 
-def get_template_field(field_name: str, in_template: str) -> TemplateField:
+def get_template_field(field_name: str,
+                       in_template: str) -> TemplateField:
     """ Return the first matching template field in a template, if any. """
 
     field_search = '{{\s*' + field_name + '\s*}}'
@@ -228,7 +283,9 @@ def fill_image_fields(content: str,
             else (content, image_paths))
 
 
-def fill_template_field(field: TemplateField, field_value: str, in_template: str) -> str:
+def fill_template_field(field: TemplateField,
+                        field_value: str,
+                        in_template: str) -> str:
     """ Populate a single template field in the template. """
 
     if (field.start_index < 0 or field.start_index > len(in_template) or
@@ -265,7 +322,8 @@ def fill_template_fields(
     return (content, occurences) if counting_occurences else content
 
 
-def fill_include_fields(from_base_path: str, in_template: str) -> str:
+def fill_include_fields(from_base_path: str,
+                        in_template: str) -> str:
     """ Populate all include fields in the template.
 
         An 'include' field provides a way of putting re-usable template content into a
@@ -320,7 +378,8 @@ def fill_include_fields(from_base_path: str, in_template: str) -> str:
     return template_content
 
 
-def fill_definitions(definitions: dict, in_template: str) -> (str, set):
+def fill_definitions(definitions: dict,
+                     in_template: str) -> (str, set):
     """ Populate all definition fields in the template.
 
         Note that this does not currently include definitions used in image fields.
@@ -360,7 +419,7 @@ def fill_template(template: str,
                   template_path: str,
                   row: dict,
                   in_data_path: str,
-                  definitions: dict) -> (str, set, list, set):
+                  definitions: dict) -> (str, TemplateRenderData):
     """ Populate all template fields in the template.
 
         Populating a template is done in 4 steps:
@@ -384,19 +443,17 @@ def fill_template(template: str,
         from_base_path=template_path,
         in_template=template)
 
-    # any discovered image paths from image fields
-    image_paths = []
-
     # any field that is in the data, but not found in the template; for example, if there's
     # a 'rank' column in the data, but no '{{ rank }}' field in the template
-    missing_fields_in_template = []
+    unused_columns = []
+
     column_references_in_data = []
     discovered_definition_references = []
 
     # go through each data field for this card (row)
     for column in row:
         # fetch the content for the field
-        field_content, referenced_columns, referenced_definitions = get_column_content(
+        field_content, resolution_data = get_column_content(
             row, column, in_data_path, definitions, default_content='', tracking_references=True)
 
         # fill content into the provided template
@@ -408,19 +465,19 @@ def fill_template(template: str,
 
         if occurences is 0:
             # this field was not found anywhere in the specified template
-            missing_fields_in_template.append(column)
+            unused_columns.append(column)
         else:
             # this field was found and populated in the template, so save any column references
             # made in the column content, so we can later compare that to the list of missing fields
-            column_references_in_data.extend(referenced_columns)
-            discovered_definition_references.extend(referenced_definitions)
+            column_references_in_data.extend(list(resolution_data.column_references))
+            discovered_definition_references.extend(list(resolution_data.definition_references))
 
     # make sure we only have one of each reference
     column_references = set(column_references_in_data)
 
     # remove any "missing fields" that are actually referenced in column content-
     # they may not be in the template, but they are not unused/missing, so don't warn about it
-    missing_fields_in_template = list(set(missing_fields_in_template) - column_references)
+    unused_columns = list(set(unused_columns) - column_references)
 
     # fill any definition fields- note that this should happen prior to filling image fields,
     # since that allows a definition to include image references
@@ -432,13 +489,11 @@ def fill_template(template: str,
     template, filled_image_paths, referenced_definitions = fill_image_fields(
         template, definitions, tracking_references=True)
 
-    image_paths.extend(filled_image_paths)
-
     discovered_definition_references.extend(referenced_definitions)
 
     # any template field visible in the template, but not found in the data; for example, if
     # the template has a {{ rank }} field (or more), but no 'rank' column in the data
-    missing_fields_in_data = []
+    unknown_fields = []
 
     # find any remaining template fields so we can warn that they were not filled
     remaining_fields = get_template_fields(template)
@@ -454,39 +509,13 @@ def fill_template(template: str,
                     pass
                 else:
                     # the field was not found in the card data, so make a warning about it
-                    missing_fields_in_data.append(field.name)
+                    unknown_fields.append(field.name)
 
-    return (template, image_paths,
-            [set(missing_fields_in_template), set(missing_fields_in_data)],
-            set(discovered_definition_references))
-
-
-def template_from_path(template_path: str, relative_to_path: str=None) -> (str, bool, str):
-    """ Return the template contents of the given path, if possible.
-
-        If specified, path is made relative to another path.
-    """
-
-    template = None
-    template_not_found = False
-
-    if template_path is not None and len(template_path) > 0:
-        if not os.path.isabs(template_path):
-            # the path is not an absolute path; assume that it's located relative to the data
-            if relative_to_path is not None:
-                template_path = os.path.join(
-                    os.path.dirname(relative_to_path),
-                    template_path)
-
-        try:
-            with open(template_path) as t:
-                template = t.read().strip()
-        except IOError:
-            template_not_found = True
-    else:
-        template_not_found = True
-
-    return template, template_not_found, template_path
+    return template, TemplateRenderData(
+        image_paths=set(filled_image_paths),
+        unknown_fields=set(unknown_fields),
+        unused_fields=set(unused_columns),
+        referenced_definitions=set(discovered_definition_references))
 
 
 def fill_card(
@@ -497,11 +526,11 @@ def fill_card(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict) -> (str, list, list, set):
+        definitions: dict) -> (str, TemplateRenderData):
     """ Return the contents of a card using the specified template. """
 
     # attempt to fill all fields discovered in the template using the data for this card
-    template, discovered_image_paths, missing_fields, referenced_definitions = fill_template(
+    template, render_data = fill_template(
         template, template_path, row, in_data_path, definitions)
 
     # fill all row index fields (usually used for error templates)
@@ -534,13 +563,10 @@ def fill_card(
                      TemplateFields.CARD_COPY_INDEX,
                      TemplateFields.CARD_TEMPLATE_PATH}
 
-    missing_fields_in_template = missing_fields[0]
-    missing_fields_in_data = missing_fields[1]
+    # update the set of unknown fields to not include the exceptions listed above
+    render_data.unknown_fields = render_data.unknown_fields - except_fields
 
-    missing_fields = [missing_fields_in_template,
-                      missing_fields_in_data - except_fields]
-
-    return template, discovered_image_paths, missing_fields, referenced_definitions
+    return template, render_data
 
 
 def fill_card_front(
@@ -551,7 +577,7 @@ def fill_card_front(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict) -> (str, list, list, set):
+        definitions: dict) -> (str, TemplateRenderData):
     """ Return the contents of the front of a card using the specified template. """
 
     return fill_card(template, template_path, get_front_data(row), row_index, in_data_path,
@@ -566,7 +592,7 @@ def fill_card_back(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict) -> (str, list, list, set):
+        definitions: dict) -> (str, TemplateRenderData):
     """ Return the contents of the back of a card using the specified template. """
 
     return fill_card(template, template_path, get_back_data(row), row_index, in_data_path,
@@ -587,7 +613,9 @@ def get_back_data(row: dict) -> dict:
             if not is_special_column(column) and is_back_column(column)}
 
 
-def get_column_reference(field_name: str, in_reference_row: dict, in_data_path: str) -> (str, dict):
+def get_column_reference(field_name: str,
+                         in_reference_row: dict,
+                         in_data_path: str) -> (str, dict):
     """ Return the field name and the row of data that it references.
 
         If a field name like 'title #6' is passed, then 'title' and row number 6 is returned.
@@ -684,20 +712,17 @@ def get_column_content(row: dict,
                 if is_column:
                     # prioritize the column reference by resolving it first,
                     # even if it could also be a definition instead (but warn about it later)
-                    column_reference_content, column_reference_refs, column_reference_defs = get_column_content(
+                    column_reference_content, resolution_data = get_column_content(
                         reference_row, column_reference, in_data_path, definitions, default_content,
                         tracking_references=True)
-
-                    column_references.extend(column_reference_refs)
-                    definition_references.extend(column_reference_defs)
                 elif is_definition:
                     # resolve the definition reference, keeping track of any discovered references
-                    column_reference_content, column_reference_refs, column_reference_defs = get_definition_content(
+                    column_reference_content, resolution_data = get_definition_content(
                         definitions, definition=column_reference,
                         tracking_references=True)
 
-                    column_references.extend(column_reference_refs)
-                    definition_references.extend(column_reference_defs)
+                column_references.extend(list(resolution_data.column_references))
+                definition_references.extend(list(resolution_data.definition_references))
 
                 # and ultimately fill any occurences
                 column_content, occurences = fill_template_fields(
@@ -717,7 +742,10 @@ def get_column_content(row: dict,
                     # the reference appears multiple places
                     warn_ambiguous_reference(column_reference, column_reference_content)
 
-    return ((column_content, column_references, definition_references) if tracking_references
+    resolution_data = ColumnResolutionData(
+        set(column_references), set(definition_references))
+
+    return ((column_content, resolution_data) if tracking_references
             else column_content)
 
 
@@ -726,15 +754,17 @@ def get_definition_content(definitions: dict,
                            tracking_references: bool=False) -> str:
     """ Return the content of a definition, recursively resolving any references. """
 
-    definition_content, column_references, definition_references = get_column_content(
+    definition_content, resolution_data = get_column_content(
         row=definitions, column=definition, in_data_path='', definitions=definitions,
         default_content='', tracking_references=True)
 
-    return ((definition_content, column_references, definition_references) if tracking_references
+    return ((definition_content, resolution_data) if tracking_references
             else definition_content)
 
 
-def get_sized_card(card: str, size_class: str, content: str) -> str:
+def get_sized_card(card: str,
+                   size_class: str,
+                   content: str) -> str:
     """ Populate and return a card in a given size with the specified content. """
 
     card = fill_template_fields(TemplateFields.CARD_SIZE, size_class, in_template=card)
