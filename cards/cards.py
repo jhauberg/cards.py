@@ -22,7 +22,7 @@ from cards.constants import Columns, TemplateFields, CardSizes
 
 from cards.util import (
     WarningContext, warn, lower_first_row,
-    is_url, find_file_path, open_path,
+    FileWrapper, is_url, find_file_path, open_path,
     copy_file_if_necessary, create_missing_directories_if_necessary
 )
 
@@ -219,14 +219,22 @@ def get_definitions_from_file(path: str, verbosely: 'show warnings'=False) -> di
             if verbosely:
                 warn_bad_definitions_file(path)
         else:
-            with open(path) as f:
+            with open(path) as data_file_raw:
+                data_file = FileWrapper(data_file_raw)
+
                 # skip the first row (column headers)
-                f.readline()
+                next(data_file)
 
                 # map all rows into key-value pairs (assume no more than 2 columns are present)
-                definitions = {k: v for k, v in csv.reader(f)}
+                # and skipping ignored rows
+                definitions = {k: v for k, v in csv.reader(data_file)
+                               if not is_line_excluded(data_file.raw_line)}
 
     return definitions
+
+
+def is_line_excluded(line: str) -> bool:
+    return line.startswith('#')
 
 
 def get_page(page_number: int, cards: str, page_template: str) -> str:
@@ -382,7 +390,9 @@ def generate(args):
 
         image_paths = []
 
-        with open(data_path) as data_file:
+        with open(data_path) as data_file_raw:
+            # wrap the file stream to retain access to unparsed lines
+            data_file = FileWrapper(data_file_raw)
             # read the csv as a dict, so that we can access each column by name
             data = csv.DictReader(lower_first_row(data_file))
 
@@ -449,7 +459,8 @@ def generate(args):
                 default_template = template_from_data(data)
 
                 # reset the iterator
-                data_file.seek(0)
+                # (note how this is done directly on the file stream; i.e. not on the wrapper)
+                data_file_raw.seek(0)
 
                 # and start over
                 data = csv.DictReader(lower_first_row(data_file), fieldnames=stripped_column_names)
@@ -477,6 +488,10 @@ def generate(args):
                 # since the column names counts as a row, and most editors
                 # do not use a zero-based row index, the first row == 2
                 row_index += 1
+
+                if is_line_excluded(data_file.raw_line):
+                    # this row should be ignored - so skip and continue
+                    continue
 
                 # this is the shared index for any instance of this card
                 card_copy_index += 1

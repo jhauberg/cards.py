@@ -11,6 +11,27 @@ import errno
 from urllib.parse import urlparse
 
 
+class FileWrapper:
+    """ Provides access to the last read line of a file.
+
+        Useful in combination with parsers such as DictReader when
+        you also need access to unparsed data.
+    """
+
+    def __init__(self, file):
+        self.file = file
+        self.raw_line = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        # iterate like usual, but keep the read line around until the next is read
+        self.raw_line = next(self.file)
+
+        return self.raw_line
+
+
 class WarningContext(object):
     """ Represents the context of a warning. """
 
