@@ -238,7 +238,7 @@ def get_definitions_from_file(path: str, verbosely: 'show warnings'=False) -> di
 
 
 def is_line_excluded(line: str) -> bool:
-    return line.startswith('#')
+    return line.strip().startswith('#')
 
 
 def get_page(page_number: int, cards: str, page_template: str) -> str:
