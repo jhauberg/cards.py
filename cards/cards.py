@@ -159,7 +159,7 @@ def warn_bad_template_path(context: WarningContext,
          as_error=True)
 
 
-def warn_abort_unusually_high_count(context: WarningContext, count: int) -> None:
+def warn_abort_unusually_high_count(context: WarningContext, count: int) -> bool:
     # arbitrarily determined amount- but if the count is really high
     # it might just be an error
     warn('The card has specified a high count: {0}. '
@@ -172,6 +172,10 @@ def warn_abort_unusually_high_count(context: WarningContext, count: int) -> None
         return True
 
     return False
+
+
+def warn_card_was_skipped_intentionally(context: WarningContext) -> None:
+    warn('The card was skipped.', in_context=context)
 
 
 def copy_images_to_output_directory(
@@ -490,6 +494,10 @@ def generate(args):
                 row_index += 1
 
                 if is_line_excluded(data_file.raw_line):
+                    if is_verbose:
+                        warn_card_was_skipped_intentionally(
+                            WarningContext(context, row_index))
+
                     # this row should be ignored - so skip and continue
                     continue
 
