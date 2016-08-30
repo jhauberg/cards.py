@@ -16,15 +16,31 @@ Install straight from the source:
 
 # Usage
 
-When installed, you can run cards.py on the command line:
+When installed, you can run `cards.py` on the command line:
 
     $ cards -f cards.csv
 
-You can also run cards.py without installing it.
+<details>
+  <summary>**Running without installing**</summary>
 
-However, in that case, you must execute the `cards` module as a script:
+You can also run `cards.py` without installing it. However, in that case, you must execute the `cards` module as a script.
+
+Assuming working directory is the root of the project, you go like this:
 
     $ python -m cards -f cards.csv
+</details>
+
+<details>
+  <summary>**Uninstalling**</summary>
+
+If you wish to uninstall `cards.py` and make sure that you get rid of everything, you can run the installation again using the additional **--record** argument to save a list of all installed files:
+
+    $ python setup.py install --record installed_files.txt
+
+You can then go through all listed files and manually delete each one.
+
+This is actually a general tip that can be used for any python package installed using `setup_tools`.
+</details>
 
 ## Requirements
 
@@ -34,10 +50,6 @@ However, in that case, you must execute the `cards` module as a script:
 
   * Safari
   * Chrome
-
-## Documentation
-
-See the [wiki](https://github.com/jhauberg/cards.py/wiki)
 
 ## Examples
 
