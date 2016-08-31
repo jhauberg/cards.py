@@ -146,6 +146,17 @@ def warn_unused_definitions(unused_definitions: list) -> None:
     warn(warning.format(unused_definitions))
 
 
+def warn_invalid_columns(context: WarningContext, invalid_columns: list) -> None:
+    if len(invalid_columns) > 1:
+        warning = 'Skipping datasource. Some column names are invalid: {0}'
+    else:
+        invalid_columns = invalid_columns[0]
+
+        warning = 'Skipping datasource. A column name is invalid: {0}'
+
+    warn(warning.format(invalid_columns), in_context=context, as_error=True)
+
+
 def warn_bad_template_path(context: WarningContext,
                            template_path: str,
                            is_back: bool=False) -> None:
@@ -176,6 +187,20 @@ def warn_abort_unusually_high_count(context: WarningContext, count: int) -> bool
 
 def warn_card_was_skipped_intentionally(context: WarningContext) -> None:
     warn('The card was skipped.', in_context=context)
+
+
+class InvalidColumnError(object):
+    """ Provides additional data about the rendering of a template. """
+
+    def __init__(self, column_name: str, reason: str):
+        self.column_name = column_name
+        self.reason = reason
+
+    def __str__(self):
+        return '\'{0}\' {1}'.format(self.column_name, self.reason)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def copy_images_to_output_directory(
@@ -291,6 +316,12 @@ def get_size_identifier_from_columns(column_names: list) -> (str, list):
     return size_identifier, parsed_column_names
 
 
+def get_invalid_columns(column_names: list) -> list:
+    return [InvalidColumnError(column_name, reason='contains whitespace (should be an underscore)')
+            for column_name in column_names
+            if ' ' in column_name]
+
+
 def generate(args):
     # required arguments
     data_paths = args['input_paths']
@@ -402,6 +433,16 @@ def generate(args):
 
             # make a list of all column names as they are (but stripped of excess whitespace)
             column_names = [column_name.strip() for column_name in data.fieldnames]
+
+            # determine whether this datasource contains invalid columns
+            invalid_column_names = get_invalid_columns(column_names)
+
+            if len(invalid_column_names) > 0:
+                # warn that this datasource will be skipped
+                warn_invalid_columns(WarningContext(context), invalid_column_names)
+
+                continue
+
             # then determine the size identifier (if any; e.g. '@template:jumbo')
             size_identifier, stripped_column_names = get_size_identifier_from_columns(column_names)
             # replace the column keys with stripped/parsed representations
