@@ -858,9 +858,13 @@ def generate(args):
         copy_images_to_output_directory(
             context_image_paths[context], context, output_path, verbosely=True)
 
-    print('Generated {0} {1} on {2} {3}. See \033[4m\'{4}\'\033[0m.'
-          .format(cards_total, cards_or_card,
-                  pages_total, pages_or_page,
-                  output_filepath))
+    if cards_total > 0:
+        print('Generated {0} {1} on {2} {3}. See \033[4m\'{4}\'\033[0m'
+              .format(cards_total, cards_or_card,
+                      pages_total, pages_or_page,
+                      output_filepath))
+    else:
+        print('Generated 0 cards. See \033[4m\'{0}\'\033[0m'
+              .format(output_filepath))
 
     open_path(output_path)
