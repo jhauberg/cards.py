@@ -306,10 +306,10 @@ def get_size_identifier_from_columns(column_names: list) -> (str, list):
 
                 if size_index != -1:
                     # a size identifier was found- so isolate it from the rest of the column
-                    size_identifier = column_name[size_index + 1:]
+                    size_identifier = column_name[size_index + 1:].strip()
                     # and remove it so we have a clean column name (important for any column
                     # references to resolve properly)
-                    parsed_column_names[column_index] = column_name[:size_index]
+                    parsed_column_names[column_index] = column_name[:size_index].strip()
 
                 break
 
@@ -434,8 +434,11 @@ def generate(args):
             # make a list of all column names as they are (but stripped of excess whitespace)
             column_names = [column_name.strip() for column_name in data.fieldnames]
 
+            # then determine the size identifier (if any; e.g. '@template:jumbo')
+            size_identifier, stripped_column_names = get_size_identifier_from_columns(column_names)
+
             # determine whether this datasource contains invalid columns
-            invalid_column_names = get_invalid_columns(column_names)
+            invalid_column_names = get_invalid_columns(stripped_column_names)
 
             if len(invalid_column_names) > 0:
                 # warn that this datasource will be skipped
@@ -443,8 +446,6 @@ def generate(args):
 
                 continue
 
-            # then determine the size identifier (if any; e.g. '@template:jumbo')
-            size_identifier, stripped_column_names = get_size_identifier_from_columns(column_names)
             # replace the column keys with stripped/parsed representations
             # (e.g. '@template:jumbo' becomes just '@template')
             data.fieldnames = stripped_column_names
