@@ -185,6 +185,11 @@ def warn_abort_unusually_high_count(context: WarningContext, count: int) -> bool
     return False
 
 
+def warn_bad_card_size(context: WarningContext, size_identifier: str) -> None:
+    warn('Cards will be default size because an unknown card size was specified: \'{0}\''
+         .format(size_identifier), in_context=context)
+
+
 def warn_card_was_skipped_intentionally(context: WarningContext) -> None:
     warn('The card was skipped.', in_context=context)
 
@@ -452,7 +457,12 @@ def generate(args):
 
             if size_identifier is not None:
                 new_card_size = CardSizes.get_card_size(size_identifier)
-                card_size = new_card_size if new_card_size is not None else default_card_size
+
+                if new_card_size is not None:
+                    card_size = new_card_size
+                else:
+                    if is_verbose:
+                        warn_bad_card_size(WarningContext(context), size_identifier)
 
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
