@@ -500,7 +500,7 @@ def generate(args):
                 cards_on_page = 0
                 cards = ''
 
-            cards_per_row, cards_per_column = card_size.cards_per_page
+            cards_per_column, cards_per_row = card_size.cards_per_page
             max_cards_per_page = cards_per_row * cards_per_column
 
             # empty backs may be necessary to fill in empty spots on a page to ensure

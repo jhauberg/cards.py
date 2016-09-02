@@ -65,15 +65,19 @@ class CardSizes:
 
         if identifier is not None:
             if identifier == 'token':
-                return CardSize(identifier, style='card-size-075x075', cards_per_page=(14, 10))
+                return CardSize(identifier, style='card-size-075x075', cards_per_page=(10, 14)) # is this stuff right?! column, rows
             elif identifier == 'standard':
                 return CardSize(identifier, style='card-size-25x35', cards_per_page=(3, 3))
+            elif identifier == 'square':
+                return CardSize(identifier, style='card-size-25x25', cards_per_page=(3, 4))
+            elif identifier == 'lsquare':
+                return CardSize(identifier, style='card-size-35x35', cards_per_page=(3, 3))
             elif identifier == 'standard-landscape':
-                return CardSize(identifier, style='card-size-35x25', cards_per_page=(4, 2))
+                return CardSize(identifier, style='card-size-35x25', cards_per_page=(2, 4))
             elif identifier == 'jumbo':
-                return CardSize(identifier, style='card-size-35x55', cards_per_page=(2, 1))
+                return CardSize(identifier, style='card-size-35x55', cards_per_page=(1, 2))
             elif identifier == 'domino':
-                return CardSize(identifier, style='card-size-175x35', cards_per_page=(4, 3))
+                return CardSize(identifier, style='card-size-175x35', cards_per_page=(3, 4))
 
         return None
 

@@ -22,6 +22,18 @@
   height: 3.5in;
 }
 
+.card-size-25x25 {
+  /* Square card */
+  width:  2.5in;
+  height: 2.5in;
+}
+
+.card-size-35x35 {
+  /* Large square card */
+  width:  3.5in;
+  height: 3.5in;
+}
+
 .card-size-35x25 {
   /* Standard card in landscape */
   width:  3.5in;
