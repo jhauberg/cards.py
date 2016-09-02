@@ -847,15 +847,17 @@ def generate(args):
 
         result.write(index)
 
-    # make sure to copy the css file to the output directory
-    copy_file_if_necessary(os.path.join(cwd, 'templates/index.css'),
-                           os.path.join(output_path, 'index.css'))
-
-    # and copy the additional image resources
+    css_path = os.path.join(output_path, 'css')
     resources_path = os.path.join(output_path, 'resources')
 
-    # creating the directory if needed
+    create_missing_directories_if_necessary(css_path)
     create_missing_directories_if_necessary(resources_path)
+
+    copy_file_if_necessary(os.path.join(cwd, 'templates/css/cards.css'),
+                           os.path.join(css_path, 'cards.css'))
+
+    copy_file_if_necessary(os.path.join(cwd, 'templates/css/index.css'),
+                           os.path.join(css_path, 'index.css'))
 
     copy_file_if_necessary(os.path.join(cwd, 'templates/resources/guide.svg'),
                            os.path.join(resources_path, 'guide.svg'))
