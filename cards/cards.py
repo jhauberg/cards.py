@@ -157,6 +157,12 @@ def warn_invalid_columns(context: WarningContext, invalid_columns: list) -> None
     warn(warning.format(invalid_columns), in_context=context, as_error=True)
 
 
+def warn_bad_data_path(context: WarningContext, data_path: str) -> None:
+    warn('The datasource could not be found at: \033[4;31m\'{0}\'\033[0m'
+         .format(data_path), in_context=context,
+         as_error=True)
+
+
 def warn_bad_template_path(context: WarningContext,
                            template_path: str,
                            is_back: bool=False) -> None:
@@ -430,6 +436,13 @@ def generate(args):
 
         image_paths = []
 
+        # determine whether this path leads to anything
+        if not os.path.isfile(data_path):
+            # if it doesn't, warn that the path to the datasource is not right
+            warn_bad_data_path(WarningContext(context), data_path)
+            # and skip this datasource
+            continue
+
         with open(data_path) as data_file_raw:
             # wrap the file stream to retain access to unparsed lines
             data_file = FileWrapper(data_file_raw)
@@ -501,7 +514,7 @@ def generate(args):
                 cards = ''
 
             cards_per_column, cards_per_row = card_size.cards_per_page
-            max_cards_per_page = cards_per_row * cards_per_column
+            max_cards_per_page = cards_per_column * cards_per_row
 
             # empty backs may be necessary to fill in empty spots on a page to ensure
             # that the layout remains correct
