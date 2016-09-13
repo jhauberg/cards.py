@@ -898,7 +898,7 @@ def generate(args):
 
     if cards_total > 0:
         if cards_total > cards_total_unique:
-            print('Generated {0} ({1} unique) {2} on {3} {4}. See \033[4m\'{4}\'\033[0m'
+            print('Generated {0} ({1} unique) {2} on {3} {4}. See \033[4m\'{5}\'\033[0m'
                   .format(cards_total, cards_total_unique, cards_or_card,
                           pages_total, pages_or_page,
                           output_filepath))
