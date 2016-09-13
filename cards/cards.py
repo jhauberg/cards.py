@@ -11,6 +11,7 @@ License: MIT (see LICENSE)
 
 import os
 import csv
+import math
 
 from cards.template import fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
 from cards.template import template_from_path
@@ -429,6 +430,8 @@ def generate(args):
 
     previous_card_size = None
 
+    page_size = CardSizes.get_page_size()
+
     # some definitions are always guaranteed to be referenced,
     # if not by cards, then by the final page output
     all_referenced_definitions = {TemplateFields.TITLE,
@@ -521,7 +524,12 @@ def generate(args):
                 cards_on_page = 0
                 cards = ''
 
-            cards_per_column, cards_per_row = card_size.cards_per_page
+            card_width, card_height = card_size.size_in_inches
+            page_width, page_height = page_size.size_in_inches
+
+            cards_per_column = math.floor(page_width / card_width)
+            cards_per_row = math.floor(page_height / card_height)
+
             max_cards_per_page = cards_per_column * cards_per_row
 
             # empty backs may be necessary to fill in empty spots on a page to ensure

@@ -51,3 +51,9 @@
   width:  1.75in;
   height: 3.5in;
 }
+
+.card-size-page {
+  /* Full page card */
+  width:  7.5in;
+  height: 10.5in;
+}

@@ -43,10 +43,10 @@ class TemplateFields:
 class CardSize(object):
     """ Represents a card size. """
 
-    def __init__(self, identifier: str, style: str, cards_per_page: tuple):
+    def __init__(self, identifier: str, style: str, size_in_inches: tuple):
         self.identifier = identifier
         self.style = style
-        self.cards_per_page = cards_per_page
+        self.size_in_inches = size_in_inches
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -65,19 +65,21 @@ class CardSizes:
 
         if identifier is not None:
             if identifier == 'token':
-                return CardSize(identifier, style='card-size-075x075', cards_per_page=(10, 14)) # is this stuff right?! column, rows
+                return CardSize(identifier, style='card-size-075x075', size_in_inches=(.75, .75))
             elif identifier == 'standard':
-                return CardSize(identifier, style='card-size-25x35', cards_per_page=(3, 3))
+                return CardSize(identifier, style='card-size-25x35', size_in_inches=(2.5, 3.5))
             elif identifier == 'square':
-                return CardSize(identifier, style='card-size-25x25', cards_per_page=(3, 4))
+                return CardSize(identifier, style='card-size-25x25', size_in_inches=(2.5, 2.5))
             elif identifier == 'lsquare':
-                return CardSize(identifier, style='card-size-35x35', cards_per_page=(3, 3))
+                return CardSize(identifier, style='card-size-35x35', size_in_inches=(3.5, 3.5))
             elif identifier == 'standard-landscape':
-                return CardSize(identifier, style='card-size-35x25', cards_per_page=(2, 4))
+                return CardSize(identifier, style='card-size-35x25', size_in_inches=(3.5, 2.5))
             elif identifier == 'jumbo':
-                return CardSize(identifier, style='card-size-35x55', cards_per_page=(1, 2))
+                return CardSize(identifier, style='card-size-35x55', size_in_inches=(3.5, 5.5))
             elif identifier == 'domino':
-                return CardSize(identifier, style='card-size-175x35', cards_per_page=(3, 4))
+                return CardSize(identifier, style='card-size-175x35', size_in_inches=(1.75, 3.5))
+            elif identifier == 'page':
+                return CardSize(identifier, style='card-size-page', size_in_inches=(7.5, 10.5))
 
         return None
 
@@ -86,3 +88,9 @@ class CardSizes:
         """ Return the default card size: standard (2.5x3.5 inches). """
 
         return CardSizes.get_card_size('standard')
+
+    @staticmethod
+    def get_page_size() -> CardSize:
+        """ Return the full page size: 7.5x10.5 inches. """
+
+        return CardSizes.get_card_size('page')
