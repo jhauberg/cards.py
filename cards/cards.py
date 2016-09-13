@@ -422,7 +422,7 @@ def generate(args):
     # incremented each time a page is generated
     pages_total = 0
 
-    card_copy_index = 0
+    cards_total_unique = 0
 
     # dict of all image paths discovered for each context during card generation
     context_image_paths = {}
@@ -575,7 +575,7 @@ def generate(args):
                     continue
 
                 # this is the shared index for any instance of this card
-                card_copy_index += 1
+                cards_total_unique += 1
 
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
@@ -644,7 +644,7 @@ def generate(args):
                     card_content, render_data = fill_card_front(
                         template, template_path,
                         row, row_index, data_path,
-                        card_index, card_copy_index,
+                        card_index, cards_total_unique,
                         definitions)
 
                     if (template is not template_not_provided and
@@ -699,7 +699,7 @@ def generate(args):
                         back_content, render_data = fill_card_back(
                             template_back, template_path_back,
                             row, row_index, data_path,
-                            card_index, card_copy_index,
+                            card_index, cards_total_unique,
                             definitions)
 
                         if (template_back is not template_back_not_provided and
@@ -897,10 +897,16 @@ def generate(args):
             context_image_paths[context], context, output_path, verbosely=True)
 
     if cards_total > 0:
-        print('Generated {0} {1} on {2} {3}. See \033[4m\'{4}\'\033[0m'
-              .format(cards_total, cards_or_card,
-                      pages_total, pages_or_page,
-                      output_filepath))
+        if cards_total > cards_total_unique:
+            print('Generated {0} ({1} unique) {2} on {3} {4}. See \033[4m\'{4}\'\033[0m'
+                  .format(cards_total, cards_total_unique, cards_or_card,
+                          pages_total, pages_or_page,
+                          output_filepath))
+        else:
+            print('Generated {0} {1} on {2} {3}. See \033[4m\'{4}\'\033[0m'
+                  .format(cards_total, cards_or_card,
+                          pages_total, pages_or_page,
+                          output_filepath))
     else:
         print('Generated 0 cards. See \033[4m\'{0}\'\033[0m'
               .format(output_filepath))
