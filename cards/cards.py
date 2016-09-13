@@ -29,6 +29,10 @@ from cards.util import (
 from cards.version import __version__
 
 
+def warn_preview_enabled() -> None:
+    warn('Preview is enabled. Only 1 of each card will be rendered.')
+
+
 def warn_image_not_copied(context: WarningContext, image_path: str) -> None:
     warn('An image was not copied to the output directory since it was specified with '
          'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path),
@@ -344,9 +348,13 @@ def generate(args):
     force_page_breaks = args['force_page_breaks']
     disable_backs = bool(args['disable_backs'])
     default_card_size_identifier = args['size_identifier']
+    is_preview = bool(args['preview'])
     is_verbose = bool(args['verbose'])
 
     disable_auto_templating = False
+
+    if is_preview:
+        warn_preview_enabled()
 
     if definitions_path is None:
         # no definitions file has been explicitly specified, so try looking for it automatically
@@ -594,6 +602,10 @@ def generate(args):
                     if warn_abort_unusually_high_count(WarningContext(context, row_index), count):
                         # it was an error, so break out and continue with the next card
                         continue
+
+                if count > 0 and is_preview:
+                    # only render 1 card unless it should be skipped
+                    count = 1
 
                 for i in range(count):
                     card_index = cards_total + 1

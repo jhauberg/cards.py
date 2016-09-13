@@ -39,6 +39,10 @@ def setup_arguments(parser) -> None:
                         default=False, action='store_true',
                         help='Don\'t generate card backs')
 
+    parser.add_argument('--preview', dest='preview', required=False,
+                        default=False, action='store_true',
+                        help='Only render 1 of each card')
+
     parser.add_argument('--verbose', dest='verbose', required=False,
                         default=False, action='store_true',
                         help='Show more information')
