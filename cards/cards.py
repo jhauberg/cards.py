@@ -554,10 +554,10 @@ def generate(args):
                 if is_verbose:
                     warn_assume_backs(WarningContext(context))
             else:
-                disable_backs = True
-
-                if is_verbose:
+                if is_verbose and not disable_backs:
                     warn_no_backs(WarningContext(context))
+
+                disable_backs = True
 
             row_index = 1
 
