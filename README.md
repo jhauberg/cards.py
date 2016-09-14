@@ -18,7 +18,7 @@ Install straight from the source:
 
 When installed, you can run `cards.py` on the command line:
 
-    $ cards -f cards.csv
+    $ cards cards.csv
 
 <details>
   <summary>**Running without installing**</summary>
@@ -27,7 +27,7 @@ You can also run `cards.py` without installing it. However, in that case, you mu
 
 Assuming working directory is the root of the project, you go like this:
 
-    $ python -m cards -f cards.csv
+    $ python -m cards cards.csv
 </details>
 
 <details>
