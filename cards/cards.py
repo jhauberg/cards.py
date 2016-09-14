@@ -345,10 +345,10 @@ def generate(args):
     # optional arguments
     output_path = args['output_path']
     output_filename = args['output_filename']
-    definitions_path = args['definitions_path']
+    definitions_path = args['definitions_filename']
     force_page_breaks = args['force_page_breaks']
     disable_backs = bool(args['disable_backs'])
-    default_card_size_identifier = args['size_identifier']
+    default_card_size_identifier = args['size']
     is_preview = bool(args['preview'])
     is_verbose = bool(args['verbose'])
 

@@ -8,52 +8,62 @@ from cards.cards import generate
 from cards.version import __version__
 
 
+def pretty_description(description: str) -> str:
+    apply_bold_color = '\033[1m'
+    apply_normal_color = '\033[0m'
+
+    return apply_bold_color + description + apply_normal_color
+
+
 def setup_arguments(parser) -> None:
     """ Sets up required and optional program arguments. """
 
     # required arguments
-    parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='*',
-                        help='One or more paths to CSV files containing card data')
+    # parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='+',
+    #                     help='One or more paths to CSV files containing card data')
+    parser.add_argument(dest='input_paths', nargs='+',
+                        help=pretty_description('specifies one or more paths to card datasources'))
 
     # optional arguments
-    parser.add_argument('-o', '--output-folder', dest='output_path', required=False,
-                        help='Path to a directory in which the pages will be generated '
-                             '(a sub-directory will be created)')
+    parser.add_argument('-o', '--output-path', dest='output_path', required=False,
+                        help='specifies the path to the output directory '
+                             '(a \'generated\' sub-directory will be created)')
 
     parser.add_argument('-O', '--output-filename', dest='output_filename', required=False,
                         default='index.html',
-                        help='Name of the generated file')
+                        help='set the filename of the generated output file')
 
-    parser.add_argument('-d', '--definitions-filename', dest='definitions_path', required=False,
-                        help='Path to a CSV file containing definitions')
+    parser.add_argument('-d', '--definitions-filename', dest='definitions_filename', required=False,
+                        help='specifies the path to the definitions file')
 
-    parser.add_argument('-s', '--size', dest='size_identifier', required=False,
-                        help='Set the default size to use for cards (default is \'standard\'. '
-                        'Other options include: \'domino\', \'jumbo\' or \'token\')')
+    parser.add_argument('-s', '--size', dest='size', required=False,
+                        help='set the default card size (default is \'standard\'; '
+                        'other options include: \'domino\', \'jumbo\' or \'token\')')
 
     parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
                         default=False, action='store_true',
-                        help='Force a page break for each datasource')
+                        help='force a page break after each datasource')
 
     parser.add_argument('--disable-backs', dest='disable_backs', required=False,
                         default=False, action='store_true',
-                        help='Don\'t generate card backs')
+                        help='don\'t generate card backs')
 
     parser.add_argument('--preview', dest='preview', required=False,
                         default=False, action='store_true',
-                        help='Only render 1 of each card')
+                        help='only render 1 of each card')
 
     parser.add_argument('--verbose', dest='verbose', required=False,
                         default=False, action='store_true',
-                        help='Show more information')
+                        help='show more output information')
 
     parser.add_argument('--version', action='version', version='cards ' + __version__,
-                        help='Show the program\'s version')
+                        help='show the program version')
 
 
 def main(as_module=False):
     parser = argparse.ArgumentParser(
-        description='Generates print-ready cards for your tabletop game.')
+        description='Generates print-ready cards for your tabletop game',
+        epilog='Make more cards!')
 
     setup_arguments(parser)
 
