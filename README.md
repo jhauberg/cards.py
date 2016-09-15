@@ -12,7 +12,7 @@ Use the print function of your browser to save the pages to a PDF or to print th
 
 Install straight from the source:
 
-    $ python setup.py install
+    $ python3 setup.py install
 
 # Usage
 
@@ -27,7 +27,7 @@ You can also run `cards.py` without installing it. However, in that case, you mu
 
 Assuming working directory is the root of the project, you go like this:
 
-    $ python -m cards cards.csv
+    $ python3 -m cards cards.csv
 </details>
 
 <details>
@@ -35,7 +35,7 @@ Assuming working directory is the root of the project, you go like this:
 
 If you wish to uninstall `cards.py` and make sure that you get rid of everything, you can run the installation again using the additional **--record** argument to save a list of all installed files:
 
-    $ python setup.py install --record installed_files.txt
+    $ python3 setup.py install --record installed_files.txt
 
 You can then go through all listed files and manually delete each one.
 
