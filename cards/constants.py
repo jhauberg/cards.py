@@ -40,7 +40,7 @@ class TemplateFields:
     COPYRIGHT = '_copyright'                     # Optional field that is replaced with the copyright notice for the project
 
 
-class CardSize(object):
+class CardSize:
     """ Represents a card size. """
 
     def __init__(self, identifier: str, style: str, size_in_inches: tuple):

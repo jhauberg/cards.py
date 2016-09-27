@@ -20,192 +20,17 @@ from cards.template import get_column_content, get_definition_content, get_sized
 from cards.autotemplate import template_from_data
 
 from cards.constants import Columns, TemplateFields, CardSizes
+from cards.warning import WarningDisplay, WarningContext
 
 from cards.util import (
-    WarningContext, warn, lower_first_row,
-    FileWrapper, is_url, find_file_path, open_path,
+    FileWrapper, is_url, find_file_path, open_path, lower_first_row,
     copy_file_if_necessary, create_missing_directories_if_necessary
 )
 
 from cards.version import __version__
 
 
-def warn_preview_enabled() -> None:
-    warn('Preview is enabled. Only 1 of each card will be rendered.')
-
-
-def warn_image_not_copied(context: WarningContext, image_path: str) -> None:
-    warn('An image was not copied to the output directory since it was specified with '
-         'an absolute path: \033[4;33m\'{0}\'\033[0m'.format(image_path),
-         in_context=context)
-
-
-def warn_missing_image(context: WarningContext, image_path: str) -> None:
-    warn('One or more cards contain an image reference that does not exist: '
-         '\033[4;31m\'{0}\'\033[0m'.format(image_path),
-         in_context=context,
-         as_error=True)
-
-
-def warn_bad_definitions_file(definitions_path: str) -> None:
-    warn('No definitions file was found at: '
-         '\033[4;31m\'{0}\'\033[0m'.format(definitions_path),
-         as_error=True)
-
-
-def warn_using_automatically_found_definitions(definitions_path: str) -> None:
-    warn('No definitions have been specified. Using definitions automatically found at: '
-         '\033[4;33m\'{0}\'\033[0m'.format(definitions_path))
-
-
-def warn_assume_backs(context: WarningContext) -> None:
-    warn('Assuming card backs should be generated since ' +
-         '\'' + Columns.TEMPLATE_BACK + '\' appears in data. '
-         'You can disable card backs by specifying the --disable-backs argument.',
-         in_context=context)
-
-
-def warn_no_backs(context: WarningContext) -> None:
-    warn('Card backs will not be generated since \'' + Columns.TEMPLATE_BACK + '\''
-         ' does not appear in data.',
-         in_context=context)
-
-
-def warn_indeterminable_count(context: WarningContext) -> None:
-    warn('The card provided an indeterminable count and was skipped.',
-         in_context=context)
-
-
-def warn_missing_default_template(context: WarningContext) -> None:
-    warn('A template was not provided and auto-templating is not enabled.'
-         'Cards will not be generated correctly.',
-         in_context=context)
-
-
-def warn_missing_template(context: WarningContext) -> None:
-    warn('The card did not provide a template.',
-         in_context=context,
-         as_error=True)
-
-
-def warn_empty_template(context: WarningContext,
-                        template_path: str,
-                        is_back_template: bool=False) -> None:
-    warning = ('The card provided a back template that appears to be empty: '
-               '\033[4;33m\'{0}\'\033[0;33m.'
-               if is_back_template else
-               'The card provided a template that appears to be empty: '
-               '\033[4;33m\'{0}\'\033[0;33m. '
-               'The card will use an auto-template instead, if possible.')
-
-    warn(warning.format(template_path), in_context=context)
-
-
-def warn_using_auto_template(context: WarningContext) -> None:
-    warn('The card did not provide a template. The card will use an auto-template instead.',
-         in_context=context)
-
-
-def warn_unknown_fields_in_template(context: WarningContext,
-                                    unknown_fields: list,
-                                    is_back_template: bool=False) -> None:
-    if len(unknown_fields) > 1:
-        warning = ('The back template contains fields that are not present for this card: {0}'
-                   if is_back_template else
-                   'The template contains fields that are not present for this card: {0}')
-    else:
-        unknown_fields = unknown_fields[0]
-
-        warning = ('The back template contains a field that is not present for this card: \'{0}\''
-                   if is_back_template else
-                   'The template contains a field that is not present for this card: \'{0}\'')
-
-    warn(warning.format(unknown_fields), in_context=context)
-
-
-def warn_missing_fields_in_template(context: WarningContext,
-                                    missing_fields: list,
-                                    is_back_template: bool=False) -> None:
-    if len(missing_fields) > 1:
-        warning = ('The card back has unused columns: {0}'
-                   if is_back_template else
-                   'The card has unused columns: {0}')
-    else:
-        missing_fields = missing_fields[0]
-
-        warning = ('The card back has an unused column: \'{0}\''
-                   if is_back_template else
-                   'The card has an unused column: \'{0}\'')
-
-    warn(warning.format(missing_fields), in_context=context)
-
-
-def warn_unused_definitions(unused_definitions: list) -> None:
-    if len(unused_definitions) > 1:
-        warning = 'You have definitions that seem to be unused: {0}'
-    else:
-        unused_definitions = unused_definitions[0]
-
-        warning = 'You have a definition that seem to be unused: \'{0}\''
-
-    warn(warning.format(unused_definitions))
-
-
-def warn_invalid_columns(context: WarningContext, invalid_columns: list) -> None:
-    if len(invalid_columns) > 1:
-        warning = 'Skipping datasource. Some column names are invalid: {0}'
-    else:
-        invalid_columns = invalid_columns[0]
-
-        warning = 'Skipping datasource. A column name is invalid: {0}'
-
-    warn(warning.format(invalid_columns), in_context=context, as_error=True)
-
-
-def warn_bad_data_path(context: WarningContext, data_path: str) -> None:
-    warn('The datasource could not be found at: \033[4;31m\'{0}\'\033[0m'
-         .format(data_path), in_context=context,
-         as_error=True)
-
-
-def warn_bad_template_path(context: WarningContext,
-                           template_path: str,
-                           is_back: bool=False) -> None:
-    warning = ('The card provided a back template that could not be opened: '
-               '\033[4;31m\'{0}\'\033[0m'
-               if is_back else
-               'The card provided a template that could not be opened: '
-               '\033[4;31m\'{0}\'\033[0m')
-
-    warn(warning.format(template_path), in_context=context,
-         as_error=True)
-
-
-def warn_abort_unusually_high_count(context: WarningContext, count: int) -> bool:
-    # arbitrarily determined amount- but if the count is really high
-    # it might just be an error
-    warn('The card has specified a high count: {0}. '
-         'Are you sure you want to continue?'.format(count),
-         in_context=context)
-
-    answer = input('(Y)es or (n)o?').strip().lower()
-
-    if answer == 'n' or answer == 'no':
-        return True
-
-    return False
-
-
-def warn_bad_card_size(context: WarningContext, size_identifier: str) -> None:
-    warn('Cards will be default size because an unknown card size was specified: \'{0}\''
-         .format(size_identifier), in_context=context)
-
-
-def warn_card_was_skipped_intentionally(context: WarningContext) -> None:
-    warn('The card was skipped.', in_context=context)
-
-
-class InvalidColumnError(object):
+class InvalidColumnError:
     """ Provides additional data about the rendering of a template. """
 
     def __init__(self, column_name: str, reason: str):
@@ -235,7 +60,7 @@ def copy_images_to_output_directory(
         # using an absolute path, assume that it should not be copied)
         if os.path.isabs(image_path) or is_url(image_path):
             if verbosely:
-                warn_image_not_copied(WarningContext(context), image_path)
+                WarningDisplay.image_not_copied(WarningContext(context), image_path)
         else:
             # if the image path is not an absolute path, assume
             # that it's located relative to where the data is
@@ -253,7 +78,7 @@ def copy_images_to_output_directory(
 
                 copy_file_if_necessary(relative_source_path, relative_destination_path)
             else:
-                warn_missing_image(WarningContext(context), relative_source_path)
+                WarningDisplay.missing_image_error(WarningContext(context), relative_source_path)
 
 
 def get_definitions_from_file(path: str, verbosely: 'show warnings'=False) -> dict:
@@ -262,7 +87,7 @@ def get_definitions_from_file(path: str, verbosely: 'show warnings'=False) -> di
     if path is not None and len(path) > 0:
         if not os.path.isfile(path):
             if verbosely:
-                warn_bad_definitions_file(path)
+                WarningDisplay.bad_definitions_file_error(path)
         else:
             with open(path) as data_file_raw:
                 data_file = FileWrapper(data_file_raw)
@@ -355,7 +180,7 @@ def generate(args):
     disable_auto_templating = False
 
     if is_preview:
-        warn_preview_enabled()
+        WarningDisplay.preview_enabled()
 
     if definitions_path is None:
         # no definitions file has been explicitly specified, so try looking for it automatically
@@ -364,7 +189,7 @@ def generate(args):
         if found and potential_definitions_path is not None:
             definitions_path = potential_definitions_path
 
-            warn_using_automatically_found_definitions(definitions_path)
+            WarningDisplay.using_automatically_found_definitions(definitions_path)
 
     definitions = get_definitions_from_file(definitions_path)
 
@@ -450,7 +275,7 @@ def generate(args):
         # determine whether this path leads to anything
         if not os.path.isfile(data_path):
             # if it doesn't, warn that the path to the datasource is not right
-            warn_bad_data_path(WarningContext(context), data_path)
+            WarningDisplay.bad_data_path_error(WarningContext(context), data_path)
             # and skip this datasource
             continue
 
@@ -471,7 +296,7 @@ def generate(args):
 
             if len(invalid_column_names) > 0:
                 # warn that this datasource will be skipped
-                warn_invalid_columns(WarningContext(context), invalid_column_names)
+                WarningDisplay.invalid_columns_error(WarningContext(context), invalid_column_names)
 
                 continue
 
@@ -486,7 +311,7 @@ def generate(args):
                     card_size = new_card_size
                 else:
                     if is_verbose:
-                        warn_bad_card_size(WarningContext(context), size_identifier)
+                        WarningDisplay.bad_card_size(WarningContext(context), size_identifier)
 
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
@@ -556,14 +381,14 @@ def generate(args):
 
             if default_template is None and Columns.TEMPLATE not in data.fieldnames:
                 if is_verbose:
-                    warn_missing_default_template(WarningContext(context))
+                    WarningDisplay.missing_default_template(WarningContext(context))
 
             if not disable_backs and Columns.TEMPLATE_BACK in data.fieldnames:
                 if is_verbose:
-                    warn_assume_backs(WarningContext(context))
+                    WarningDisplay.assume_backs(WarningContext(context))
             else:
                 if is_verbose and not disable_backs:
-                    warn_no_backs(WarningContext(context))
+                    WarningDisplay.no_backs(WarningContext(context))
 
                 disable_backs = True
 
@@ -576,13 +401,13 @@ def generate(args):
 
                 if is_line_excluded(data_file.raw_line):
                     if is_verbose:
-                        warn_card_was_skipped_intentionally(
+                        WarningDisplay.card_was_skipped_intentionally(
                             WarningContext(context, row_index))
 
                     # this row should be ignored - so skip and continue
                     continue
 
-                # this is the shared index for any instance of this card
+                # this is also the shared index for any instance of this card
                 cards_total_unique += 1
 
                 # determine how many instances of this card to generate
@@ -597,7 +422,7 @@ def generate(args):
                         # count could not be determined, so default to skip this card
                         count = 0
                         # and warn about it
-                        warn_indeterminable_count(WarningContext(context, row_index))
+                        WarningDisplay.indeterminable_count(WarningContext(context, row_index))
                 else:
                     # the count column did not have content, so default count to 1
                     count = 1
@@ -607,7 +432,8 @@ def generate(args):
 
                 if count > 1000:
                     # the count was unusually high; ask whether it's an error or not
-                    if warn_abort_unusually_high_count(WarningContext(context, row_index), count):
+                    if WarningDisplay.abort_unusually_high_count(
+                            WarningContext(context, row_index), count):
                         # it was an error, so break out and continue with the next card
                         continue
 
@@ -616,6 +442,7 @@ def generate(args):
                     count = 1
 
                 for i in range(count):
+                    card_copy_index = i + 1
                     card_index = cards_total + 1
 
                     # determine which template to use for this card, if any
@@ -631,23 +458,27 @@ def generate(args):
                         if not_found:
                             template = template_not_opened
 
-                            warn_bad_template_path(
-                                WarningContext(context, row_index, card_index), template_path)
+                            WarningDisplay.bad_template_path_error(WarningContext(
+                                context, row_index, card_index, card_copy_index),
+                                template_path)
                         elif is_verbose and len(template) == 0:
                             template = default_template
 
-                            warn_empty_template(
-                                WarningContext(context, row_index, card_index), template_path)
+                            WarningDisplay.empty_template(WarningContext(
+                                context, row_index, card_index, card_copy_index),
+                                template_path)
                     else:
                         template = default_template
 
                         if template is not None and is_verbose:
-                            warn_using_auto_template(WarningContext(context, row_index, card_index))
+                            WarningDisplay.using_auto_template(WarningContext(
+                                context, row_index, card_index, card_copy_index))
 
                     if template is None:
                         template = template_not_provided
 
-                        warn_missing_template(WarningContext(context, row_index, card_index))
+                        WarningDisplay.missing_template_error(WarningContext(
+                            context, row_index, card_index, card_copy_index))
 
                     card_content, render_data = fill_card_front(
                         template, template_path,
@@ -658,13 +489,13 @@ def generate(args):
                     if (template is not template_not_provided and
                        template is not template_not_opened):
                         if len(render_data.unused_fields) > 0 and is_verbose:
-                            warn_missing_fields_in_template(
-                                WarningContext(context, row_index, card_index),
+                            WarningDisplay.missing_fields_in_template(WarningContext(
+                                context, row_index, card_index, card_copy_index),
                                 list(render_data.unused_fields))
 
                         if len(render_data.unknown_fields) > 0 and is_verbose:
-                            warn_unknown_fields_in_template(
-                                WarningContext(context, row_index, card_index),
+                            WarningDisplay.unknown_fields_in_template(WarningContext(
+                                context, row_index, card_index, card_copy_index),
                                 list(render_data.unknown_fields))
 
                     all_referenced_definitions |= render_data.referenced_definitions
@@ -693,12 +524,12 @@ def generate(args):
                             if not_found:
                                 template_back = template_not_opened
 
-                                warn_bad_template_path(
-                                    WarningContext(context, row_index, card_index),
+                                WarningDisplay.bad_template_path_error(WarningContext(
+                                    context, row_index, card_index, card_copy_index),
                                     template_path_back, is_back=True)
                             elif is_verbose and len(template_back) == 0:
-                                warn_empty_template(
-                                    WarningContext(context, row_index, card_index),
+                                WarningDisplay.empty_template(WarningContext(
+                                    context, row_index, card_index, card_copy_index),
                                     template_path_back, is_back_template=True)
 
                         if template_back is None:
@@ -713,13 +544,13 @@ def generate(args):
                         if (template_back is not template_back_not_provided and
                            template_back is not template_not_opened):
                             if len(render_data.unused_fields) > 0 and is_verbose:
-                                warn_missing_fields_in_template(
-                                    WarningContext(context, row_index, card_index),
+                                WarningDisplay.missing_fields_in_template(WarningContext(
+                                    context, row_index, card_index, card_copy_index),
                                     list(render_data.unused_fields), is_back_template=True)
 
                             if len(render_data.unknown_fields) > 0 and is_verbose:
-                                warn_unknown_fields_in_template(
-                                    WarningContext(context, row_index, card_index),
+                                WarningDisplay.unknown_fields_in_template(WarningContext(
+                                    context, row_index, card_index, card_copy_index),
                                     list(render_data.unknown_fields), is_back_template=True)
 
                         all_referenced_definitions |= render_data.referenced_definitions
@@ -808,7 +639,7 @@ def generate(args):
 
     if len(unused_definitions) > 0:
         if is_verbose:
-            warn_unused_definitions(unused_definitions)
+            WarningDisplay.unused_definitions(unused_definitions)
 
     if output_path is None:
         # output to current working directory unless otherwise specified

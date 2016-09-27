@@ -7,12 +7,13 @@ import itertools
 
 from typing import List
 
-from cards.util import WarningContext, warn, dequote, lower_first_row
+from cards.util import dequote, lower_first_row
+from cards.warning import WarningDisplay, WarningContext
 
 from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
 
 
-class TemplateField(object):
+class TemplateField:
     """ Represents a field in a template. """
 
     def __init__(self, name: str, start_index: int, end_index: int):
@@ -21,36 +22,7 @@ class TemplateField(object):
         self.end_index = end_index  # the index of the last '}' wrapping character
 
 
-def warn_ambiguous_reference(reference, result) -> None:
-    truncated_result = (result if len(result) < 18 else result[:18] + '…')
-
-    warn('A reference named \'{0}\' could refer to both a column or a definition. '
-         'The column data \'{1}\' was used.'
-         .format(reference, truncated_result))
-
-
-def warn_unknown_size_specification(context: WarningContext, size_specification: str) -> None:
-    warn('The size specification \'{0}\' has not been defined. '
-         'Image might not display as expected.'
-         .format(size_specification),
-         in_context=context)
-
-
-def warn_unresolved_image_reference(image_reference: str, closest_resolution_value: str) -> None:
-    warn('An image reference could not be resolved: \033[4;31m\'{0}\'\033[31m. '
-         'Was it supposed to be: \'{1}\'?\033[0m'
-         .format(image_reference, closest_resolution_value),
-         as_error=True)
-
-
-def warn_included_file_not_found(context: WarningContext, included_file_path: str) -> None:
-    warn('An included file was not found: \033[4;31m\'{0}\'\033[0m'
-         .format(included_file_path),
-         in_context=context,
-         as_error=True)
-
-
-class TemplateRenderData(object):
+class TemplateRenderData:
     """ Provides additional data about the rendering of a template. """
 
     def __init__(self,
@@ -64,7 +36,7 @@ class TemplateRenderData(object):
         self.referenced_definitions = referenced_definitions
 
 
-class ColumnResolutionData(object):
+class ColumnResolutionData:
     """ Provides additional data about the resolution of a column. """
 
     def __init__(self,
@@ -155,7 +127,7 @@ def image_tag_from_path(image_path: str,
             except ValueError:
                 explicit_width = None
 
-                warn_unknown_size_specification(
+                WarningDisplay.unknown_size_specification(
                     WarningContext(actual_image_path), width_specification)
             else:
                 if explicit_width < 0:
@@ -188,7 +160,7 @@ def image_tag_from_path(image_path: str,
             image_tag = '<img src="{0}">'.format(actual_image_path)
     else:
         if size_index != -1 or copy_only:
-            warn_unresolved_image_reference(
+            WarningDisplay.unresolved_image_reference_error(
                 image_reference=image_path,
                 closest_resolution_value=actual_image_path)
 
@@ -360,7 +332,7 @@ def fill_include_fields(from_base_path: str,
                         # so we open it and read in the entire content
                         include_content = f.read()
                 else:
-                    warn_included_file_not_found(
+                    WarningDisplay.included_file_not_found_error(
                         WarningContext(os.path.basename(from_base_path)), include_path)
 
                 # populate the include field with the content; or blank if unresolved
@@ -740,7 +712,10 @@ def get_column_content(row: dict,
                 if occurences > 0 and (is_definition and is_column and
                                        reference_row is not definitions):
                     # the reference appears multiple places
-                    warn_ambiguous_reference(column_reference, column_reference_content)
+                    context = os.path.basename(in_data_path)
+                    # so warn about it
+                    WarningDisplay.ambiguous_reference(
+                        WarningContext(context), column_reference, column_reference_content)
 
     resolution_data = ColumnResolutionData(
         set(column_references), set(definition_references))
