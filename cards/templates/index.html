@@ -11,6 +11,35 @@
     <meta name="description" content="Cards generated using https://github.com/jhauberg/cards.py {{ _program_version }}">
 
     <script type="text/javascript">
+      function removeOverlappingCutGuides() {
+        var elements = document.getElementsByClassName('cut-guide');
+
+        if (elements.length > 0) {
+          for (var i = 0; i < elements.length; i++) {
+            var element = elements[i];
+            var elementFrame = element.getBoundingClientRect();
+
+            for (var j = 0; j < elements.length; j++) {
+              if (i == j) {
+                continue;
+              }
+
+              var otherElement = elements[j]
+              var otherElementFrame = otherElement.getBoundingClientRect();
+
+              var overlap = !(elementFrame.right < otherElementFrame.left ||
+                              elementFrame.left > otherElementFrame.right ||
+                              elementFrame.bottom < otherElementFrame.top ||
+                              elementFrame.top > otherElementFrame.bottom)
+
+              if (overlap) {
+                otherElement.parentNode.removeChild(otherElement);
+              }
+            }
+          }
+        }
+      }
+
       function toggleVisibility(className) {
         var elements = document.getElementsByClassName(className);
 
@@ -52,6 +81,10 @@
           toggleButton.innerHTML = '<b>' + getActionFromVisibility(visibility) + '</b><br />CUT GUIDES'
         }
       }
+
+      window.onload = function() {
+        removeOverlappingCutGuides();
+      };
     </script>
   </head>
   <body>
