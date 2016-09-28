@@ -4,6 +4,7 @@
 import argparse
 
 from cards.cards import generate
+from cards.util import terminal_supports_color
 
 from cards.version import __version__
 
@@ -12,15 +13,14 @@ def pretty_description(description: str) -> str:
     apply_bold_color = '\033[1m'
     apply_normal_color = '\033[0m'
 
-    return apply_bold_color + description + apply_normal_color
+    return (apply_bold_color + description + apply_normal_color if terminal_supports_color()
+            else description)
 
 
 def setup_arguments(parser) -> None:
     """ Sets up required and optional program arguments. """
 
     # required arguments
-    # parser.add_argument('-f', '--input-filename', dest='input_paths', required=True, nargs='+',
-    #                     help='One or more paths to CSV files containing card data')
     parser.add_argument(dest='input_paths', nargs='+',
                         help=pretty_description('specifies one or more paths to card datasources'))
 
@@ -62,6 +62,7 @@ def setup_arguments(parser) -> None:
 
 def main(as_module=False):
     parser = argparse.ArgumentParser(
+        prog='cards.py',
         description='Generates print-ready cards for your tabletop game',
         epilog='Make more cards!')
 

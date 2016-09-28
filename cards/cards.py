@@ -23,7 +23,7 @@ from cards.constants import Columns, TemplateFields, CardSizes
 from cards.warning import WarningDisplay, WarningContext
 
 from cards.util import (
-    FileWrapper, is_url, find_file_path, open_path, lower_first_row,
+    FileWrapper, is_url, find_file_path, open_path, lower_first_row, terminal_supports_color,
     copy_file_if_necessary, create_missing_directories_if_necessary
 )
 
@@ -735,19 +735,23 @@ def generate(args):
         copy_images_to_output_directory(
             context_image_paths[context], context, output_path, verbosely=True)
 
+    output_location_message = ('See \033[4m\'{0}\'\033[0m'.format(output_filepath)
+                               if terminal_supports_color() else
+                               'See \'{0}\''.format(output_filepath))
+
     if cards_total > 0:
         if cards_total > cards_total_unique:
-            print('Generated {0} ({1} unique) {2} on {3} {4}. See \033[4m\'{5}\'\033[0m'
+            print('Generated {0} ({1} unique) {2} on {3} {4}. {5}'
                   .format(cards_total, cards_total_unique, cards_or_card,
                           pages_total, pages_or_page,
-                          output_filepath))
+                          output_location_message))
         else:
-            print('Generated {0} {1} on {2} {3}. See \033[4m\'{4}\'\033[0m'
+            print('Generated {0} {1} on {2} {3}. {4}'
                   .format(cards_total, cards_or_card,
                           pages_total, pages_or_page,
-                          output_filepath))
+                          output_location_message))
     else:
-        print('Generated 0 cards. See \033[4m\'{0}\'\033[0m'
-              .format(output_filepath))
+        print('Generated 0 cards. {0}'
+              .format(output_location_message))
 
     open_path(output_path)

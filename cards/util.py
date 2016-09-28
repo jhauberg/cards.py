@@ -61,9 +61,23 @@ def is_url(string: str) -> bool:
     return urlparse(string).scheme != ""
 
 
+def terminal_supports_color():
+    """ Determine whether the current terminal supports colored output. """
+
+    platform = sys.platform
+
+    is_supported_platform = platform != 'win32' or 'ANSICON' in os.environ
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+
+    if not is_supported_platform or not is_a_tty:
+        return False
+
+    return True
+
+
 def open_path(path: str) -> None:
-    """ Opens a path in a cross-platform manner;
-        showing e.g. Finder on MacOS or Explorer on Windows
+    """ Open a path in a cross-platform manner;
+        i.e. open Finder on MacOS and Explorer on Windows.
     """
 
     if sys.platform.startswith('darwin'):

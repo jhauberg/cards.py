@@ -2,6 +2,8 @@
 
 from cards.constants import Columns
 
+from cards.util import terminal_supports_color
+
 
 class WarningContext:
     """ Represents the context of a warning. """
@@ -45,11 +47,11 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
 
 
 class WarningDisplay:
-    apply_error_color = '\033[31m'
-    apply_error_color_underlined = '\033[4;31m'
-    apply_warning_color = '\033[33m'
-    apply_warning_color_underlined = '\033[4;33m'
-    apply_normal_color = '\033[0m'
+    apply_error_color = '\033[31m' if terminal_supports_color() else ''
+    apply_error_color_underlined = '\033[4;31m' if terminal_supports_color() else ''
+    apply_warning_color = '\033[33m' if terminal_supports_color() else ''
+    apply_warning_color_underlined = '\033[4;33m' if terminal_supports_color() else ''
+    apply_normal_color = '\033[0m' if terminal_supports_color() else ''
 
     @staticmethod
     def ambiguous_reference(context: WarningContext, reference: str, result: str) -> None:
