@@ -114,21 +114,6 @@ def get_page(page_number: int, cards: str, page_template: str) -> str:
     return fill_template_fields(TemplateFields.CARDS, cards, numbered_page)
 
 
-def fill_metadata_field(field_name: str, field_value: str, in_template: str) -> str:
-    """ Fills a metadata field like e.g. `title` or `description` and determines
-        whether or not the field should be displayed or hidden.
-    """
-
-    field_value = field_value.strip()
-    # these are css values; 'none' means hidden and taking up no space, while 'block' is the default
-    field_display = 'none' if len(field_value) == 0 else 'block'
-
-    in_template = fill_template_fields('{0}_display'.format(field_name), field_display, in_template)
-    in_template = fill_template_fields(field_name, field_value, in_template)
-
-    return in_template
-
-
 def get_size_identifier_from_columns(column_names: list) -> (str, list):
     size_identifier = None
 
@@ -698,10 +683,10 @@ def generate(args):
         copyright_notice = get_definition_content(definitions, definition=TemplateFields.COPYRIGHT)
         version_identifier = get_definition_content(definitions, definition=TemplateFields.VERSION)
 
-        index = fill_metadata_field(TemplateFields.TITLE, title, in_template=index)
-        index = fill_metadata_field(TemplateFields.DESCRIPTION, description, in_template=index)
-        index = fill_metadata_field(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
-        index = fill_metadata_field(TemplateFields.VERSION, version_identifier, in_template=index)
+        index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
+        index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
+        index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
+        index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
 
         # fill any image fields that might have appeared by populating the metadata fields
         index, filled_image_paths = fill_image_fields(index, definitions)
@@ -741,17 +726,17 @@ def generate(args):
 
     if cards_total > 0:
         if cards_total > cards_total_unique:
-            print('Generated {0} ({1} unique) {2} on {3} {4}. {5}'
+            print('Generated {0} ({1} unique) {2} on {3} {4}.\n{5}'
                   .format(cards_total, cards_total_unique, cards_or_card,
                           pages_total, pages_or_page,
                           output_location_message))
         else:
-            print('Generated {0} {1} on {2} {3}. {4}'
+            print('Generated {0} {1} on {2} {3}.\n{4}'
                   .format(cards_total, cards_or_card,
                           pages_total, pages_or_page,
                           output_location_message))
     else:
-        print('Generated 0 cards. {0}'
+        print('Generated 0 cards.\n{0}'
               .format(output_location_message))
 
     open_path(output_path)
