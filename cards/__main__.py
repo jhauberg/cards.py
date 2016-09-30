@@ -62,7 +62,7 @@ def setup_arguments(parser) -> None:
 
 def main(as_module=False):
     parser = argparse.ArgumentParser(
-        prog='cards.py',
+        prog='cards',
         description='Generates print-ready cards for your tabletop game',
         epilog='Make more cards!')
 
