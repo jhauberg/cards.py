@@ -311,9 +311,14 @@ def fill_include_fields(from_base_path: str,
         # include fields should strictly separate the keyword and path by a single whitespace
         field_components = field.name.split(' ', 1)
 
-        if len(field_components) > 0 and field_components[0] == TemplateFields.INCLUDE:
+        field_command = field_components[0] if len(field_components) > 0 else None
+
+        if field_command is not None:
+            is_include_command = field_command == TemplateFields.INCLUDE
+            is_inline_command = field_command == TemplateFields.INLINE
+
             # the field at least contains the include keyword
-            if len(field_components) > 1:
+            if len(field_components) > 1 and (is_include_command or is_inline_command):
                 # the field might also contain a path
                 include_path = dequote(field_components[1])
                 # default to blank
@@ -328,9 +333,15 @@ def fill_include_fields(from_base_path: str,
 
                 if os.path.isfile(include_path):
                     # we've ended up with a path that can be opened
-                    with open(include_path) as f:
-                        # so we open it and read in the entire content
-                        include_content = f.read()
+                    with open(include_path) as include_file:
+                        if is_include_command:
+                            # open it and read in the entire contents as is
+                            include_content = include_file.read()
+                        elif is_inline_command:
+                            # read each line
+                            for line in include_file.readlines():
+                                # stripping excess whitespace and newline in the process
+                                include_content += line.strip()
                 else:
                     WarningDisplay.included_file_not_found_error(
                         WarningContext(os.path.basename(from_base_path)), include_path)
@@ -651,13 +662,15 @@ def get_column_content(row: dict,
     # get the raw content of the column, optionally assigning a default value
     column_content = row.get(column, default_content)
 
-    # fill any include fields as the first thing
-    column_content = fill_include_fields(in_data_path, column_content)
-
     column_references = []
     definition_references = []
 
     if column_content is not None:
+        # strip excess whitespace
+        column_content = column_content.strip()
+        # fill any include fields before doing anything else
+        column_content = fill_include_fields(in_data_path, column_content)
+
         # there's at least some kind of content, so begin filling column reference fields (if any)
         reference_field_names = get_template_field_names(column_content)
 
@@ -717,6 +730,9 @@ def get_column_content(row: dict,
                     WarningDisplay.ambiguous_reference(
                         WarningContext(context), column_reference, column_reference_content)
 
+        # transform content to html using any applied markdown formatting
+        column_content = markdown(column_content)
+
     resolution_data = ColumnResolutionData(
         set(column_references), set(definition_references))
 
@@ -764,3 +780,56 @@ def is_back_column(column: str) -> bool:
     """ Determine whether a column is only intended for the back of a card. """
 
     return column.endswith(ColumnDescriptors.BACK_ONLY) if column is not None else False
+
+
+def markdown(content: str) -> str:
+    """ Transform any Markdown formatting into HTML.
+
+        Supports:
+            *emphasis*, _emphasis_
+            **strong**, __strong__, "they can _also be **combined**_"
+            ~~deleted~~, ++inserted++
+            superscript^5
+
+            Line break using multiples of 2 whitespace:
+                "break  once", "break    twice", "break      thrice"
+            or break twice by using 3 whitespace:
+                "break   twice"
+            note that multiples of 3 is not possible; e.g. 6 whitespace will be treated as 3 breaks.
+    """
+
+    # match any variation of bounding *'s:
+    # e.g. "emphasize *this*", or "strong **this**"
+    content = re.sub('(\*\*)(.+?)(\*\*)', '<strong>\\2</strong>', content)
+    content = re.sub('(\*)(.+?)(\*)', '<em>\\2</em>', content)
+
+    # match any variation of bounding _'s:
+    # e.g. "emphasize _this_", or "strong __this__"
+    # note that _'s applies under slightly different rules than *'s; it only kicks in
+    # when preceded by a special character or whitespace;
+    # e.g. "this_does not work_", "but _this does_" and "this (_works too_)"
+    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(__)(.+?)(__)', '<em>\\3</em>', content)
+    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(_)(.+?)(_)', '<em>\\3</em>', content)
+
+    # match any variation of bounding ^'s, or just ^:
+    # e.g. "5 kg/m^3^"
+    # content = re.sub('\^(.+)\^', '<sup>\\1</sup>', content)
+
+    # match preceding ^; e.g. "5 kg/m^3"
+    # note that this is preferred over using bounding ^'s, as both do not work together without
+    # applying extended rules (like with the _'s)
+    content = re.sub('\^(.+?)(?=(\s|\n|$))', '<sup>\\1</sup>', content)
+
+    # matches any variation of bounding ~~'s': e.g. "deleted ~~this~~"
+    content = re.sub('~~(.+)~~', '<del>\\1</del>', content)
+    # matches any variation of bounding ++'s': e.g. "inserted ++this++"
+    content = re.sub('\+\+(.+)\+\+', '<ins>\\1</ins>', content)
+
+    # matches exactly: "break this   line twice"
+    # 4 whitespaces should produce same result, but this is a shortcut since 2 breaks is common
+    content = re.sub('(?<=\S)((\s{3})(?=\S))', '<br /><br />', content)
+    # matches any variation of 2 whitespace:
+    # e.g. "break this  line", or "break this    line twice"
+    content = re.sub('\s\s', '<br />', content)
+
+    return content
