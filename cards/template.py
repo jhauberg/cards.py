@@ -811,7 +811,7 @@ def markdown(content: str) -> str:
     content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(__)(.+?)(__)', '<em>\\3</em>', content)
     content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(_)(.+?)(_)', '<em>\\3</em>', content)
 
-    # match any variation of bounding ^'s, or just ^:
+    # match any variation of bounding ^'s:
     # e.g. "5 kg/m^3^"
     # content = re.sub('\^(.+)\^', '<sup>\\1</sup>', content)
 

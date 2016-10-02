@@ -57,7 +57,7 @@ def dequote(s):
 
 
 def is_url(string: str) -> bool:
-    """ Determines whether a string is an url or not. """
+    """ Determine whether a string is an url or not. """
 
     return urlparse(string).scheme != ""
 
