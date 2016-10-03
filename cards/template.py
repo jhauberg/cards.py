@@ -93,9 +93,9 @@ def image_tag_from_path(image_path: str,
         # in case it is, then ignore anything beyond the protocol specification
         size_index = -1
 
-    copy_only = image_path.endswith(TemplateFieldDescriptors.COPY_ONLY)
+    no_transform = image_path.endswith(TemplateFieldDescriptors.COPY_ONLY)
 
-    if copy_only:
+    if no_transform:
         actual_image_path = image_path.replace(TemplateFieldDescriptors.COPY_ONLY, '')
 
         # ignore any size specification since an <img> tag will not be created for this image
@@ -165,6 +165,7 @@ def image_tag_from_path(image_path: str,
         actual_image_path = get_definition_content(definitions, definition=actual_image_path)
 
     if is_image(actual_image_path):
+        # the path points to an image, so we proceed the transformation
         resource_path = actual_image_path
 
         if is_resource(actual_image_path):
@@ -174,7 +175,7 @@ def image_tag_from_path(image_path: str,
             # so that we can keep every resource contained
             resource_path = get_resource_path(image_name)
 
-        if copy_only:
+        if no_transform:
             # the image should only be copied - so the "tag" is simply the image path
             image_tag = resource_path
         elif (explicit_width is not None and
@@ -186,12 +187,15 @@ def image_tag_from_path(image_path: str,
             # make a tag with the image at its intrinsic size
             image_tag = '<img src="{0}">'.format(resource_path)
     else:
-        if size_index != -1 or copy_only:
+        # the file is not an image; or something has gone wrong
+        if no_transform or size_index != -1:
+            # if either of these attributes exist, then it likely was supposed to be an image
+            # but we could not resolve it properly- so warn about it
             WarningDisplay.unresolved_image_reference_error(
                 image_reference=image_path,
                 closest_resolution_value=actual_image_path)
 
-        # clear any paths/tags as they are invalid
+        # clear any paths or tags as they would just be invalid
         actual_image_path = ''
         image_tag = ''
 
