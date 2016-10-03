@@ -46,13 +46,12 @@ class InvalidColumnError:
         return self.__str__()
 
 
-def get_definitions_from_file(path: str, verbosely: 'show warnings'=False) -> dict:
+def get_definitions_from_file(path: str) -> dict:
     definitions = {}
 
     if path is not None and len(path) > 0:
         if not os.path.isfile(path):
-            if verbosely:
-                WarningDisplay.bad_definitions_file_error(path)
+            WarningDisplay.bad_definitions_file_error(path)
         else:
             with open(path) as data_file_raw:
                 data_file = FileWrapper(data_file_raw)
