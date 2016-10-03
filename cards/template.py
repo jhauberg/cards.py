@@ -117,10 +117,10 @@ def image_tag_from_path(image_path: str,
             size = get_definition_content(definitions, definition=size)
 
         # get each size specification separately (removing blanks)
-        size = list(filter(None, size.split('x')))
+        size_components = list(filter(None, size.split('x')))
 
-        if len(size) > 0:
-            width_specification = size[0]
+        if len(size_components) > 0:
+            width_specification = size_components[0]
 
             try:
                 explicit_width = int(width_specification)
@@ -128,16 +128,30 @@ def image_tag_from_path(image_path: str,
                 explicit_width = None
 
                 WarningDisplay.unknown_size_specification(
-                    WarningContext(actual_image_path), width_specification)
+                    WarningContext(actual_image_path), size)
             else:
                 if explicit_width < 0:
+                    WarningDisplay.invalid_width_specification(
+                        WarningContext(actual_image_path), explicit_width)
+
                     explicit_width = None
 
-        if len(size) > 1:
-            explicit_height = int(size[1]) if size[1].isdigit() else None
+        if len(size_components) > 1:
+            height_specification = size_components[1]
 
-            if explicit_height is not None and explicit_height < 0:
+            try:
+                explicit_height = int(height_specification)
+            except ValueError:
                 explicit_height = None
+
+                WarningDisplay.unknown_size_specification(
+                    WarningContext(actual_image_path), size)
+            else:
+                if explicit_height < 0:
+                    WarningDisplay.invalid_height_specification(
+                        WarningContext(actual_image_path), explicit_height)
+
+                    explicit_height = None
         else:
             # default to a squared size using the width specification
             explicit_height = explicit_width

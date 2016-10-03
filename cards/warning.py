@@ -54,7 +54,9 @@ class WarningDisplay:
     apply_normal_color = '\033[0m' if terminal_supports_color() else ''
 
     @staticmethod
-    def ambiguous_reference(context: WarningContext, reference: str, result: str) -> None:
+    def ambiguous_reference(context: WarningContext,
+                            reference: str,
+                            result: str) -> None:
         truncated_result = (result if len(result) < 18 else result[:18] + '…')
 
         warn('A reference named \'{0}\' could refer to both a column or a definition. '
@@ -63,10 +65,27 @@ class WarningDisplay:
              in_context=context)
 
     @staticmethod
-    def unknown_size_specification(context: WarningContext, size_specification: str) -> None:
+    def unknown_size_specification(context: WarningContext,
+                                   size_specification: str) -> None:
         warn('The size specification \'{0}\' has not been defined. '
              'Image might not display as expected.'
              .format(size_specification),
+             in_context=context)
+
+    @staticmethod
+    def invalid_width_specification(context: WarningContext,
+                                    width: int) -> None:
+        warn('An image cannot have a width of \'{0}\'. '
+             'Image will be shown at its intrinsic size.'
+             .format(width),
+             in_context=context)
+
+    @staticmethod
+    def invalid_height_specification(context: WarningContext,
+                                     height: int) -> None:
+        warn('An image cannot have a height of \'{0}\'. '
+             'Image will be shown at its intrinsic size.'
+             .format(height),
              in_context=context)
 
     @staticmethod
@@ -78,7 +97,8 @@ class WarningDisplay:
              as_error=True)
 
     @staticmethod
-    def included_file_not_found_error(context: WarningContext, included_file_path: str) -> None:
+    def included_file_not_found_error(context: WarningContext,
+                                      included_file_path: str) -> None:
         warn('An included file was not found: {0}\'{1}\''
              .format(WarningDisplay.apply_error_color_underlined, included_file_path),
              in_context=context,
@@ -89,14 +109,16 @@ class WarningDisplay:
         warn('Preview is enabled. Only 1 of each card will be rendered.')
 
     @staticmethod
-    def image_not_copied(context: WarningContext, image_path: str) -> None:
+    def image_not_copied(context: WarningContext,
+                         image_path: str) -> None:
         warn('An image was not copied to the output directory since it was specified with '
              'an absolute path: {0}\'{1}\''
              .format(WarningDisplay.apply_warning_color_underlined, image_path),
              in_context=context)
 
     @staticmethod
-    def missing_image_error(context: WarningContext, image_path: str) -> None:
+    def missing_image_error(context: WarningContext,
+                            image_path: str) -> None:
         warn('One or more cards contain an image reference that does not exist: {0}\'{1}\''
              .format(WarningDisplay.apply_error_color_underlined, image_path),
              in_context=context,
@@ -210,7 +232,8 @@ class WarningDisplay:
         warn(warning.format(unused_definitions))
 
     @staticmethod
-    def invalid_columns_error(context: WarningContext, invalid_columns: list) -> None:
+    def invalid_columns_error(context: WarningContext,
+                              invalid_columns: list) -> None:
         if len(invalid_columns) > 1:
             warning = 'Skipping datasource. Some column names are invalid: {0}'
         else:
@@ -223,7 +246,8 @@ class WarningDisplay:
              as_error=True)
 
     @staticmethod
-    def bad_data_path_error(context: WarningContext, data_path: str) -> None:
+    def bad_data_path_error(context: WarningContext,
+                            data_path: str) -> None:
         warn('The datasource could not be found at: {0}\'{1}\''
              .format(WarningDisplay.apply_error_color_underlined, data_path),
              in_context=context,
@@ -242,7 +266,8 @@ class WarningDisplay:
              as_error=True)
 
     @staticmethod
-    def abort_unusually_high_count(context: WarningContext, count: int) -> bool:
+    def abort_unusually_high_count(context: WarningContext,
+                                   count: int) -> bool:
         # arbitrarily determined amount- but if the count is really high
         # it might just be an error
         warn('The card has specified a high count: {0}. '
@@ -257,7 +282,8 @@ class WarningDisplay:
         return False
 
     @staticmethod
-    def bad_card_size(context: WarningContext, size_identifier: str) -> None:
+    def bad_card_size(context: WarningContext,
+                      size_identifier: str) -> None:
         warn('Cards will be default size because an unknown card size was specified: \'{0}\''
              .format(size_identifier),
              in_context=context)
