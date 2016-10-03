@@ -1,5 +1,6 @@
 text
 "&#123;&#123; image/cards.svg &#125;&#125;<br /><br /><b>Should show the image at its intrinsic size</b><br /><br />{{ image/cards.svg }}"
+"&#123;&#123; https://rawgit.com/jhauberg/cards.py/master/cards/templates/resources/cards.svg &#125;&#125;<br /><br /><b>Should show the image at its intrinsic size</b><br /><br />{{ https://rawgit.com/jhauberg/cards.py/master/cards/templates/resources/cards.svg }}"
 "&#123;&#123; ../../cards/templates/resources/cards.svg &#125;&#125;<br /><br /><b>Should show the image at its intrinsic size</b><br /><br />{{ ../../cards/templates/resources/cards.svg }}"
 "&#123;&#123; image/cards.svg:32x32 &#125;&#125;<br /><br /><b>Should show the image at 32x32</b><br /><br />{{ image/cards.svg:32x32 }}"
 "&#123;&#123; image/cards.svg:x32 &#125;&#125;<br /><br /><b>Should show the image at 32x32</b><br /><br />{{ image/cards.svg:x32 }}"
