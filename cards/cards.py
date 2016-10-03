@@ -17,13 +17,15 @@ from cards.template import fill_template_fields, fill_image_fields, fill_card_fr
 from cards.template import template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
+from cards.resource import copy_images_to_output_directory
+
 from cards.autotemplate import template_from_data
 
 from cards.constants import Columns, TemplateFields, CardSizes
 from cards.warning import WarningDisplay, WarningContext
 
 from cards.util import (
-    FileWrapper, is_url, find_file_path, open_path, lower_first_row, terminal_supports_color,
+    FileWrapper, find_file_path, open_path, lower_first_row, terminal_supports_color,
     copy_file_if_necessary, create_missing_directories_if_necessary
 )
 
@@ -42,43 +44,6 @@ class InvalidColumnError:
 
     def __repr__(self):
         return self.__str__()
-
-
-def copy_images_to_output_directory(
-        image_paths: list,
-        root_path: str,
-        output_path: str,
-        verbosely: 'show warnings'=False) -> None:
-    """ Copies all provided images to the specified output path, keeping the directory structure
-        intact for each image.
-    """
-
-    context = os.path.basename(root_path)
-
-    for image_path in image_paths:
-        # copy each relatively specified image (if an image is specified
-        # using an absolute path, assume that it should not be copied)
-        if os.path.isabs(image_path) or is_url(image_path):
-            if verbosely:
-                WarningDisplay.image_not_copied(WarningContext(context), image_path)
-        else:
-            # if the image path is not an absolute path, assume
-            # that it's located relative to where the data is
-            relative_source_path = os.path.join(
-                os.path.dirname(root_path), image_path)
-
-            if os.path.isfile(relative_source_path):
-                # only copy if the file actually exists
-                relative_destination_path = os.path.join(
-                    output_path, image_path)
-
-                # make sure any missing directories are created as needed
-                create_missing_directories_if_necessary(
-                    os.path.dirname(relative_destination_path))
-
-                copy_file_if_necessary(relative_source_path, relative_destination_path)
-            else:
-                WarningDisplay.missing_image_error(WarningContext(context), relative_source_path)
 
 
 def get_definitions_from_file(path: str, verbosely: 'show warnings'=False) -> dict:
@@ -714,11 +679,11 @@ def generate(args):
     copy_file_if_necessary(os.path.join(cwd, 'templates/resources/cards.svg'),
                            os.path.join(resources_path, 'cards.svg'))
 
-    # additionally, copy all referenced images to the output directory as well
-    # (making sure to keep their original directory structure in relation to their context)
+    # additionally, copy all referenced images to the output directory
     for context in context_image_paths:
         copy_images_to_output_directory(
-            context_image_paths[context], context, output_path, verbosely=True)
+            context_image_paths[context], context, output_path,
+            verbosely=is_verbose)
 
     output_location_message = ('See \033[4m\'{0}\'\033[0m'.format(output_filepath)
                                if terminal_supports_color() else

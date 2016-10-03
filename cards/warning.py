@@ -111,8 +111,7 @@ class WarningDisplay:
     @staticmethod
     def image_not_copied(context: WarningContext,
                          image_path: str) -> None:
-        warn('An image was not copied to the output directory since it was specified with '
-             'an absolute path: {0}\'{1}\''
+        warn('An image was not copied to the output directory: {0}\'{1}\''
              .format(WarningDisplay.apply_warning_color_underlined, image_path),
              in_context=context)
 

@@ -7,6 +7,8 @@ import itertools
 
 from typing import List
 
+from cards.resource import get_resource_path, is_resource
+
 from cards.util import dequote, lower_first_row
 from cards.warning import WarningDisplay, WarningContext
 
@@ -163,21 +165,33 @@ def image_tag_from_path(image_path: str,
         actual_image_path = get_definition_content(definitions, definition=actual_image_path)
 
     if is_image(actual_image_path):
+        resource_path = actual_image_path
+
+        if is_resource(actual_image_path):
+            # the path is relative and goes back
+            image_name = os.path.basename(actual_image_path)
+            # transform this path so that it is relative within the output directory,
+            # so that we can keep every resource contained
+            resource_path = get_resource_path(image_name)
+
         if copy_only:
             # the image should only be copied - so the "tag" is simply the image path
-            image_tag = actual_image_path
+            image_tag = resource_path
         elif (explicit_width is not None and
               explicit_height is not None):
+                # make a tag with the image at the specified dimensions
                 image_tag = '<img src="{0}" width="{1}" height="{2}">'.format(
-                    actual_image_path, explicit_width, explicit_height)
+                    resource_path, explicit_width, explicit_height)
         else:
-            image_tag = '<img src="{0}">'.format(actual_image_path)
+            # make a tag with the image at its intrinsic size
+            image_tag = '<img src="{0}">'.format(resource_path)
     else:
         if size_index != -1 or copy_only:
             WarningDisplay.unresolved_image_reference_error(
                 image_reference=image_path,
                 closest_resolution_value=actual_image_path)
 
+        # clear any paths/tags as they are invalid
         actual_image_path = ''
         image_tag = ''
 
