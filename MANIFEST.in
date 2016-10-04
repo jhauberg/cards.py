@@ -2,8 +2,9 @@
 include README.md
 include CONTRIBUTING.md
 include LICENSE
+include requirements.txt
 
-# include anything in this directory
+# include everything in this directory
 graft cards/templates
 
 # exclude pesky DS_Store files and compiled python scripts

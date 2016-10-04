@@ -41,6 +41,9 @@ setup(
     packages=['cards'],
     include_package_data=True,
     platforms='any',
+    install_requires=[
+        'docopt==0.6.2'
+    ],
     entry_points={
         'console_scripts': [
             'cards = cards.__main__:main',
