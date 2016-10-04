@@ -1,4 +1,4 @@
-<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards/templates/resources/cards.svg" alt="cards.py" align="left">
+<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/cards.svg" alt="cards.py" align="left">
 
 # cards.py
 
@@ -18,7 +18,7 @@ Install straight from the source:
 
 When installed, you can run `cards.py` on the command line:
 
-    $ cards cards.csv
+    $ cards make cards.csv
 
 <details>
   <summary>**Running without installing**</summary>
@@ -27,7 +27,7 @@ You can also run `cards.py` without installing it. However, in that case, you mu
 
 Assuming working directory is the root of the project, you go like this:
 
-    $ python3 -m cards cards.csv
+    $ python3 -m cards make cards.csv
 </details>
 
 <details>
@@ -38,13 +38,14 @@ If you wish to uninstall `cards.py` and make sure that you get rid of everything
     $ python3 setup.py install --record installed_files.txt
 
 You can then go through all listed files and manually delete each one.
-
-This is actually a general tip that can be used for any python package installed using `setup_tools`.
 </details>
 
 ## Requirements
 
+This project strives to keep dependencies at an absolute minimum.
+
   * Python 3.5
+  * [docopt](https://github.com/docopt/docopt) - provides a nicer command-line interface
 
 ## Browser support
 
