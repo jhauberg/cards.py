@@ -8,7 +8,11 @@ from cards.util import terminal_supports_color
 class WarningContext:
     """ Represents the context of a warning. """
 
-    def __init__(self, name: str, row_index: int=-1, card_index: int=-1, card_copy_index: int=-1):
+    def __init__(self,
+                 name: str=None,
+                 row_index: int=-1,
+                 card_index: int=-1,
+                 card_copy_index: int=-1):
         self.name = name
         self.row_index = row_index
         self.card_index = card_index
@@ -23,7 +27,7 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
 
     message_context = '[{0}]'.format('!' if as_error else '-')
 
-    if in_context is not None:
+    if in_context is not None and (in_context.name is not None and len(in_context.name) > 0):
         if in_context.row_index > -1:
             if in_context.card_index > -1:
                 if in_context.card_copy_index > -1:
@@ -304,7 +308,7 @@ class WarningDisplay:
     @staticmethod
     def bad_card_size(context: WarningContext,
                       size_identifier: str) -> None:
-        warn('Cards will be default size because an unknown card size was specified: \'{0}\''
+        warn('The card size \'{0}\' is invalid. Defaulting to \'standard\'.'
              .format(size_identifier),
              in_context=context)
 

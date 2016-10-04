@@ -225,6 +225,10 @@ def make(data_paths: list,
     default_card_size = CardSizes.get_card_size(default_card_size_identifier)
 
     if default_card_size is None:
+        if is_verbose:
+            WarningDisplay.bad_card_size(
+                WarningContext(), size_identifier=default_card_size_identifier)
+
         default_card_size = CardSizes.get_default_card_size()
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
@@ -291,7 +295,8 @@ def make(data_paths: list,
 
             if len(invalid_column_names) > 0:
                 # warn that this datasource will be skipped
-                WarningDisplay.invalid_columns_error(WarningContext(context), invalid_column_names)
+                WarningDisplay.invalid_columns_error(
+                    WarningContext(context), invalid_column_names)
 
                 continue
 
@@ -306,7 +311,8 @@ def make(data_paths: list,
                     card_size = new_card_size
                 else:
                     if is_verbose:
-                        WarningDisplay.bad_card_size(WarningContext(context), size_identifier)
+                        WarningDisplay.bad_card_size(
+                            WarningContext(context), size_identifier)
 
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
@@ -376,14 +382,17 @@ def make(data_paths: list,
 
             if default_template is None and Columns.TEMPLATE not in data.fieldnames:
                 if is_verbose:
-                    WarningDisplay.missing_default_template(WarningContext(context))
+                    WarningDisplay.missing_default_template(
+                        WarningContext(context))
 
             if not disable_backs and Columns.TEMPLATE_BACK in data.fieldnames:
                 if is_verbose:
-                    WarningDisplay.assume_backs(WarningContext(context))
+                    WarningDisplay.assume_backs(
+                        WarningContext(context))
             else:
                 if is_verbose and not disable_backs:
-                    WarningDisplay.no_backs(WarningContext(context))
+                    WarningDisplay.no_backs(
+                        WarningContext(context))
 
                 disable_backs = True
 
@@ -417,7 +426,8 @@ def make(data_paths: list,
                         # count could not be determined, so default to skip this card
                         count = 0
                         # and warn about it
-                        WarningDisplay.indeterminable_count(WarningContext(context, row_index))
+                        WarningDisplay.indeterminable_count(
+                            WarningContext(context, row_index))
                 else:
                     # the count column did not have content, so default count to 1
                     count = 1
@@ -453,27 +463,27 @@ def make(data_paths: list,
                         if not_found:
                             template = template_not_opened
 
-                            WarningDisplay.bad_template_path_error(WarningContext(
-                                context, row_index, card_index, card_copy_index),
+                            WarningDisplay.bad_template_path_error(
+                                WarningContext(context, row_index, card_index, card_copy_index),
                                 template_path)
                         elif is_verbose and len(template) == 0:
                             template = default_template
 
-                            WarningDisplay.empty_template(WarningContext(
-                                context, row_index, card_index, card_copy_index),
+                            WarningDisplay.empty_template(
+                                WarningContext(context, row_index, card_index, card_copy_index),
                                 template_path)
                     else:
                         template = default_template
 
                         if template is not None and is_verbose:
-                            WarningDisplay.using_auto_template(WarningContext(
-                                context, row_index, card_index, card_copy_index))
+                            WarningDisplay.using_auto_template(
+                                WarningContext(context, row_index, card_index, card_copy_index))
 
                     if template is None:
                         template = template_not_provided
 
-                        WarningDisplay.missing_template_error(WarningContext(
-                            context, row_index, card_index, card_copy_index))
+                        WarningDisplay.missing_template_error(
+                            WarningContext(context, row_index, card_index, card_copy_index))
 
                     card_content, render_data = fill_card_front(
                         template, template_path,
@@ -484,13 +494,13 @@ def make(data_paths: list,
                     if (template is not template_not_provided and
                        template is not template_not_opened):
                         if len(render_data.unused_fields) > 0 and is_verbose:
-                            WarningDisplay.missing_fields_in_template(WarningContext(
-                                context, row_index, card_index, card_copy_index),
+                            WarningDisplay.missing_fields_in_template(
+                                WarningContext(context, row_index, card_index, card_copy_index),
                                 list(render_data.unused_fields))
 
                         if len(render_data.unknown_fields) > 0 and is_verbose:
-                            WarningDisplay.unknown_fields_in_template(WarningContext(
-                                context, row_index, card_index, card_copy_index),
+                            WarningDisplay.unknown_fields_in_template(
+                                WarningContext(context, row_index, card_index, card_copy_index),
                                 list(render_data.unknown_fields))
 
                     all_referenced_definitions |= render_data.referenced_definitions
@@ -519,12 +529,12 @@ def make(data_paths: list,
                             if not_found:
                                 template_back = template_not_opened
 
-                                WarningDisplay.bad_template_path_error(WarningContext(
-                                    context, row_index, card_index, card_copy_index),
+                                WarningDisplay.bad_template_path_error(
+                                    WarningContext(context, row_index, card_index, card_copy_index),
                                     template_path_back, is_back=True)
                             elif is_verbose and len(template_back) == 0:
-                                WarningDisplay.empty_template(WarningContext(
-                                    context, row_index, card_index, card_copy_index),
+                                WarningDisplay.empty_template(
+                                    WarningContext(context, row_index, card_index, card_copy_index),
                                     template_path_back, is_back_template=True)
 
                         if template_back is None:
@@ -539,13 +549,13 @@ def make(data_paths: list,
                         if (template_back is not template_back_not_provided and
                            template_back is not template_not_opened):
                             if len(render_data.unused_fields) > 0 and is_verbose:
-                                WarningDisplay.missing_fields_in_template(WarningContext(
-                                    context, row_index, card_index, card_copy_index),
+                                WarningDisplay.missing_fields_in_template(
+                                    WarningContext(context, row_index, card_index, card_copy_index),
                                     list(render_data.unused_fields), is_back_template=True)
 
                             if len(render_data.unknown_fields) > 0 and is_verbose:
-                                WarningDisplay.unknown_fields_in_template(WarningContext(
-                                    context, row_index, card_index, card_copy_index),
+                                WarningDisplay.unknown_fields_in_template(
+                                    WarningContext(context, row_index, card_index, card_copy_index),
                                     list(render_data.unknown_fields), is_back_template=True)
 
                         all_referenced_definitions |= render_data.referenced_definitions
