@@ -1,7 +1,7 @@
 # coding=utf-8
 
 """
-Generate print-ready cards for your tabletop game.
+Generate print-ready cards for your tabletop game
 
 https://github.com/jhauberg/cards.py
 
@@ -12,6 +12,7 @@ License: MIT (see LICENSE)
 import os
 import csv
 import math
+import shutil
 
 from cards.template import fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
 from cards.template import template_from_path
@@ -68,6 +69,8 @@ def get_definitions_from_file(path: str) -> dict:
 
 
 def is_line_excluded(line: str) -> bool:
+    """ Determine if a line in a file should be excluded. """
+
     return line.strip().startswith('#')
 
 
@@ -107,24 +110,70 @@ def get_size_identifier_from_columns(column_names: list) -> (str, list):
 
 
 def get_invalid_columns(column_names: list) -> list:
+    """ Return a list of errors for each invalid column. """
+
     return [InvalidColumnError(column_name, reason='contains whitespace (should be an underscore)')
             for column_name in column_names
             if ' ' in column_name]
 
 
-def generate(args):
-    # required arguments
-    data_paths = args['input_paths']
+def get_base_path() -> str:
+    """ Return the path of the actual location of the current script; i.e. the path from
+        which we can reach included project resources like base templates, icons and so on.
+    """
 
-    # optional arguments
-    output_path = args['output_path']
-    output_filename = args['output_filename']
-    definitions_path = args['definitions_filename']
-    force_page_breaks = args['force_page_breaks']
-    disable_backs = bool(args['disable_backs'])
-    default_card_size_identifier = args['size']
-    is_preview = bool(args['preview'])
-    is_verbose = bool(args['verbose'])
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+def make_empty_project(in_path: str,
+                       name: str=None,
+                       verbosely: bool=False) -> bool:
+    """ Build an empty project that can be used as a starting point. """
+
+    name = name if name is not None else 'empty'
+
+    if name is not None and len(name) > 0:
+        # make sure any whitespace is replaced with dashes
+        name_components = name.split(' ')
+        name = '-'.join(name_components).lower()
+
+    empty_project_path = os.path.join(get_base_path(), 'templates/project')
+    destination_path = os.path.join(in_path, '{0}/src'.format(name))
+
+    if os.path.isdir(destination_path):
+        WarningDisplay.could_not_make_new_project_error(
+            destination_path, already_exists=True)
+
+        return False
+
+    try:
+        shutil.copytree(empty_project_path, destination_path)
+
+        if verbosely:
+            print('Made new project at: {0}\'{1}\'{2}'.format(
+                WarningDisplay.apply_normal_color_underlined, destination_path,
+                WarningDisplay.apply_normal_color))
+
+        open_path(destination_path)
+
+        return True
+    except IOError as error:
+        WarningDisplay.could_not_make_new_project_error(
+            destination_path, reason=str(error))
+
+    return False
+
+
+def make(data_paths: list,
+         definitions_path: str=None,
+         output_path: str=None,
+         output_filename: str=None,
+         force_page_breaks: bool=False,
+         disable_backs: bool=False,
+         default_card_size_identifier: str='standard',
+         is_preview: bool=False,
+         is_verbose: bool=False):
+    """ Build cards for all specified datasources. """
 
     disable_auto_templating = False
 
@@ -138,42 +187,39 @@ def generate(args):
         if found and potential_definitions_path is not None:
             definitions_path = potential_definitions_path
 
-            WarningDisplay.using_automatically_found_definitions(definitions_path)
+            if is_verbose:
+                WarningDisplay.using_automatically_found_definitions(
+                    definitions_path)
 
     definitions = get_definitions_from_file(definitions_path)
 
-    # get the current working directory (though not the ACTUAL working directory,
-    # we pretend that the location of this script file is the working directory and base path.
-    # this ensures that the relative paths still work, even if this script should be executed
-    # through a shell script or similar where the working directory might not be where this
-    # script is located)
-    cwd = os.path.dirname(os.path.realpath(__file__))
+    base_path = get_base_path()
 
-    with open(os.path.join(cwd, 'templates/card.html')) as c:
+    with open(os.path.join(base_path, 'templates/base/card.html')) as c:
         # load the container template for a card
         card = c.read()
 
-    with open(os.path.join(cwd, 'templates/page.html')) as p:
+    with open(os.path.join(base_path, 'templates/base/page.html')) as p:
         # load the container template for a page
         page = p.read()
 
-    with open(os.path.join(cwd, 'templates/index.html')) as i:
+    with open(os.path.join(base_path, 'templates/base/index.html')) as i:
         # load the container template for the final html file
         index = i.read()
 
     # error template for the output on cards specifying a template that was not found,
     # or could not be opened
-    with open(os.path.join(cwd, 'templates/error/could_not_open.html')) as e:
+    with open(os.path.join(base_path, 'templates/base/error/could_not_open.html')) as e:
         template_not_opened = e.read()
 
     # error template for the output on cards when a default template has not been specified,
     # and the card hasn't specified one either
-    with open(os.path.join(cwd, 'templates/error/not_provided.html')) as e:
+    with open(os.path.join(base_path, 'templates/base/error/not_provided.html')) as e:
         template_not_provided = e.read()
 
     # error template for the output on cards when a template back has not been specified,
     # and backs are not disabled
-    with open(os.path.join(cwd, 'templates/error/back_not_provided.html')) as e:
+    with open(os.path.join(base_path, 'templates/base/error/back_not_provided.html')) as e:
         template_back_not_provided = e.read()
 
     default_card_size = CardSizes.get_card_size(default_card_size_identifier)
@@ -639,9 +685,12 @@ def generate(args):
         title = get_definition_content(definitions, definition=TemplateFields.TITLE).strip()
 
         if len(title) == 0:
-            title = '{0} {1} on {2} {3}'.format(
-                cards_total, cards_or_card,
-                pages_total, pages_or_page)
+            if cards_total > 0:
+                title = '{0} {1} on {2} {3}'.format(
+                    cards_total, cards_or_card,
+                    pages_total, pages_or_page)
+            else:
+                title = 'Nothing to see here'
 
         description = get_definition_content(definitions, definition=TemplateFields.DESCRIPTION)
         copyright_notice = get_definition_content(definitions, definition=TemplateFields.COPYRIGHT)
@@ -666,16 +715,16 @@ def generate(args):
     create_missing_directories_if_necessary(css_path)
     create_missing_directories_if_necessary(resources_path)
 
-    copy_file_if_necessary(os.path.join(cwd, 'templates/css/cards.css'),
+    copy_file_if_necessary(os.path.join(base_path, 'templates/base/css/cards.css'),
                            os.path.join(css_path, 'cards.css'))
 
-    copy_file_if_necessary(os.path.join(cwd, 'templates/css/index.css'),
+    copy_file_if_necessary(os.path.join(base_path, 'templates/base/css/index.css'),
                            os.path.join(css_path, 'index.css'))
 
-    copy_file_if_necessary(os.path.join(cwd, 'templates/resources/guide.svg'),
+    copy_file_if_necessary(os.path.join(base_path, 'templates/base/resources/guide.svg'),
                            os.path.join(resources_path, 'guide.svg'))
 
-    copy_file_if_necessary(os.path.join(cwd, 'templates/resources/cards.svg'),
+    copy_file_if_necessary(os.path.join(base_path, 'templates/base/resources/cards.svg'),
                            os.path.join(resources_path, 'cards.svg'))
 
     # additionally, copy all referenced images to the output directory

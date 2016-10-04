@@ -1,74 +1,84 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import argparse
+"""
+Generate print-ready cards for your tabletop game
 
-from cards.cards import generate
-from cards.util import terminal_supports_color
+Usage:
+  cards make [<datasource>]... [--definitions=<defs>]
+             [--output-path=<path>] [--output-file=<file>]
+             [--card-size=<size>] [--force-page-breaks] [--disable-backs]
+             [--preview] [--verbose]
+  cards new  [<name>] [--output-path=<path>] [--verbose]
+  cards -h | --help
+  cards -v | --version
 
+Examples:
+  cards make cards.csv
+    Builds the 'cards.csv' datasource and outputs to the current directory.
+
+  cards make cards.csv tokens.csv -d defs.csv -o ~/Desktop
+    Builds both 'cards.csv' and 'tokens.csv' datasources with the definitions 'defs.csv',
+    and outputs to the specified path (the desktop in this case).
+
+  cards new "Empty Game"
+    Creates an empty project in the current directory.
+
+Options:
+  -h --help                  Show program help
+  -v --version               Show program version
+  -o --output-path=<path>    Specify output directory
+  -f --output-file=<file>    Specify output filename [default: index.html]
+  -d --definitions=<defs>    Specify definitions filename
+  --card-size=<size>         Specify default card size [default: standard]
+                             Other options include: \'domino\', \'jumbo\' or \'token\'
+  --force-page-breaks        Force a page break after each datasource
+  --disable-backs            Do not render card backs
+  --preview                  Only render 1 of each card
+  --verbose                  Show more information
+"""
+
+import os
+
+from docopt import docopt
+
+from cards.cards import make, make_empty_project
 from cards.version import __version__
 
 
-def pretty_description(description: str) -> str:
-    apply_bold_color = '\033[1m'
-    apply_normal_color = '\033[0m'
+def main():
+    arguments = docopt(__doc__, version='cards ' + __version__)
 
-    return (apply_bold_color + description + apply_normal_color if terminal_supports_color()
-            else description)
+    output_path = arguments['--output-path']
 
+    if output_path is None or len(output_path) == 0:
+        output_path = os.getcwd()
 
-def setup_arguments(parser) -> None:
-    """ Sets up required and optional program arguments. """
+    is_verbose = arguments['--verbose']
 
-    # required arguments
-    parser.add_argument(dest='input_paths', nargs='+',
-                        help=pretty_description('specifies one or more paths to card datasources'))
+    if arguments['new']:
+        make_empty_project(
+            in_path=output_path,
+            name=arguments['<name>'],
+            verbosely=is_verbose)
+    elif arguments['make']:
+        data_paths = arguments['<datasource>']
 
-    # optional arguments
-    parser.add_argument('-o', '--output-path', dest='output_path', required=False,
-                        help='specifies the path to the output directory '
-                             '(a \'generated\' sub-directory will be created)')
+        output_filename = arguments['--output-file']
+        definitions_path = arguments['--definitions']
+        default_card_size_identifier = arguments['--card-size']
+        force_page_breaks = arguments['--force-page-breaks']
+        disable_backs = arguments['--disable-backs']
+        is_preview = arguments['--preview']
 
-    parser.add_argument('-O', '--output-filename', dest='output_filename', required=False,
-                        default='index.html',
-                        help='set the filename of the generated output file')
+        make(data_paths, definitions_path,
+             output_path, output_filename,
+             force_page_breaks,
+             disable_backs,
+             default_card_size_identifier,
+             is_preview,
+             is_verbose)
 
-    parser.add_argument('-d', '--definitions-filename', dest='definitions_filename', required=False,
-                        help='specifies the path to the definitions file')
-
-    parser.add_argument('-s', '--size', dest='size', required=False,
-                        help='set the default card size (default is \'standard\'; '
-                        'other options include: \'domino\', \'jumbo\' or \'token\')')
-
-    parser.add_argument('--force-page-breaks', dest='force_page_breaks', required=False,
-                        default=False, action='store_true',
-                        help='force a page break after each datasource')
-
-    parser.add_argument('--disable-backs', dest='disable_backs', required=False,
-                        default=False, action='store_true',
-                        help='don\'t generate card backs')
-
-    parser.add_argument('--preview', dest='preview', required=False,
-                        default=False, action='store_true',
-                        help='only render 1 of each card')
-
-    parser.add_argument('--verbose', dest='verbose', required=False,
-                        default=False, action='store_true',
-                        help='show more output information')
-
-    parser.add_argument('--version', action='version', version='cards ' + __version__,
-                        help='show the program version')
-
-
-def main(as_module=False):
-    parser = argparse.ArgumentParser(
-        prog='cards',
-        description='Generates print-ready cards for your tabletop game',
-        epilog='Make more cards!')
-
-    setup_arguments(parser)
-
-    generate(vars(parser.parse_args()))
 
 if __name__ == '__main__':
-    main(as_module=True)
+    main()
