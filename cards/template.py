@@ -838,10 +838,10 @@ def markdown(content: str) -> str:
     # match any variation of bounding _'s:
     # e.g. "emphasize _this_", or "strong __this__"
     # note that _'s applies under slightly different rules than *'s; it only kicks in
-    # when preceded by a special character or whitespace;
+    # when preceded and superceded by a special character or whitespace;
     # e.g. "this_does not work_", "but _this does_" and "this (_works too_)"
-    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(__)(.+?)(__)', '<em>\\3</em>', content)
-    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(_)(.+?)(_)', '<em>\\3</em>', content)
+    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(__)(.+?)(__)(?=(\s|[^a-zA-Z0-9]))', '<em>\\3</em>', content)
+    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(_)(.+?)(_)(?=(\s|[^a-zA-Z0-9]))', '<em>\\3</em>', content)
 
     # match any variation of bounding ^'s:
     # e.g. "5 kg/m^3^"
