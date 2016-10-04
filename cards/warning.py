@@ -47,11 +47,32 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
 
 
 class WarningDisplay:
-    apply_error_color = '\033[31m' if terminal_supports_color() else ''
+    apply_error_color = '\033[0;31m' if terminal_supports_color() else ''
     apply_error_color_underlined = '\033[4;31m' if terminal_supports_color() else ''
-    apply_warning_color = '\033[33m' if terminal_supports_color() else ''
+    apply_warning_color = '\033[0;33m' if terminal_supports_color() else ''
     apply_warning_color_underlined = '\033[4;33m' if terminal_supports_color() else ''
     apply_normal_color = '\033[0m' if terminal_supports_color() else ''
+    apply_normal_color_underlined = '\033[4m' if terminal_supports_color() else ''
+
+    @staticmethod
+    def could_not_make_new_project_error(at_destination_path: str,
+                                         already_exists: bool=False,
+                                         reason: str=None) -> None:
+        if already_exists:
+            warn('Could not create empty project at: {0}\'{1}\'{2}. Directory already exists.'
+                 .format(WarningDisplay.apply_error_color_underlined, at_destination_path,
+                         WarningDisplay.apply_error_color),
+                 as_error=True)
+        else:
+            if reason is not None and len(reason) > 0:
+                warn('Could not create empty project at: {0}\'{1}\'{2}. {3}'
+                     .format(WarningDisplay.apply_error_color_underlined, at_destination_path,
+                             WarningDisplay.apply_error_color, reason),
+                     as_error=True)
+            else:
+                warn('Could not create empty project at: {0}\'{1}\''
+                     .format(WarningDisplay.apply_error_color_underlined, at_destination_path),
+                     as_error=True)
 
     @staticmethod
     def ambiguous_reference(context: WarningContext,
