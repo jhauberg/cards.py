@@ -18,7 +18,7 @@ from cards.template import fill_template_fields, fill_image_fields, fill_card_fr
 from cards.template import template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
-from cards.resource import copy_images_to_output_directory
+from cards.resource import copy_images_to_output_directory, get_resources_path
 
 from cards.autotemplate import template_from_data
 
@@ -115,6 +115,14 @@ def get_invalid_columns(column_names: list) -> list:
     return [InvalidColumnError(column_name, reason='contains whitespace (should be an underscore)')
             for column_name in column_names
             if ' ' in column_name]
+
+
+def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list:
+    existing_resource_filenames = os.listdir(
+        os.path.join(in_directory_path, get_resources_path()))
+
+    return list(set(existing_resource_filenames) -
+                set(copied_filenames))
 
 
 def get_base_path() -> str:
@@ -737,11 +745,24 @@ def make(data_paths: list,
     copy_file_if_necessary(os.path.join(base_path, 'templates/base/resources/cards.svg'),
                            os.path.join(resources_path, 'cards.svg'))
 
+    all_copied_image_filenames = []
+
     # additionally, copy all referenced images to the output directory
     for context in context_image_paths:
+        image_paths = context_image_paths[context]
+        image_filenames = [os.path.basename(image_path) for image_path in image_paths]
+
         copy_images_to_output_directory(
-            context_image_paths[context], context, output_path,
+            image_paths, context, output_path,
             verbosely=is_verbose)
+
+        all_copied_image_filenames.extend(image_filenames)
+
+    unused_resources = get_unused_resources(output_path, all_copied_image_filenames)
+
+    if len(unused_resources) > 0:
+        if is_verbose:
+            WarningDisplay.unused_resources(unused_resources)
 
     output_location_message = ('See \033[4m\'{0}\'\033[0m'.format(output_filepath)
                                if terminal_supports_color() else

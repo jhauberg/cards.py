@@ -30,10 +30,16 @@ def is_resource(file_path: str) -> bool:
             else True)
 
 
+def get_resources_path() -> str:
+    """ Get path for copied resources. """
+
+    return 'resources/copied'
+
+
 def get_resource_path(resource_name: str) -> str:
     """ Get destination path for the resource. """
 
-    return ('resources/copied/{0}'.format(resource_name)
+    return (os.path.join(get_resources_path(), resource_name)
             if resource_name is not None and len(resource_name) > 0
             else None)
 

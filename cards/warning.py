@@ -79,6 +79,10 @@ class WarningDisplay:
                      as_error=True)
 
     @staticmethod
+    def unused_resources(resource_filenames: list) -> None:
+        warn('Unused resources were found: {0}'.format(resource_filenames))
+
+    @staticmethod
     def ambiguous_reference(context: WarningContext,
                             reference: str,
                             result: str) -> None:
