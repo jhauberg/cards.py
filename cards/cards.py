@@ -194,15 +194,34 @@ def make(data_paths: list,
 
     definitions = get_definitions_from_file(definitions_path)
 
+    # dict of all image paths discovered for each context during card generation
+    context_image_paths = {}
+
     base_path = get_base_path()
 
-    with open(os.path.join(base_path, 'templates/base/card.html')) as c:
+    card_template_path = os.path.join(base_path, 'templates/base/card.html')
+
+    with open(card_template_path) as c:
         # load the container template for a card
         card = c.read()
 
-    with open(os.path.join(base_path, 'templates/base/page.html')) as p:
+        # fill any image fields defined by the default card template
+        card, filled_image_paths = fill_image_fields(card)
+
+        if len(filled_image_paths) > 0:
+            context_image_paths[card_template_path] = list(set(filled_image_paths))
+
+    page_template_path = os.path.join(base_path, 'templates/base/page.html')
+
+    with open(page_template_path) as p:
         # load the container template for a page
         page = p.read()
+
+        # fill any image fields defined by the default page template
+        page, filled_image_paths = fill_image_fields(page)
+
+        if len(filled_image_paths) > 0:
+            context_image_paths[page_template_path] = list(set(filled_image_paths))
 
     with open(os.path.join(base_path, 'templates/base/index.html')) as i:
         # load the container template for the final html file
@@ -249,9 +268,6 @@ def make(data_paths: list,
     pages_total = 0
 
     cards_total_unique = 0
-
-    # dict of all image paths discovered for each context during card generation
-    context_image_paths = {}
 
     previous_card_size = None
 
@@ -733,12 +749,6 @@ def make(data_paths: list,
 
     copy_file_if_necessary(os.path.join(base_path, 'templates/base/css/index.css'),
                            os.path.join(css_path, 'index.css'))
-
-    copy_file_if_necessary(os.path.join(base_path, 'templates/base/resources/guide.svg'),
-                           os.path.join(resources_path, 'guide.svg'))
-
-    copy_file_if_necessary(os.path.join(base_path, 'templates/base/resources/cards.svg'),
-                           os.path.join(resources_path, 'cards.svg'))
 
     all_copied_image_filenames = []
 

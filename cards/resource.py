@@ -33,7 +33,7 @@ def is_resource(file_path: str) -> bool:
 def get_resources_path() -> str:
     """ Get path for copied resources. """
 
-    return 'resources/copied'
+    return 'resources'
 
 
 def get_resource_path(resource_name: str) -> str:
