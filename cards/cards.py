@@ -78,7 +78,8 @@ def get_page(page_number: int, cards: str, page_template: str) -> str:
     numbered_page = fill_template_fields(
         TemplateFields.PAGE_NUMBER, str(page_number), page_template)
 
-    return fill_template_fields(TemplateFields.CARDS, cards, numbered_page)
+    return fill_template_fields(
+        TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
 
 
 def get_size_identifier_from_columns(column_names: list) -> (str, list):
@@ -683,7 +684,8 @@ def make(data_paths: list,
         index = fill_template_fields(
             field_name=TemplateFields.PAGES,
             field_value=pages,
-            in_template=index)
+            in_template=index,
+            indenting=True)
 
         index = fill_template_fields(
             field_name=TemplateFields.PROGRAM_VERSION,

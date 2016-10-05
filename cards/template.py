@@ -287,15 +287,49 @@ def fill_image_fields(content: str,
             else (content, image_paths))
 
 
+def get_padded_content(content: str, from_start_index: int, in_template: str) -> str:
+    """ Return content that is appropriately padded/indented, given a starting position.
+
+        For example, if a starting index of 4 is given for a template "    content\ngoes here",
+        the resulting content becomes "    content\n    goes here".
+    """
+
+    pad_count = 0
+    index = from_start_index
+
+    while index >= 0:
+        # keep going backwards in the string
+        index -= 1
+
+        if index < 0 or in_template[index] == '\n':
+            # we found the previous line or beginning of string
+            break
+
+        pad_count += 1
+
+    if pad_count > 0:
+        # split content up into separate lines
+        lines = content.splitlines(keepends=True)
+        # then append padding between each line
+        content = (' ' * pad_count).join(lines)
+
+    return content
+
+
 def fill_template_field(field: TemplateField,
                         field_value: str,
-                        in_template: str) -> str:
+                        in_template: str,
+                        indenting: bool=False) -> str:
     """ Populate a single template field in the template. """
 
     if (field.start_index < 0 or field.start_index > len(in_template) or
        field.end_index < 0 or field.end_index > len(in_template)):
         raise ValueError('Template field \'{0}\' out of range ({1}-{2}).'
                          .format(field.name, field.start_index, field.end_index))
+
+    if indenting:
+        field_value = get_padded_content(
+            field_value, field.start_index, in_template)
 
     return in_template[:field.start_index] + field_value + in_template[field.end_index:]
 
@@ -304,7 +338,8 @@ def fill_template_fields(
         field_name: str,
         field_value: str,
         in_template: str,
-        counting_occurences: bool=False) -> (str, int):
+        counting_occurences: bool=False,
+        indenting: bool=False) -> (str, int):
     """ Populate all template fields with a given name in the template. """
 
     # make sure that we have a sane value
@@ -319,6 +354,14 @@ def fill_template_fields(
     # comparison, to ensure that e.g. {{name}} is populated with the
     # value from column "Name", even though the casing might differ
     search = re.compile(field_search, re.IGNORECASE)
+
+    if indenting:
+        match = search.search(in_template)
+
+        if match is not None:
+            start_index, end_index = match.span()
+
+            field_value = get_padded_content(field_value, start_index, in_template)
 
     # finally replace any found occurences of the template field with its value
     content, occurences = search.subn(field_value, in_template)
@@ -368,7 +411,7 @@ def fill_include_fields(from_base_path: str,
                     with open(include_path) as include_file:
                         if is_include_command:
                             # open it and read in the entire contents as is
-                            include_content = include_file.read()
+                            include_content = include_file.read().strip()
                         elif is_inline_command:
                             # read each line
                             for line in include_file.readlines():
@@ -380,7 +423,7 @@ def fill_include_fields(from_base_path: str,
 
                 # populate the include field with the content; or blank if unresolved
                 template_content = fill_template_field(
-                    field, include_content, template_content)
+                    field, include_content, template_content, indenting=is_include_command)
 
                 # since we're using fill_template_field, we have to recursively start over,
                 # otherwise the next field objects would have invalid indices and would not be
@@ -791,7 +834,7 @@ def get_sized_card(card: str,
     """ Populate and return a card in a given size with the specified content. """
 
     card = fill_template_fields(TemplateFields.CARD_SIZE, size_class, in_template=card)
-    card = fill_template_fields(TemplateFields.CARD_CONTENT, content, in_template=card)
+    card = fill_template_fields(TemplateFields.CARD_CONTENT, content, in_template=card, indenting=True)
 
     return card
 
