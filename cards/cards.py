@@ -358,11 +358,6 @@ def make(data_paths: list,
 
             max_cards_per_page = cards_per_column * cards_per_row
 
-            # empty backs may be necessary to fill in empty spots on a page to ensure
-            # that the layout remains correct
-            empty_back = get_sized_card(
-                card, size_class=card_size.style, content='')
-
             if disable_auto_templating:
                 default_template = None
             else:
@@ -395,6 +390,12 @@ def make(data_paths: list,
                         WarningContext(context))
 
                 disable_backs = True
+
+            if not disable_backs:
+                # empty backs may be necessary to fill in empty spots on a page to ensure
+                # that the layout remains correct
+                empty_back = get_sized_card(
+                    card, size_class=card_size.style, content='')
 
             row_index = 1
 
