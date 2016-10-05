@@ -80,7 +80,8 @@ class WarningDisplay:
 
     @staticmethod
     def unused_resources(resource_filenames: list) -> None:
-        warn('Unused resources were found: {0}'.format(resource_filenames))
+        warn('Unused resources were found in output directory (resources/copied/): {0}'
+             .format(resource_filenames))
 
     @staticmethod
     def ambiguous_reference(context: WarningContext,

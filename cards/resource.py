@@ -44,6 +44,19 @@ def get_resource_path(resource_name: str) -> str:
             else None)
 
 
+def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list:
+    existing_resource_filenames = []
+
+    try:
+        existing_resource_filenames = os.listdir(
+            os.path.join(in_directory_path, get_resources_path()))
+    except IOError:
+        pass
+
+    return list(set(existing_resource_filenames) -
+                set(copied_filenames))
+
+
 def copy_images_to_output_directory(
         image_paths: list,
         root_path: str,

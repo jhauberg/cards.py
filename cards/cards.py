@@ -18,7 +18,7 @@ from cards.template import fill_template_fields, fill_image_fields, fill_card_fr
 from cards.template import template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
-from cards.resource import copy_images_to_output_directory, get_resources_path
+from cards.resource import copy_images_to_output_directory, get_unused_resources
 
 from cards.autotemplate import template_from_data
 
@@ -115,14 +115,6 @@ def get_invalid_columns(column_names: list) -> list:
     return [InvalidColumnError(column_name, reason='contains whitespace (should be an underscore)')
             for column_name in column_names
             if ' ' in column_name]
-
-
-def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list:
-    existing_resource_filenames = os.listdir(
-        os.path.join(in_directory_path, get_resources_path()))
-
-    return list(set(existing_resource_filenames) -
-                set(copied_filenames))
 
 
 def get_base_path() -> str:
