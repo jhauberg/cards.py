@@ -207,7 +207,7 @@ def get_template_field(field_name: str,
     """ Return the first matching template field in a template, if any. """
 
     field_search = '{{\s*' + field_name + '\s*}}'
-    field_matches = list(re.finditer(field_search, in_template, re.DOTALL))
+    field_matches = list(re.finditer(field_search, in_template))
 
     for field_match in field_matches:
         return TemplateField(name=field_match.group(1).strip(),
@@ -216,12 +216,14 @@ def get_template_field(field_name: str,
     return None
 
 
-def get_template_fields(in_template: str) -> List[TemplateField]:
+def get_template_fields(in_template: str, like_pattern: str='') -> List[TemplateField]:
     """ Return a list of all template fields (e.g. '{{ a_field }}') that occur in a template. """
+
+    pattern = '{{(' + '({0})'.format(like_pattern) + '.*?)}}'
 
     return [TemplateField(name=field.group(1).strip(),
                           start_index=field.start(), end_index=field.end())
-            for field in list(re.finditer('{{(.*?)}}', in_template, re.DOTALL))]
+            for field in list(re.finditer(pattern, in_template))]
 
 
 def get_template_field_names(in_template: str) -> List[str]:
@@ -382,7 +384,7 @@ def fill_include_fields(from_base_path: str,
     template_content = in_template
 
     # find all template fields and go through each, determining whether it's an include field or not
-    for field in get_template_fields(template_content):
+    for field in get_template_fields(template_content, like_pattern='.include|.inline'):
         # include fields should strictly separate the keyword and path by a single whitespace
         field_components = field.name.split(' ', 1)
 
