@@ -3,6 +3,7 @@
 import os
 import re
 import csv
+import datetime
 import itertools
 
 from typing import List
@@ -206,12 +207,12 @@ def get_template_field(field_name: str,
                        in_template: str) -> TemplateField:
     """ Return the first matching template field in a template, if any. """
 
-    field_search = '{{\s*' + field_name + '\s*}}'
-    field_matches = list(re.finditer(field_search, in_template))
+    pattern = '.{0}'.format(field_name)
 
-    for field_match in field_matches:
-        return TemplateField(name=field_match.group(1).strip(),
-                             start_index=field_match.start(), end_index=field_match.end())
+    template_fields = get_template_fields(in_template, like_pattern=pattern)
+
+    if len(template_fields) > 0:
+        return template_fields[0]
 
     return None
 
@@ -237,7 +238,7 @@ def get_template_field_names(in_template: str) -> List[str]:
     return list(template_field_names)
 
 
-def fill_image_fields(content: str,
+def fill_image_fields(in_template: str,
                       definitions: dict=None,
                       tracking_references: bool=False) -> (str, list):
     """ Populate all image fields in the template.
@@ -251,7 +252,9 @@ def fill_image_fields(content: str,
 
     found_definition_references = []
 
-    template_fields = get_template_fields(content)
+    template_fields = get_template_fields(in_template)
+
+    content = in_template
 
     for field in template_fields:
         # at this point we don't know that it's actually an image field - we only know that it's
@@ -371,6 +374,54 @@ def fill_template_fields(
     return (content, occurences) if counting_occurences else content
 
 
+def fill_date_fields(date: datetime, in_template: str) -> str:
+    """ Populate all date fields in the template.
+
+        A 'date' field provides an easy way of putting the current date into a template.
+
+        A date field uses built-in Python date formats, and should look like this:
+
+            '{{ date }}'              - using default formatting
+            '{{ date '%d, %b %Y' }}'  - using custom formatting
+
+        See all supported format identifiers here http://strftime.org
+    """
+
+    template_content = in_template
+
+    for field in get_template_fields(template_content, like_pattern='.date'):
+        # include fields should strictly separate the keyword and path by a single whitespace
+        field_components = field.name.split(' ', 1)
+
+        # default date format: 07, Oct 2016
+        date_format = '%B %-d, %Y'
+
+        if len(field_components) > 1:
+            # a date field can have a custom format
+            custom_date_format = dequote(field_components[1]).strip()
+
+            if len(custom_date_format) > 0:
+                # if found, we'll use that and let date.strftime handle it
+                date_format = custom_date_format
+
+        formatted_date = date.strftime(date_format)
+
+        # populate the include field with the content; or blank if unresolved
+        template_content = fill_template_field(
+            field, formatted_date,
+            in_template=template_content)
+
+        # since we're using fill_template_field, we have to recursively start over,
+        # otherwise the next field objects would have invalid indices and would not be
+        # resolved properly
+        template_content = fill_date_fields(
+            date, in_template=template_content)
+
+        break
+
+    return template_content
+
+
 def fill_include_fields(from_base_path: str,
                         in_template: str) -> str:
     """ Populate all include fields in the template.
@@ -378,7 +429,9 @@ def fill_include_fields(from_base_path: str,
         An 'include' field provides a way of putting re-usable template content into a
         separate file, and including it in place of the field.
 
-        An include field should look like this: '{{ include 'path/to/file.html' }}'.
+        An include field should look like this:
+
+            '{{ include 'path/to/file.html' }}'
     """
 
     template_content = in_template
@@ -397,7 +450,7 @@ def fill_include_fields(from_base_path: str,
             # the field at least contains the include keyword
             if len(field_components) > 1 and (is_include_command or is_inline_command):
                 # the field might also contain a path
-                include_path = dequote(field_components[1])
+                include_path = dequote(field_components[1]).strip()
                 # default to blank
                 include_content = ''
 
@@ -544,6 +597,11 @@ def fill_template(template: str,
     template, referenced_definitions = fill_definitions(definitions, in_template=template)
 
     discovered_definition_references.extend(referenced_definitions)
+
+    # in case data might contain a column that clashes with the date field; i.e. named 'date'
+    # just do this last so that the column always overrules
+    template = fill_date_fields(
+        datetime.date.today(), in_template=template)
 
     # replace any image fields with HTML compliant <img> tags
     template, filled_image_paths, referenced_definitions = fill_image_fields(
@@ -746,7 +804,7 @@ def get_column_content(row: dict,
         # strip excess whitespace
         column_content = column_content.strip()
         # fill any include fields before doing anything else
-        column_content = fill_include_fields(in_data_path, column_content)
+        column_content = fill_include_fields(in_data_path, in_template=column_content)
 
         # there's at least some kind of content, so begin filling column reference fields (if any)
         reference_field_names = get_template_field_names(column_content)
@@ -806,6 +864,10 @@ def get_column_content(row: dict,
                     # so warn about it
                     WarningDisplay.ambiguous_reference(
                         WarningContext(context), column_reference, column_reference_content)
+
+        # in case data might contain a column that clashes with the date field; i.e. named 'date'
+        # just do this last so that the column always overrules
+        column_content = fill_date_fields(datetime.date.today(), in_template=column_content)
 
         # transform content to html using any applied markdown formatting
         column_content = markdown(column_content)

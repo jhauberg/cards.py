@@ -33,6 +33,7 @@ class TemplateFields:
 
     INCLUDE = 'include'                          # Optional field that is replaced with the contents of a file (content is copied *as is*)
     INLINE = 'inline'                            # Optional field that works like 'include', except that it strips any excess whitespace from each line in the file
+    DATE = 'date'                                # Optional field that is replaced with current date
 
     VERSION = '_version'                         # Optional field that is replaced with the version identifier of the project
     PROGRAM_VERSION = '_program_version'         # Optional field that is replaced with the version identifier of the program
