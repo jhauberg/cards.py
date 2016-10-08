@@ -423,7 +423,8 @@ def fill_date_fields(date: datetime, in_template: str) -> str:
 
 
 def fill_include_fields(from_base_path: str,
-                        in_template: str) -> str:
+                        in_template: str,
+                        verbosely: bool=False) -> str:
     """ Populate all include fields in the template.
 
         An 'include' field provides a way of putting re-usable template content into a
@@ -483,11 +484,12 @@ def fill_include_fields(from_base_path: str,
                     WarningDisplay.included_file_not_found_error(
                         WarningContext(os.path.basename(from_base_path)), include_path)
             else:
-                WarningDisplay.include_should_specify_file(
-                    WarningContext('{0}:{1}'.format(
-                        os.path.basename(from_base_path),
-                        get_line_number(field.start_index, in_template))),
-                    is_inline=is_inline_command)
+                if verbosely:
+                    WarningDisplay.include_should_specify_file(
+                        WarningContext('{0}:{1}'.format(
+                            os.path.basename(from_base_path),
+                            get_line_number(field.start_index, in_template))),
+                        is_inline=is_inline_command)
 
             # populate the include field with the content; or blank if unresolved
             template_content = fill_template_field(
@@ -497,7 +499,9 @@ def fill_include_fields(from_base_path: str,
             # otherwise the next field objects would have invalid indices and would not be
             # resolved properly
             template_content = fill_include_fields(
-                from_base_path, in_template=template_content)
+                from_base_path,
+                in_template=template_content,
+                verbosely=verbosely)
 
             break
 
@@ -545,7 +549,8 @@ def fill_template(template: str,
                   template_path: str,
                   row: dict,
                   in_data_path: str,
-                  definitions: dict) -> (str, TemplateRenderData):
+                  definitions: dict,
+                  verbosely: bool=False) -> (str, TemplateRenderData):
     """ Populate all template fields in the template.
 
         Populating a template is done in 4 steps:
@@ -567,7 +572,8 @@ def fill_template(template: str,
     # as they might contribute even more template fields to populate
     template = fill_include_fields(
         from_base_path=template_path,
-        in_template=template)
+        in_template=template,
+        verbosely=verbosely)
 
     # any field that is in the data, but not found in the template; for example, if there's
     # a 'rank' column in the data, but no '{{ rank }}' field in the template
@@ -586,7 +592,8 @@ def fill_template(template: str,
     for column in row:
         # fetch the content for the field
         field_content, resolution_data = get_column_content(
-            row, column, in_data_path, definitions, default_content='', tracking_references=True)
+            row, column, in_data_path, definitions,
+            default_content='', tracking_references=True)
 
         # fill content into the provided template
         template, occurences = fill_template_fields(
@@ -623,27 +630,26 @@ def fill_template(template: str,
     remaining_fields = get_template_fields(template)
 
     for field in remaining_fields:
-        if len(field.name) > 0:
-            if field.name == TemplateFields.CARDS_TOTAL:
-                # this is a special case: this field will not be filled until every card
-                # has been generated- so this field should not be treated as if missing;
-                # instead, simply ignore it at this point
-                pass
+        if field.name == TemplateFields.CARDS_TOTAL:
+            # this is a special case: this field will not be filled until every card
+            # has been generated- so this field should not be treated as if missing;
+            # instead, simply ignore it at this point
+            pass
+        else:
+            column_reference, reference_row = get_column_reference(
+                field.name, in_reference_row=row, in_data_path=in_data_path)
+
+            field_content = get_column_content(
+                reference_row, column_reference, in_data_path, definitions)
+
+            if field_content is not None:
+                template = fill_template_fields(
+                    field_name=field.name,
+                    field_value=field_content,
+                    in_template=template)
             else:
-                column_reference, reference_row = get_column_reference(
-                    field.name, in_reference_row=row, in_data_path=in_data_path)
-
-                field_content = get_column_content(
-                    reference_row, column_reference, in_data_path, definitions)
-
-                if field_content is not None:
-                    template = fill_template_fields(
-                        field_name=field.name,
-                        field_value=field_content,
-                        in_template=template)
-                else:
-                    # the field was not found in the card data, so make a warning about it
-                    unknown_fields.append(field.name)
+                # the field was not found in the card data, so make a warning about it
+                unknown_fields.append(field.name)
 
     # make sure we only have one of each reference
     column_references = set(column_references_in_data)
@@ -667,12 +673,13 @@ def fill_card(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict) -> (str, TemplateRenderData):
+        definitions: dict,
+        verbosely: bool=False) -> (str, TemplateRenderData):
     """ Return the contents of a card using the specified template. """
 
     # attempt to fill all fields discovered in the template using the data for this card
     template, render_data = fill_template(
-        template, template_path, row, in_data_path, definitions)
+        template, template_path, row, in_data_path, definitions, verbosely)
 
     # fill all row index fields (usually used for error templates)
     template = fill_template_fields(
@@ -718,11 +725,12 @@ def fill_card_front(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict) -> (str, TemplateRenderData):
+        definitions: dict,
+        verbosely: bool=False) -> (str, TemplateRenderData):
     """ Return the contents of the front of a card using the specified template. """
 
     return fill_card(template, template_path, get_front_data(row), row_index, in_data_path,
-                     card_index, card_copy_index, definitions)
+                     card_index, card_copy_index, definitions, verbosely)
 
 
 def fill_card_back(
@@ -733,11 +741,12 @@ def fill_card_back(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict) -> (str, TemplateRenderData):
+        definitions: dict,
+        verbosely: bool=False) -> (str, TemplateRenderData):
     """ Return the contents of the back of a card using the specified template. """
 
     return fill_card(template, template_path, get_back_data(row), row_index, in_data_path,
-                     card_index, card_copy_index, definitions)
+                     card_index, card_copy_index, definitions, verbosely)
 
 
 def get_front_data(row: dict) -> dict:
@@ -832,61 +841,60 @@ def get_column_content(row: dict,
         # there's at least some kind of content, so begin filling column reference fields (if any)
         reference_field_names = get_template_field_names(column_content)
 
-        if len(reference_field_names) > 0:
-            for reference_field_name in reference_field_names:
-                column_reference, reference_row = get_column_reference(
-                    reference_field_name, in_reference_row=row, in_data_path=in_data_path)
+        for reference_field_name in reference_field_names:
+            column_reference, reference_row = get_column_reference(
+                reference_field_name, in_reference_row=row, in_data_path=in_data_path)
 
-                # determine if the field occurs as a definition
-                is_definition = column_reference in definitions
-                # determine if the field occurs as a column in the current row- note that if
-                # the current row is actually the definitions, then it actually *is* a column,
-                # but it should not be treated as such
-                is_column = column_reference in reference_row and reference_row is not definitions
+            # determine if the field occurs as a definition
+            is_definition = column_reference in definitions
+            # determine if the field occurs as a column in the current row- note that if
+            # the current row is actually the definitions, then it actually *is* a column,
+            # but it should not be treated as such
+            is_column = column_reference in reference_row and reference_row is not definitions
 
-                if not is_column and not is_definition:
-                    # the field is not a reference that can be resolved right now, so skip it
-                    # (it might be an image reference)
-                    continue
+            if not is_column and not is_definition:
+                # the field is not a reference that can be resolved right now, so skip it
+                # (it might be an image reference)
+                continue
 
-                # recursively get the content of the referenced column to ensure any further
-                # references are determined and filled prior to filling the originating reference
+            # recursively get the content of the referenced column to ensure any further
+            # references are determined and filled prior to filling the originating reference
 
+            if is_column:
+                # prioritize the column reference by resolving it first,
+                # even if it could also be a definition instead (but warn about it later)
+                column_reference_content, resolution_data = get_column_content(
+                    reference_row, column_reference, in_data_path, definitions, default_content,
+                    tracking_references=True)
+            elif is_definition:
+                # resolve the definition reference, keeping track of any discovered references
+                column_reference_content, resolution_data = get_definition_content(
+                    definitions, definition=column_reference,
+                    tracking_references=True)
+
+            column_references.extend(list(resolution_data.column_references))
+            definition_references.extend(list(resolution_data.definition_references))
+
+            # and ultimately fill any occurences
+            column_content, occurences = fill_template_fields(
+                field_name=reference_field_name,
+                field_value=column_reference_content,
+                in_template=column_content,
+                counting_occurences=True)
+
+            if occurences > 0 and tracking_references:
                 if is_column:
-                    # prioritize the column reference by resolving it first,
-                    # even if it could also be a definition instead (but warn about it later)
-                    column_reference_content, resolution_data = get_column_content(
-                        reference_row, column_reference, in_data_path, definitions, default_content,
-                        tracking_references=True)
+                    column_references.append(column_reference)
                 elif is_definition:
-                    # resolve the definition reference, keeping track of any discovered references
-                    column_reference_content, resolution_data = get_definition_content(
-                        definitions, definition=column_reference,
-                        tracking_references=True)
+                    definition_references.append(column_reference)
 
-                column_references.extend(list(resolution_data.column_references))
-                definition_references.extend(list(resolution_data.definition_references))
-
-                # and ultimately fill any occurences
-                column_content, occurences = fill_template_fields(
-                    field_name=reference_field_name,
-                    field_value=column_reference_content,
-                    in_template=column_content,
-                    counting_occurences=True)
-
-                if occurences > 0 and tracking_references:
-                    if is_column:
-                        column_references.append(column_reference)
-                    elif is_definition:
-                        definition_references.append(column_reference)
-
-                if occurences > 0 and (is_definition and is_column and
-                                       reference_row is not definitions):
-                    # the reference appears multiple places
-                    context = os.path.basename(in_data_path)
-                    # so warn about it
-                    WarningDisplay.ambiguous_reference(
-                        WarningContext(context), column_reference, column_reference_content)
+            if occurences > 0 and (is_definition and is_column and
+                                   reference_row is not definitions):
+                # the reference appears multiple places
+                context = os.path.basename(in_data_path)
+                # so warn about it
+                WarningDisplay.ambiguous_reference(
+                    WarningContext(context), column_reference, column_reference_content)
 
         # in case data might contain a column that clashes with the date field; i.e. named 'date'
         # just do this last so that the column always overrules

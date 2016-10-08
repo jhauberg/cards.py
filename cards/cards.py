@@ -507,7 +507,7 @@ def make(data_paths: list,
                         template, template_path,
                         row, row_index, data_path,
                         card_index, cards_total_unique,
-                        definitions)
+                        definitions, verbosely=is_verbose)
 
                     if (template is not template_not_provided and
                        template is not template_not_opened):
@@ -562,7 +562,7 @@ def make(data_paths: list,
                             template_back, template_path_back,
                             row, row_index, data_path,
                             card_index, cards_total_unique,
-                            definitions)
+                            definitions, verbosely=is_verbose)
 
                         if (template_back is not template_back_not_provided and
                            template_back is not template_not_opened):
