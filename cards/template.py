@@ -576,6 +576,12 @@ def fill_template(template: str,
     column_references_in_data = []
     discovered_definition_references = []
 
+    # fill any definition fields- note that this should happen prior to filling image fields,
+    # since that allows a definition to include image references
+    template, referenced_definitions = fill_definitions(definitions, in_template=template)
+
+    discovered_definition_references.extend(referenced_definitions)
+
     # go through each data field for this card (row)
     for column in row:
         # fetch the content for the field
@@ -598,19 +604,6 @@ def fill_template(template: str,
             column_references_in_data.extend(list(resolution_data.column_references))
             discovered_definition_references.extend(list(resolution_data.definition_references))
 
-    # make sure we only have one of each reference
-    column_references = set(column_references_in_data)
-
-    # remove any "missing fields" that are actually referenced in column content-
-    # they may not be in the template, but they are not unused/missing, so don't warn about it
-    unused_columns = list(set(unused_columns) - column_references)
-
-    # fill any definition fields- note that this should happen prior to filling image fields,
-    # since that allows a definition to include image references
-    template, referenced_definitions = fill_definitions(definitions, in_template=template)
-
-    discovered_definition_references.extend(referenced_definitions)
-
     # in case data might contain a column that clashes with the date field; i.e. named 'date'
     # just do this last so that the column always overrules
     template = fill_date_fields(
@@ -629,18 +622,35 @@ def fill_template(template: str,
     # find any remaining template fields so we can warn that they were not filled
     remaining_fields = get_template_fields(template)
 
-    if len(remaining_fields) > 0:
-        # leftover fields were found
-        for field in remaining_fields:
-            if len(field.name) > 0:
-                if field.name == TemplateFields.CARDS_TOTAL:
-                    # this is a special case: this field will not be filled until every card
-                    # has been generated- so this field should not be treated as if missing;
-                    # instead, simply ignore it at this point
-                    pass
+    for field in remaining_fields:
+        if len(field.name) > 0:
+            if field.name == TemplateFields.CARDS_TOTAL:
+                # this is a special case: this field will not be filled until every card
+                # has been generated- so this field should not be treated as if missing;
+                # instead, simply ignore it at this point
+                pass
+            else:
+                column_reference, reference_row = get_column_reference(
+                    field.name, in_reference_row=row, in_data_path=in_data_path)
+
+                field_content = get_column_content(
+                    reference_row, column_reference, in_data_path, definitions)
+
+                if field_content is not None:
+                    template = fill_template_fields(
+                        field_name=field.name,
+                        field_value=field_content,
+                        in_template=template)
                 else:
                     # the field was not found in the card data, so make a warning about it
                     unknown_fields.append(field.name)
+
+    # make sure we only have one of each reference
+    column_references = set(column_references_in_data)
+
+    # remove any "missing fields" that are actually referenced in column content-
+    # they may not be in the template, but they are not unused/missing, so don't warn about it
+    unused_columns = list(set(unused_columns) - column_references)
 
     return template, TemplateRenderData(
         image_paths=set(filled_image_paths),
