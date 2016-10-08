@@ -79,9 +79,9 @@ class WarningDisplay:
                      as_error=True)
 
     @staticmethod
-    def unused_resources(resource_filenames: list) -> None:
-        warn('Unused resources were found in output directory (resources/copied/): {0}'
-             .format(resource_filenames))
+    def unused_resources(resource_filenames: list, in_resource_dir: str) -> None:
+        warn('Unused resources were found in output directory ({0}): {1}'
+             .format(in_resource_dir, resource_filenames))
 
     @staticmethod
     def ambiguous_reference(context: WarningContext,
@@ -135,6 +135,12 @@ class WarningDisplay:
              as_error=True)
 
     @staticmethod
+    def include_should_specify_file(context: WarningContext, is_inline: bool=False) -> None:
+        warn('{0} fields should specify a file path.'
+             .format('Inline' if is_inline else 'Include'),
+             in_context=context)
+
+    @staticmethod
     def preview_enabled() -> None:
         warn('Preview is enabled. Only 1 of each card will be rendered.')
 
@@ -167,15 +173,15 @@ class WarningDisplay:
 
     @staticmethod
     def assume_backs(context: WarningContext) -> None:
-        warn('Assuming card backs should be generated since ' +
-             '\'' + Columns.TEMPLATE_BACK + '\' appears in data. '
-             'You can disable card backs by specifying the --disable-backs argument.',
+        warn('Card backs will be generated since the ' +
+             '\'' + Columns.TEMPLATE_BACK + '\' column has been set. '
+             'You can disable card backs by specifying the --disable-backs option.',
              in_context=context)
 
     @staticmethod
     def no_backs(context: WarningContext) -> None:
-        warn('Card backs will not be generated since \'' + Columns.TEMPLATE_BACK + '\''
-             ' does not appear in data.',
+        warn('Card backs will not be generated since the '
+             '\'' + Columns.TEMPLATE_BACK + '\' column has not been set.',
              in_context=context)
 
     @staticmethod

@@ -10,7 +10,7 @@ from typing import List
 
 from cards.resource import get_resource_path, is_resource
 
-from cards.util import dequote, lower_first_row
+from cards.util import dequote, lower_first_row, get_line_number
 from cards.warning import WarningDisplay, WarningContext
 
 from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
@@ -447,13 +447,20 @@ def fill_include_fields(from_base_path: str,
             is_include_command = field_command == TemplateFields.INCLUDE
             is_inline_command = field_command == TemplateFields.INLINE
 
-            # the field at least contains the include keyword
-            if len(field_components) > 1 and (is_include_command or is_inline_command):
-                # the field might also contain a path
-                include_path = dequote(field_components[1]).strip()
-                # default to blank
-                include_content = ''
+            if not is_include_command and not is_inline_command:
+                # we're in a situation where we've, somehow, found neither of the type of fields
+                # we're looking for; so just move on
+                continue
 
+            # default to blank
+            include_content = ''
+            include_path = None
+
+            if len(field_components) > 1:
+                # the field should contain a path
+                include_path = dequote(field_components[1]).strip()
+
+            if include_path is not None and len(include_path) > 0:
                 if not os.path.isabs(include_path):
                     # it's not an absolute path, so we should make it a relative path
                     if from_base_path is not None:
@@ -475,18 +482,24 @@ def fill_include_fields(from_base_path: str,
                 else:
                     WarningDisplay.included_file_not_found_error(
                         WarningContext(os.path.basename(from_base_path)), include_path)
+            else:
+                WarningDisplay.include_should_specify_file(
+                    WarningContext('{0}:{1}'.format(
+                        os.path.basename(from_base_path),
+                        get_line_number(field.start_index, in_template))),
+                    is_inline=is_inline_command)
 
-                # populate the include field with the content; or blank if unresolved
-                template_content = fill_template_field(
-                    field, include_content, template_content, indenting=is_include_command)
+            # populate the include field with the content; or blank if unresolved
+            template_content = fill_template_field(
+                field, include_content, template_content, indenting=is_include_command)
 
-                # since we're using fill_template_field, we have to recursively start over,
-                # otherwise the next field objects would have invalid indices and would not be
-                # resolved properly
-                template_content = fill_include_fields(
-                    from_base_path, in_template=template_content)
+            # since we're using fill_template_field, we have to recursively start over,
+            # otherwise the next field objects would have invalid indices and would not be
+            # resolved properly
+            template_content = fill_include_fields(
+                from_base_path, in_template=template_content)
 
-                break
+            break
 
     return template_content
 

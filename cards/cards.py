@@ -18,7 +18,7 @@ from cards.template import fill_template_fields, fill_image_fields, fill_card_fr
 from cards.template import template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
-from cards.resource import copy_images_to_output_directory, get_unused_resources
+from cards.resource import copy_images_to_output_directory, get_unused_resources, get_resources_path
 
 from cards.autotemplate import template_from_data
 
@@ -767,7 +767,8 @@ def make(data_paths: list,
 
     if len(unused_resources) > 0:
         if is_verbose:
-            WarningDisplay.unused_resources(unused_resources)
+            WarningDisplay.unused_resources(
+                unused_resources, in_resource_dir=get_resources_path())
 
     output_location_message = ('See \033[4m\'{0}\'\033[0m'.format(output_filepath)
                                if terminal_supports_color() else
