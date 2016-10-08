@@ -84,6 +84,14 @@ class WarningDisplay:
              .format(in_resource_dir, resource_filenames))
 
     @staticmethod
+    def resource_was_overwritten(context: WarningContext,
+                                 resource_path: str,
+                                 relative_source_path: str) -> None:
+        warn('The resource \'{0}\' was overwritten by \'{1}\''
+             .format(resource_path, relative_source_path),
+             in_context=context)
+
+    @staticmethod
     def ambiguous_reference(context: WarningContext,
                             reference: str,
                             result: str) -> None:

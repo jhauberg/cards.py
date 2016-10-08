@@ -94,7 +94,24 @@ def copy_images_to_output_directory(
                 create_missing_directories_if_necessary(
                     os.path.dirname(relative_destination_path))
 
-                copy_file_if_necessary(relative_source_path, relative_destination_path)
+                resource_was_copied, resource_already_existed = copy_file_if_necessary(
+                    relative_source_path, relative_destination_path)
+
+                if verbosely:
+                    resource_was_overwritten = resource_already_existed and resource_was_copied
+                    resource_was_duplicate = resource_already_existed and not resource_was_copied
+
+                    if resource_was_duplicate:
+                        # do nothing for now- this is triggered several times and is neither
+                        # a problem nor something that the user is interested in knowing about
+                        pass
+                    elif resource_was_overwritten:
+                        # the resource was named identically to an existing resource, but
+                        # had different or changed file contents; this might be an error,
+                        # so warn about it if verbose
+                        if verbosely:
+                            WarningDisplay.resource_was_overwritten(
+                                WarningContext(context), resource_path, relative_source_path)
             else:
                 WarningDisplay.missing_image_error(
                     WarningContext(context), relative_source_path)
