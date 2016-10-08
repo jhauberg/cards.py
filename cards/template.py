@@ -630,7 +630,13 @@ def fill_template(template: str,
     remaining_fields = get_template_fields(template)
 
     for field in remaining_fields:
-        if field.name == TemplateFields.CARDS_TOTAL:
+        if len(field.name) == 0:
+            # this is an empty field (e.g. {{ }}), so just get rid of it
+            template = fill_template_fields(
+                field_name=field.name,
+                field_value='',
+                in_template=template)
+        elif field.name == TemplateFields.CARDS_TOTAL:
             # this is a special case: this field will not be filled until every card
             # has been generated- so this field should not be treated as if missing;
             # instead, simply ignore it at this point
@@ -842,6 +848,15 @@ def get_column_content(row: dict,
         reference_field_names = get_template_field_names(column_content)
 
         for reference_field_name in reference_field_names:
+            if len(reference_field_name) == 0:
+                # there's at least one empty field (e.g. {{ }}) in the content, so get rid of it
+                column_content = fill_template_fields(
+                    field_name=reference_field_name,
+                    field_value='',
+                    in_template=column_content)
+                # and just proceed
+                continue
+
             column_reference, reference_row = get_column_reference(
                 reference_field_name, in_reference_row=row, in_data_path=in_data_path)
 
