@@ -76,6 +76,10 @@ def terminal_supports_color():
     return True
 
 
+def get_line_number(from_index: int, in_string: str) -> int:
+    return in_string.count('\n', 0, from_index) + 1
+
+
 def open_path(path: str) -> None:
     """ Open a path in a cross-platform manner;
         i.e. open Finder on MacOS and Explorer on Windows.
@@ -131,23 +135,25 @@ def find_file_path(name: str, paths: list) -> (bool, str):
             (False, first_potential_path))
 
 
-def copy_file_if_necessary(source_path: str, destination_path: str) -> bool:
+def copy_file_if_necessary(source_path: str, destination_path: str) -> (bool, bool):
     """ Attempt copying a file to a destination path.
 
         If the file already exists at the destination path, the destination file is only
         overwritten if it is different from the source.
     """
 
-    if not os.path.exists(destination_path) or not filecmp.cmp(source_path, destination_path):
+    file_already_exists = os.path.exists(destination_path)
+
+    if not file_already_exists or not filecmp.cmp(source_path, destination_path):
         # the file doesn't already exist, or it does exist, but is different
         try:
             shutil.copyfile(source_path, destination_path)
 
-            return True
+            return True, file_already_exists
         except IOError:
-            return False
+            pass
 
-    return False
+    return False, file_already_exists
 
 
 def create_missing_directories_if_necessary(path: str) -> bool:
