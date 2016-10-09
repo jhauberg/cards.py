@@ -43,6 +43,8 @@ import os
 from docopt import docopt
 
 from cards.cards import make, make_empty_project
+from cards.warning import WarningDisplay
+
 from cards.version import __version__
 
 
@@ -54,13 +56,12 @@ def main():
     if output_path is None or len(output_path) == 0:
         output_path = os.getcwd()
 
-    is_verbose = arguments['--verbose']
+    WarningDisplay.is_verbose = arguments['--verbose']
 
     if arguments['new']:
         make_empty_project(
             in_path=output_path,
-            name=arguments['<name>'],
-            verbosely=is_verbose)
+            name=arguments['<name>'])
     elif arguments['make']:
         data_paths = arguments['<datasource>']
 
@@ -76,8 +77,7 @@ def main():
              force_page_breaks,
              disable_backs,
              default_card_size_identifier,
-             is_preview,
-             is_verbose)
+             is_preview)
 
 
 if __name__ == '__main__':

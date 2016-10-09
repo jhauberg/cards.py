@@ -127,8 +127,7 @@ def get_base_path() -> str:
 
 
 def make_empty_project(in_path: str,
-                       name: str=None,
-                       verbosely: bool=False) -> bool:
+                       name: str=None) -> bool:
     """ Build an empty project that can be used as a starting point. """
 
     name = name if name is not None else 'empty'
@@ -150,10 +149,9 @@ def make_empty_project(in_path: str,
     try:
         shutil.copytree(empty_project_path, destination_path)
 
-        if verbosely:
-            print('Made new project at: {0}\'{1}\'{2}'.format(
-                WarningDisplay.apply_normal_color_underlined, destination_path,
-                WarningDisplay.apply_normal_color))
+        print('Made new project at: {0}\'{1}\'{2}'.format(
+            WarningDisplay.apply_normal_color_underlined, destination_path,
+            WarningDisplay.apply_normal_color))
 
         open_path(destination_path)
 
@@ -172,8 +170,7 @@ def make(data_paths: list,
          force_page_breaks: bool=False,
          disable_backs: bool=False,
          default_card_size_identifier: str='standard',
-         is_preview: bool=False,
-         is_verbose: bool=False):
+         is_preview: bool=False):
     """ Build cards for all specified datasources. """
 
     disable_auto_templating = False
@@ -188,9 +185,8 @@ def make(data_paths: list,
         if found and potential_definitions_path is not None:
             definitions_path = potential_definitions_path
 
-            if is_verbose:
-                WarningDisplay.using_automatically_found_definitions(
-                    definitions_path)
+            WarningDisplay.using_automatically_found_definitions(
+                definitions_path)
 
     definitions = get_definitions_from_file(definitions_path)
 
@@ -245,11 +241,10 @@ def make(data_paths: list,
     default_card_size = CardSizes.get_card_size(default_card_size_identifier)
 
     if default_card_size is None:
-        if is_verbose:
-            WarningDisplay.bad_card_size(
-                WarningContext(), size_identifier=default_card_size_identifier)
-
         default_card_size = CardSizes.get_default_card_size()
+
+        WarningDisplay.bad_card_size(
+            WarningContext(), size_identifier=default_card_size_identifier)
 
     # buffer that will contain at most MAX_CARDS_PER_PAGE amount of cards
     cards = ''
@@ -327,9 +322,8 @@ def make(data_paths: list,
                 if new_card_size is not None:
                     card_size = new_card_size
                 else:
-                    if is_verbose:
-                        WarningDisplay.bad_card_size(
-                            WarningContext(context), size_identifier)
+                    WarningDisplay.bad_card_size(
+                        WarningContext(context), size_identifier)
 
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
@@ -393,16 +387,14 @@ def make(data_paths: list,
                 next(data)
 
             if default_template is None and Columns.TEMPLATE not in data.fieldnames:
-                if is_verbose:
-                    WarningDisplay.missing_default_template(
-                        WarningContext(context))
+                WarningDisplay.missing_default_template(
+                    WarningContext(context))
 
             if not disable_backs and Columns.TEMPLATE_BACK in data.fieldnames:
-                if is_verbose:
-                    WarningDisplay.assume_backs(
-                        WarningContext(context))
+                WarningDisplay.assume_backs(
+                    WarningContext(context))
             else:
-                if is_verbose and not disable_backs:
+                if not disable_backs:
                     WarningDisplay.no_backs(
                         WarningContext(context))
 
@@ -422,9 +414,8 @@ def make(data_paths: list,
                 row_index += 1
 
                 if is_line_excluded(data_file.raw_line):
-                    if is_verbose:
-                        WarningDisplay.card_was_skipped_intentionally(
-                            WarningContext(context, row_index))
+                    WarningDisplay.card_was_skipped_intentionally(
+                        WarningContext(context, row_index))
 
                     # this row should be ignored - so skip and continue
                     continue
@@ -484,7 +475,7 @@ def make(data_paths: list,
                             WarningDisplay.bad_template_path_error(
                                 WarningContext(context, row_index, card_index, card_copy_index),
                                 template_path)
-                        elif is_verbose and len(template) == 0:
+                        elif len(template) == 0:
                             template = default_template
 
                             WarningDisplay.empty_template(
@@ -493,7 +484,7 @@ def make(data_paths: list,
                     else:
                         template = default_template
 
-                        if template is not None and is_verbose:
+                        if template is not None:
                             WarningDisplay.using_auto_template(
                                 WarningContext(context, row_index, card_index, card_copy_index))
 
@@ -507,16 +498,16 @@ def make(data_paths: list,
                         template, template_path,
                         row, row_index, data_path,
                         card_index, cards_total_unique,
-                        definitions, verbosely=is_verbose)
+                        definitions)
 
                     if (template is not template_not_provided and
                        template is not template_not_opened):
-                        if len(render_data.unused_fields) > 0 and is_verbose:
+                        if len(render_data.unused_fields) > 0:
                             WarningDisplay.missing_fields_in_template(
                                 WarningContext(context, row_index, card_index, card_copy_index),
                                 list(render_data.unused_fields))
 
-                        if len(render_data.unknown_fields) > 0 and is_verbose:
+                        if len(render_data.unknown_fields) > 0:
                             WarningDisplay.unknown_fields_in_template(
                                 WarningContext(context, row_index, card_index, card_copy_index),
                                 list(render_data.unknown_fields))
@@ -550,7 +541,7 @@ def make(data_paths: list,
                                 WarningDisplay.bad_template_path_error(
                                     WarningContext(context, row_index, card_index, card_copy_index),
                                     template_path_back, is_back=True)
-                            elif is_verbose and len(template_back) == 0:
+                            elif len(template_back) == 0:
                                 WarningDisplay.empty_template(
                                     WarningContext(context, row_index, card_index, card_copy_index),
                                     template_path_back, is_back_template=True)
@@ -562,16 +553,16 @@ def make(data_paths: list,
                             template_back, template_path_back,
                             row, row_index, data_path,
                             card_index, cards_total_unique,
-                            definitions, verbosely=is_verbose)
+                            definitions)
 
                         if (template_back is not template_back_not_provided and
                            template_back is not template_not_opened):
-                            if len(render_data.unused_fields) > 0 and is_verbose:
+                            if len(render_data.unused_fields) > 0:
                                 WarningDisplay.missing_fields_in_template(
                                     WarningContext(context, row_index, card_index, card_copy_index),
                                     list(render_data.unused_fields), is_back_template=True)
 
-                            if len(render_data.unknown_fields) > 0 and is_verbose:
+                            if len(render_data.unknown_fields) > 0:
                                 WarningDisplay.unknown_fields_in_template(
                                     WarningContext(context, row_index, card_index, card_copy_index),
                                     list(render_data.unknown_fields), is_back_template=True)
@@ -661,8 +652,7 @@ def make(data_paths: list,
     unused_definitions = list(set(definitions.keys()) - all_referenced_definitions)
 
     if len(unused_definitions) > 0:
-        if is_verbose:
-            WarningDisplay.unused_definitions(unused_definitions)
+        WarningDisplay.unused_definitions(unused_definitions)
 
     if output_path is None:
         # output to current working directory unless otherwise specified
@@ -758,35 +748,42 @@ def make(data_paths: list,
         image_filenames = [os.path.basename(image_path) for image_path in image_paths]
 
         copy_images_to_output_directory(
-            image_paths, context, output_path,
-            verbosely=is_verbose)
+            image_paths, context, output_path)
 
         all_copied_image_filenames.extend(image_filenames)
 
     unused_resources = get_unused_resources(output_path, all_copied_image_filenames)
 
     if len(unused_resources) > 0:
-        if is_verbose:
-            WarningDisplay.unused_resources(
-                unused_resources, in_resource_dir=get_resources_path())
+        WarningDisplay.unused_resources(
+            unused_resources, in_resource_dir=get_resources_path())
 
     output_location_message = ('See \033[4m\'{0}\'\033[0m'.format(output_filepath)
                                if terminal_supports_color() else
                                'See \'{0}\''.format(output_filepath))
 
+    warnings_and_errors_message = (' ({0} errors, {1} warnings{2})'
+                                   .format(WarningDisplay.error_count,
+                                           WarningDisplay.warning_count,
+                                           ('; set --verbose to see warnings'
+                                            if not WarningDisplay.is_verbose else ''))
+                                   if WarningDisplay.has_encountered_errors()
+                                   or WarningDisplay.has_encountered_warnings()
+                                   else '')
+
     if cards_total > 0:
         if cards_total > cards_total_unique:
-            print('Generated {0} ({1} unique) {2} on {3} {4}.\n{5}'
+            print('Generated {0} ({1} unique) {2} on {3} {4}{5}.\n{6}'
                   .format(cards_total, cards_total_unique, cards_or_card,
                           pages_total, pages_or_page,
-                          output_location_message))
+                          warnings_and_errors_message, output_location_message))
         else:
-            print('Generated {0} {1} on {2} {3}.\n{4}'
+            print('Generated {0} {1} on {2} {3}{4}.\n{5}'
                   .format(cards_total, cards_or_card,
                           pages_total, pages_or_page,
-                          output_location_message))
+                          warnings_and_errors_message, output_location_message))
     else:
-        print('Generated 0 cards.\n{0}'
-              .format(output_location_message))
+        print('Generated 0 cards{0}.\n{1}'
+              .format(warnings_and_errors_message, output_location_message))
 
     open_path(output_path)

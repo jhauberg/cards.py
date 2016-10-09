@@ -423,8 +423,7 @@ def fill_date_fields(date: datetime, in_template: str) -> str:
 
 
 def fill_include_fields(from_base_path: str,
-                        in_template: str,
-                        verbosely: bool=False) -> str:
+                        in_template: str) -> str:
     """ Populate all include fields in the template.
 
         An 'include' field provides a way of putting re-usable template content into a
@@ -484,12 +483,11 @@ def fill_include_fields(from_base_path: str,
                     WarningDisplay.included_file_not_found_error(
                         WarningContext(os.path.basename(from_base_path)), include_path)
             else:
-                if verbosely:
-                    WarningDisplay.include_should_specify_file(
-                        WarningContext('{0}:{1}'.format(
-                            os.path.basename(from_base_path),
-                            get_line_number(field.start_index, in_template))),
-                        is_inline=is_inline_command)
+                WarningDisplay.include_should_specify_file(
+                    WarningContext('{0}:{1}'.format(
+                        os.path.basename(from_base_path),
+                        get_line_number(field.start_index, in_template))),
+                    is_inline=is_inline_command)
 
             # populate the include field with the content; or blank if unresolved
             template_content = fill_template_field(
@@ -499,9 +497,7 @@ def fill_include_fields(from_base_path: str,
             # otherwise the next field objects would have invalid indices and would not be
             # resolved properly
             template_content = fill_include_fields(
-                from_base_path,
-                in_template=template_content,
-                verbosely=verbosely)
+                from_base_path, in_template=template_content)
 
             break
 
@@ -549,8 +545,7 @@ def fill_template(template: str,
                   template_path: str,
                   row: dict,
                   in_data_path: str,
-                  definitions: dict,
-                  verbosely: bool=False) -> (str, TemplateRenderData):
+                  definitions: dict) -> (str, TemplateRenderData):
     """ Populate all template fields in the template.
 
         Populating a template is done in 4 steps:
@@ -572,8 +567,7 @@ def fill_template(template: str,
     # as they might contribute even more template fields to populate
     template = fill_include_fields(
         from_base_path=template_path,
-        in_template=template,
-        verbosely=verbosely)
+        in_template=template)
 
     # any field that is in the data, but not found in the template; for example, if there's
     # a 'rank' column in the data, but no '{{ rank }}' field in the template
@@ -679,13 +673,12 @@ def fill_card(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict,
-        verbosely: bool=False) -> (str, TemplateRenderData):
+        definitions: dict) -> (str, TemplateRenderData):
     """ Return the contents of a card using the specified template. """
 
     # attempt to fill all fields discovered in the template using the data for this card
     template, render_data = fill_template(
-        template, template_path, row, in_data_path, definitions, verbosely)
+        template, template_path, row, in_data_path, definitions)
 
     # fill all row index fields (usually used for error templates)
     template = fill_template_fields(
@@ -731,12 +724,11 @@ def fill_card_front(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict,
-        verbosely: bool=False) -> (str, TemplateRenderData):
+        definitions: dict) -> (str, TemplateRenderData):
     """ Return the contents of the front of a card using the specified template. """
 
     return fill_card(template, template_path, get_front_data(row), row_index, in_data_path,
-                     card_index, card_copy_index, definitions, verbosely)
+                     card_index, card_copy_index, definitions)
 
 
 def fill_card_back(
@@ -747,12 +739,11 @@ def fill_card_back(
         in_data_path: str,
         card_index: int,
         card_copy_index: int,
-        definitions: dict,
-        verbosely: bool=False) -> (str, TemplateRenderData):
+        definitions: dict) -> (str, TemplateRenderData):
     """ Return the contents of the back of a card using the specified template. """
 
     return fill_card(template, template_path, get_back_data(row), row_index, in_data_path,
-                     card_index, card_copy_index, definitions, verbosely)
+                     card_index, card_copy_index, definitions)
 
 
 def get_front_data(row: dict) -> dict:

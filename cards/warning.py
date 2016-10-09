@@ -20,7 +20,17 @@ class WarningContext:
 
 
 def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
-    """ Display a command-line warning, optionally showing its context. """
+    """ Display a command-line warning, optionally within a context. """
+
+    # trigger increment even if we don't end up printing it
+    if as_error:
+        WarningDisplay.error_count += 1
+    else:
+        WarningDisplay.warning_count += 1
+
+    if not WarningDisplay.is_verbose and not as_error:
+        # only print warnings if verbose flag is enabled, or if it's an error
+        return
 
     apply_color = (WarningDisplay.apply_error_color if as_error
                    else WarningDisplay.apply_warning_color)
@@ -51,6 +61,21 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
 
 
 class WarningDisplay:
+    """ Provides functions for conveniently displaying and tracking warning/error messages. """
+
+    @staticmethod
+    def has_encountered_errors() -> bool:
+        return WarningDisplay.error_count > 0
+
+    @staticmethod
+    def has_encountered_warnings() -> bool:
+        return WarningDisplay.warning_count > 0
+
+    warning_count = 0
+    error_count = 0
+
+    is_verbose = False
+
     apply_error_color = '\033[0;31m' if terminal_supports_color() else ''
     apply_error_color_underlined = '\033[4;31m' if terminal_supports_color() else ''
     apply_warning_color = '\033[0;33m' if terminal_supports_color() else ''

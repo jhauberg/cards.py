@@ -60,8 +60,7 @@ def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list
 def copy_images_to_output_directory(
         image_paths: list,
         root_path: str,
-        output_path: str,
-        verbosely: 'show warnings'=False) -> None:
+        output_path: str) -> None:
     """ Copy all images to the output directory. """
 
     context = os.path.basename(root_path)
@@ -70,8 +69,8 @@ def copy_images_to_output_directory(
         # copy each relatively specified image
         if is_url(image_path):
             # unless it's a URL
-            if verbosely:
-                WarningDisplay.image_not_copied(WarningContext(context), image_path)
+            WarningDisplay.image_not_copied(
+                WarningContext(context), image_path)
         else:
             # if the image path is not an absolute path, assume
             # that it's located relative to where the data is
@@ -97,21 +96,18 @@ def copy_images_to_output_directory(
                 resource_was_copied, resource_already_existed = copy_file_if_necessary(
                     relative_source_path, relative_destination_path)
 
-                if verbosely:
-                    resource_was_overwritten = resource_already_existed and resource_was_copied
-                    resource_was_duplicate = resource_already_existed and not resource_was_copied
+                resource_was_overwritten = resource_already_existed and resource_was_copied
+                resource_was_duplicate = resource_already_existed and not resource_was_copied
 
-                    if resource_was_duplicate:
-                        # do nothing for now- this is triggered several times and is neither
-                        # a problem nor something that the user is interested in knowing about
-                        pass
-                    elif resource_was_overwritten:
-                        # the resource was named identically to an existing resource, but
-                        # had different or changed file contents; this might be an error,
-                        # so warn about it if verbose
-                        if verbosely:
-                            WarningDisplay.resource_was_overwritten(
-                                WarningContext(context), resource_path, relative_source_path)
+                if resource_was_duplicate:
+                    # do nothing for now- this is triggered several times and is neither
+                    # a problem nor something that the user is interested in knowing about
+                    pass
+                elif resource_was_overwritten:
+                    # the resource was named identically to an existing resource, but had
+                    # different or changed file contents; this might be an error, so warn about
+                    WarningDisplay.resource_was_overwritten(
+                        WarningContext(context), resource_path, relative_source_path)
             else:
                 WarningDisplay.missing_image_error(
                     WarningContext(context), relative_source_path)
