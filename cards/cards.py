@@ -176,7 +176,7 @@ def make(data_paths: list,
     disable_auto_templating = False
 
     if is_preview:
-        WarningDisplay.preview_enabled()
+        WarningDisplay.preview_enabled_info()
 
     if definitions_path is None:
         # no definitions file has been explicitly specified, so try looking for it automatically
@@ -185,7 +185,7 @@ def make(data_paths: list,
         if found and potential_definitions_path is not None:
             definitions_path = potential_definitions_path
 
-            WarningDisplay.using_automatically_found_definitions(
+            WarningDisplay.using_automatically_found_definitions_info(
                 definitions_path)
 
     definitions = get_definitions_from_file(definitions_path)
@@ -391,11 +391,11 @@ def make(data_paths: list,
                     WarningContext(context))
 
             if not disable_backs and Columns.TEMPLATE_BACK in data.fieldnames:
-                WarningDisplay.assume_backs(
+                WarningDisplay.assume_backs_info(
                     WarningContext(context))
             else:
                 if not disable_backs:
-                    WarningDisplay.no_backs(
+                    WarningDisplay.no_backs_info(
                         WarningContext(context))
 
                 disable_backs = True
@@ -414,7 +414,7 @@ def make(data_paths: list,
                 row_index += 1
 
                 if is_line_excluded(data_file.raw_line):
-                    WarningDisplay.card_was_skipped_intentionally(
+                    WarningDisplay.card_was_skipped_intentionally_info(
                         WarningContext(context, row_index))
 
                     # this row should be ignored - so skip and continue

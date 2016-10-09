@@ -18,8 +18,30 @@ class WarningContext:
         self.card_index = card_index
         self.card_copy_index = card_copy_index
 
+    def __repr__(self):
+        return str(self)
 
-def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
+    def __str__(self):
+        if self.name is not None and len(self.name) > 0:
+            if self.row_index > -1:
+                if self.card_index > -1:
+                    if self.card_copy_index > -1:
+                        return '[{0}:#{1}.{2}~{3}]'.format(
+                            self.name, self.row_index, self.card_copy_index, self.card_index)
+                    else:
+                        return '[{0}:#{1}~{2}]'.format(
+                            self.name, self.row_index, self.card_index)
+                else:
+                    return '[{0}:#{1}]'.format(
+                        self.name, self.row_index)
+            else:
+                return '[{0}]'.format(
+                    self.name)
+
+        return None
+
+
+def warn(message: str, in_context: WarningContext = None, as_error=False) -> None:
     """ Display a command-line warning, optionally within a context. """
 
     # trigger increment even if we don't end up printing it
@@ -28,36 +50,30 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
     else:
         WarningDisplay.warning_count += 1
 
-    if not WarningDisplay.is_verbose and not as_error:
-        # only print warnings if verbose flag is enabled, or if it's an error
+    color = (WarningDisplay.apply_error_color if as_error
+             else WarningDisplay.apply_warning_color)
+
+    message_context = '[{0}]'.format('!' if as_error else '?')
+
+    display(message, message_context, in_context, apply_color=color, force_verbosity=as_error)
+
+
+def info(message: str, in_context: WarningContext = None) -> None:
+    message_context = '[-]'
+
+    display(message, message_context, in_context, force_verbosity=True)
+
+
+def display(message: str, message_context: str=None, in_context: WarningContext = None, apply_color: str='', force_verbosity: bool=False) -> None:
+    if not WarningDisplay.is_verbose and not force_verbosity:
+        # only print warnings if verbose flag is enabled, or verbosity is forced
+        # (e.g. for errors or info)
         return
 
-    apply_color = (WarningDisplay.apply_error_color if as_error
-                   else WarningDisplay.apply_warning_color)
+    message = '{0} {1}'.format(in_context, message) if in_context is not None else message
+    message = '{0} {1}'.format(message_context, message) if message_context is not None else message
 
-    message_context = '[{0}]'.format('!' if as_error else '-')
-
-    if in_context is not None and (in_context.name is not None and len(in_context.name) > 0):
-        if in_context.row_index > -1:
-            if in_context.card_index > -1:
-                if in_context.card_copy_index > -1:
-                    message_context = '{0} [{1}:#{2}.{4}~{3}]'.format(
-                        message_context, in_context.name,
-                        in_context.row_index, in_context.card_index, in_context.card_copy_index)
-                else:
-                    message_context = '{0} [{1}:#{2}~{3}]'.format(
-                        message_context, in_context.name,
-                        in_context.row_index, in_context.card_index)
-            else:
-                message_context = '{0} [{1}:#{2}]'.format(
-                    message_context, in_context.name, in_context.row_index)
-        else:
-            message_context = '{0} [{1}]'.format(
-                message_context, in_context.name)
-
-    message_content = message_context + ' ' + message
-
-    print(apply_color + message_content + WarningDisplay.apply_normal_color)
+    print(apply_color + message + WarningDisplay.apply_normal_color)
 
 
 class WarningDisplay:
@@ -174,8 +190,8 @@ class WarningDisplay:
              in_context=context)
 
     @staticmethod
-    def preview_enabled() -> None:
-        warn('Preview is enabled. Only 1 of each card will be rendered.')
+    def preview_enabled_info() -> None:
+        info('Preview is enabled. Only 1 of each card will be rendered.')
 
     @staticmethod
     def image_not_copied(context: WarningContext,
@@ -199,21 +215,21 @@ class WarningDisplay:
              as_error=True)
 
     @staticmethod
-    def using_automatically_found_definitions(definitions_path: str) -> None:
-        warn('No definitions have been specified. Using definitions automatically found at: '
+    def using_automatically_found_definitions_info(definitions_path: str) -> None:
+        info('No definitions have been specified. Using definitions automatically found at: '
              '{0}\'{1}\''
-             .format(WarningDisplay.apply_warning_color_underlined, definitions_path))
+             .format(WarningDisplay.apply_normal_color_underlined, definitions_path))
 
     @staticmethod
-    def assume_backs(context: WarningContext) -> None:
-        warn('Card backs will be generated since the ' +
+    def assume_backs_info(context: WarningContext) -> None:
+        info('Card backs will be generated since the ' +
              '\'' + Columns.TEMPLATE_BACK + '\' column has been set. '
              'You can disable card backs by specifying the --disable-backs option.',
              in_context=context)
 
     @staticmethod
-    def no_backs(context: WarningContext) -> None:
-        warn('Card backs will not be generated since the '
+    def no_backs_info(context: WarningContext) -> None:
+        info('Card backs will not be generated since the '
              '\'' + Columns.TEMPLATE_BACK + '\' column has not been set.',
              in_context=context)
 
@@ -357,6 +373,6 @@ class WarningDisplay:
              in_context=context)
 
     @staticmethod
-    def card_was_skipped_intentionally(context: WarningContext) -> None:
-        warn('The card was skipped.',
+    def card_was_skipped_intentionally_info(context: WarningContext) -> None:
+        info('The card was skipped.',
              in_context=context)
