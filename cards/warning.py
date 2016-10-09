@@ -64,7 +64,11 @@ def info(message: str, in_context: WarningContext = None) -> None:
     display(message, message_context, in_context, force_verbosity=True)
 
 
-def display(message: str, message_context: str=None, in_context: WarningContext = None, apply_color: str='', force_verbosity: bool=False) -> None:
+def display(message: str,
+            message_context: str=None,
+            in_context: WarningContext=None,
+            apply_color: str='',
+            force_verbosity: bool=False) -> None:
     if not WarningDisplay.is_verbose and not force_verbosity:
         # only print warnings if verbose flag is enabled, or verbosity is forced
         # (e.g. for errors or info)
@@ -73,11 +77,20 @@ def display(message: str, message_context: str=None, in_context: WarningContext 
     message = '{0} {1}'.format(in_context, message) if in_context is not None else message
     message = '{0} {1}'.format(message_context, message) if message_context is not None else message
 
-    print(apply_color + message + WarningDisplay.apply_normal_color)
+    message = apply_color + message + WarningDisplay.apply_normal_color
+
+    times_displayed = WarningDisplay.messages.get(message, 0)
+
+    if times_displayed < 1:
+        print(message)
+
+    WarningDisplay.messages[message] = times_displayed + 1
 
 
 class WarningDisplay:
     """ Provides functions for conveniently displaying and tracking warning/error messages. """
+
+    messages = {}
 
     @staticmethod
     def has_encountered_errors() -> bool:
@@ -273,17 +286,17 @@ class WarningDisplay:
                                    unknown_fields: list,
                                    is_back_template: bool=False) -> None:
         if len(unknown_fields) > 1:
-            warning = ('The back template contains fields that are not present for this card: {0}'
-                       if is_back_template else
-                       'The template contains fields that are not present for this card: {0}')
+            msg = ('The back template contains fields that are not present for this card: {0}'
+                   if is_back_template else
+                   'The template contains fields that are not present for this card: {0}')
         else:
             unknown_fields = unknown_fields[0]
 
-            warning = ('The back template contains a field that is not present for this card: \'{0}\''
-                       if is_back_template else
-                       'The template contains a field that is not present for this card: \'{0}\'')
+            msg = ('The back template contains a field that is not present for this card: \'{0}\''
+                   if is_back_template else
+                   'The template contains a field that is not present for this card: \'{0}\'')
 
-        warn(warning.format(unknown_fields),
+        warn(msg.format(unknown_fields),
              in_context=context)
 
     @staticmethod
