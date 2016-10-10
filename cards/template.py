@@ -88,21 +88,27 @@ def image_tag_from_path(image_path: str,
 
     definition_references = []
 
-    # determine whether a size has been explicitly specified; e.g. "images/name-of-image.svg:16x16"
-    size_index = image_path.rfind(':')
+    size_index = -1
+    no_transform = False
 
-    # determine whether the : actually represents a protocol specification; i.e. http:// or similar
-    if image_path[size_index + 1:size_index + 1 + 2] == '//':
-        # in case it is, then ignore anything beyond the protocol specification
-        size_index = -1
+    if image_path is not None:
+        # determine whether a size has been explicitly specified;
+        # e.g. "images/name-of-image.svg:16x16"
+        size_index = image_path.rfind(':')
 
-    no_transform = image_path.endswith(TemplateFieldDescriptors.COPY_ONLY)
+        # determine whether the : actually represents a protocol specification;
+        # i.e. http:// or similar
+        if image_path[size_index + 1:size_index + 1 + 2] == '//':
+            # in case it is, then ignore anything beyond the protocol specification
+            size_index = -1
 
-    if no_transform:
-        actual_image_path = image_path.replace(TemplateFieldDescriptors.COPY_ONLY, '')
+        no_transform = image_path.endswith(TemplateFieldDescriptors.COPY_ONLY)
 
-        # ignore any size specification since an <img> tag will not be created for this image
-        size_index = -1
+        if no_transform:
+            actual_image_path = image_path.replace(TemplateFieldDescriptors.COPY_ONLY, '')
+
+            # ignore any size specification since an <img> tag will not be created for this image
+            size_index = -1
 
     explicit_width = None
     explicit_height = None
@@ -167,7 +173,7 @@ def image_tag_from_path(image_path: str,
         # the path is actually a definition; e.g. "enemy" or similar, so get the actual path.
         actual_image_path = get_definition_content(definitions, definition=actual_image_path)
 
-    if is_image(actual_image_path):
+    if actual_image_path is not None and is_image(actual_image_path):
         # the path points to an image, so we proceed the transformation
         resource_path = actual_image_path
 
@@ -219,16 +225,31 @@ def get_template_field(field_name: str,
     return None
 
 
-def get_template_fields(in_template: str, like_pattern: str='[^}}\s]*') -> List[TemplateField]:
+def get_template_fields(in_template: str,
+                        like_pattern: str='[^}}\s]*') -> List[TemplateField]:
     """ Return a list of all template fields (e.g. '{{ a_field }}') that occur in a template. """
 
     pattern = '{{\s?((' + like_pattern + ')\s?(.*?))\s?}}'
 
-    return [TemplateField(inner_content=field_match.group(1).strip(),
-                          name=field_match.group(2).strip(),
-                          context=field_match.group(3).strip(),
-                          start_index=field_match.start(), end_index=field_match.end())
-            for field_match in list(re.finditer(pattern, in_template))]
+    fields = []
+
+    for field_match in list(re.finditer(pattern, in_template)):
+        inner_content = field_match.group(1).strip()
+        name = field_match.group(2).strip()
+        context = field_match.group(3).strip()
+
+        inner_content = inner_content if len(inner_content) > 0 else None
+        name = name if len(name) > 0 else None
+        context = context if len(context) > 0 else None
+
+        field = TemplateField(
+            inner_content, name, context,
+            start_index=field_match.start(),
+            end_index=field_match.end())
+
+        fields.append(field)
+
+    return fields
 
 
 def get_template_field_names(in_template: str) -> List[str]:
@@ -394,7 +415,7 @@ def fill_date_fields(date: datetime, in_template: str) -> str:
 
     template_content = in_template
 
-    for field in get_template_fields(template_content, like_pattern='.date'):
+    for field in get_template_fields(template_content, like_pattern='date'):
         # include fields should strictly separate the keyword and path by a single whitespace
         field_components = field.inner_content.split(' ', 1)
 
@@ -625,22 +646,22 @@ def fill_template(template: str,
     # the template has a {{ rank }} field (or more), but no 'rank' column in the data
     unknown_fields = []
 
+    template = fill_empty_fields(in_template=template)
+
     # find any remaining template fields so we can warn that they were not filled
-    remaining_fields = get_template_fields(template)
+    remaining_fields = get_template_fields(in_template=template)
 
     for field in remaining_fields:
-        if len(field.inner_content) == 0:
+        if field.inner_content is None or len(field.inner_content) == 0:
             # this is an empty field (e.g. {{ }}), so just get rid of it
-            template = fill_template_fields(
-                field_name=field.inner_content,
-                field_value='',
-                in_template=template)
+            fill_empty_fields()
         elif field.inner_content == TemplateFields.CARDS_TOTAL:
             # this is a special case: this field will not be filled until every card
             # has been generated- so this field should not be treated as if missing;
             # instead, simply ignore it at this point
             pass
         else:
+            # try to resolve any row references
             column_reference, reference_row = get_column_reference(
                 field.inner_content, in_reference_row=row, in_data_path=in_data_path)
 
@@ -668,6 +689,10 @@ def fill_template(template: str,
         unknown_fields=set(unknown_fields),
         unused_fields=set(unused_columns),
         referenced_definitions=set(discovered_definition_references))
+
+
+def fill_empty_fields(in_template: str) -> str:
+    return fill_template_fields(field_name='', field_value='', in_template=in_template)
 
 
 def fill_card(
