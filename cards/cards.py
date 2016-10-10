@@ -219,9 +219,17 @@ def make(data_paths: list,
         if len(filled_image_paths) > 0:
             context_image_paths[page_template_path] = list(set(filled_image_paths))
 
-    with open(os.path.join(base_path, 'templates/base/index.html')) as i:
+    index_template_path = os.path.join(base_path, 'templates/base/index.html')
+
+    with open(index_template_path) as i:
         # load the container template for the final html file
         index = i.read()
+
+        # fill any image fields defined by the default index template
+        index, filled_image_paths = fill_image_fields(index)
+
+        if len(filled_image_paths) > 0:
+            context_image_paths[index_template_path] = list(set(filled_image_paths))
 
     # error template for the output on cards specifying a template that was not found,
     # or could not be opened
