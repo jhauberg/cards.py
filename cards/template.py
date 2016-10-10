@@ -644,10 +644,7 @@ def fill_template(template: str,
     remaining_fields = get_template_fields(in_template=template)
 
     for field in remaining_fields:
-        if field.inner_content is None or len(field.inner_content) == 0:
-            # this is an empty field (e.g. {{ }}), so just get rid of it
-            fill_empty_fields()
-        elif field.inner_content == TemplateFields.CARDS_TOTAL:
+        if field.inner_content == TemplateFields.CARDS_TOTAL:
             # this is a special case: this field will not be filled until every card
             # has been generated- so this field should not be treated as if missing;
             # instead, simply ignore it at this point
