@@ -19,10 +19,12 @@ from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDesc
 class TemplateField:
     """ Represents a field in a template. """
 
-    def __init__(self, name: str, start_index: int, end_index: int):
-        self.name = name  # the inner value of the template field; i.e. the field name
-        self.start_index = start_index  # the index of the first '{' wrapping character
-        self.end_index = end_index  # the index of the last '}' wrapping character
+    def __init__(self, inner_content: str, name: str, context: str, start_index: int, end_index: int):
+        self.inner_content = inner_content  # the inner content between the field braces
+        self.name = name  # the name of the field
+        self.context = context  # the context passed to the field name
+        self.start_index = start_index  # the index of the first '{' wrapping brace
+        self.end_index = end_index  # the index of the last '}' wrapping brace
 
 
 class TemplateRenderData:
@@ -217,14 +219,16 @@ def get_template_field(field_name: str,
     return None
 
 
-def get_template_fields(in_template: str, like_pattern: str='') -> List[TemplateField]:
+def get_template_fields(in_template: str, like_pattern: str='[^}}\s]*') -> List[TemplateField]:
     """ Return a list of all template fields (e.g. '{{ a_field }}') that occur in a template. """
 
-    pattern = '{{(' + '({0})'.format(like_pattern) + '.*?)}}'
+    pattern = '{{\s?((' + like_pattern + ')\s?(.*?))\s?}}'
 
-    return [TemplateField(name=field.group(1).strip(),
-                          start_index=field.start(), end_index=field.end())
-            for field in list(re.finditer(pattern, in_template))]
+    return [TemplateField(inner_content=field_match.group(1).strip(),
+                          name=field_match.group(2).strip(),
+                          context=field_match.group(3).strip(),
+                          start_index=field_match.start(), end_index=field_match.end())
+            for field_match in list(re.finditer(pattern, in_template))]
 
 
 def get_template_field_names(in_template: str) -> List[str]:
@@ -233,7 +237,7 @@ def get_template_field_names(in_template: str) -> List[str]:
     # get all the fields
     template_fields = get_template_fields(in_template)
     # adding each field name to a set ensures we only get unique fields
-    template_field_names = {field.name for field in template_fields}
+    template_field_names = {field.inner_content for field in template_fields}
 
     return list(template_field_names)
 
@@ -260,7 +264,8 @@ def fill_image_fields(in_template: str,
         # at this point we don't know that it's actually an image field - we only know that it's
         # a template field, so we just attempt to create an <img> tag from the field.
         # if it turns out to not be an image, we just ignore the field entirely and proceed
-        image_tag, image_path, referenced_definitions = image_tag_from_path(field.name, definitions)
+        image_tag, image_path, referenced_definitions = image_tag_from_path(
+            field.inner_content, definitions)
 
         if len(referenced_definitions) > 0:
             found_definition_references.extend(referenced_definitions)
@@ -330,7 +335,7 @@ def fill_template_field(field: TemplateField,
     if (field.start_index < 0 or field.start_index > len(in_template) or
        field.end_index < 0 or field.end_index > len(in_template)):
         raise ValueError('Template field \'{0}\' out of range ({1}-{2}).'
-                         .format(field.name, field.start_index, field.end_index))
+                         .format(field.inner_content, field.start_index, field.end_index))
 
     if indenting:
         field_value = get_padded_content(
@@ -391,7 +396,7 @@ def fill_date_fields(date: datetime, in_template: str) -> str:
 
     for field in get_template_fields(template_content, like_pattern='.date'):
         # include fields should strictly separate the keyword and path by a single whitespace
-        field_components = field.name.split(' ', 1)
+        field_components = field.inner_content.split(' ', 1)
 
         # default date format: 07, Oct 2016
         date_format = '%B %-d, %Y'
@@ -437,9 +442,9 @@ def fill_include_fields(from_base_path: str,
     template_content = in_template
 
     # find all template fields and go through each, determining whether it's an include field or not
-    for field in get_template_fields(template_content, like_pattern='.include|.inline'):
+    for field in get_template_fields(template_content, like_pattern='include|inline'):
         # include fields should strictly separate the keyword and path by a single whitespace
-        field_components = field.name.split(' ', 1)
+        field_components = field.inner_content.split(' ', 1)
 
         field_command = field_components[0] if len(field_components) > 0 else None
 
@@ -624,32 +629,32 @@ def fill_template(template: str,
     remaining_fields = get_template_fields(template)
 
     for field in remaining_fields:
-        if len(field.name) == 0:
+        if len(field.inner_content) == 0:
             # this is an empty field (e.g. {{ }}), so just get rid of it
             template = fill_template_fields(
-                field_name=field.name,
+                field_name=field.inner_content,
                 field_value='',
                 in_template=template)
-        elif field.name == TemplateFields.CARDS_TOTAL:
+        elif field.inner_content == TemplateFields.CARDS_TOTAL:
             # this is a special case: this field will not be filled until every card
             # has been generated- so this field should not be treated as if missing;
             # instead, simply ignore it at this point
             pass
         else:
             column_reference, reference_row = get_column_reference(
-                field.name, in_reference_row=row, in_data_path=in_data_path)
+                field.inner_content, in_reference_row=row, in_data_path=in_data_path)
 
             field_content = get_column_content(
                 reference_row, column_reference, in_data_path, definitions)
 
             if field_content is not None:
                 template = fill_template_fields(
-                    field_name=field.name,
+                    field_name=field.inner_content,
                     field_value=field_content,
                     in_template=template)
             else:
                 # the field was not found in the card data, so make a warning about it
-                unknown_fields.append(field.name)
+                unknown_fields.append(field.inner_content)
 
     # make sure we only have one of each reference
     column_references = set(column_references_in_data)
