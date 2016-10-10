@@ -416,15 +416,12 @@ def fill_date_fields(date: datetime, in_template: str) -> str:
     template_content = in_template
 
     for field in get_template_fields(template_content, like_pattern='date'):
-        # include fields should strictly separate the keyword and path by a single whitespace
-        field_components = field.inner_content.split(' ', 1)
-
         # default date format: 07, Oct 2016
         date_format = '%B %-d, %Y'
 
-        if len(field_components) > 1:
+        if field.context is not None:
             # a date field can have a custom format
-            custom_date_format = dequote(field_components[1]).strip()
+            custom_date_format = dequote(field.context).strip()
 
             if len(custom_date_format) > 0:
                 # if found, we'll use that and let date.strftime handle it
@@ -464,14 +461,9 @@ def fill_include_fields(from_base_path: str,
 
     # find all template fields and go through each, determining whether it's an include field or not
     for field in get_template_fields(template_content, like_pattern='include|inline'):
-        # include fields should strictly separate the keyword and path by a single whitespace
-        field_components = field.inner_content.split(' ', 1)
-
-        field_command = field_components[0] if len(field_components) > 0 else None
-
-        if field_command is not None:
-            is_include_command = field_command == TemplateFields.INCLUDE
-            is_inline_command = field_command == TemplateFields.INLINE
+        if field.name is not None:
+            is_include_command = field.name == TemplateFields.INCLUDE
+            is_inline_command = field.name == TemplateFields.INLINE
 
             if not is_include_command and not is_inline_command:
                 # we're in a situation where we've, somehow, found neither of the type of fields
@@ -482,9 +474,9 @@ def fill_include_fields(from_base_path: str,
             include_content = ''
             include_path = None
 
-            if len(field_components) > 1:
+            if field.context is not None:
                 # the field should contain a path
-                include_path = dequote(field_components[1]).strip()
+                include_path = dequote(field.context).strip()
 
             if include_path is not None and len(include_path) > 0:
                 if not os.path.isabs(include_path):
