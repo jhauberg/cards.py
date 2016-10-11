@@ -779,6 +779,8 @@ def make(data_paths: list,
                                    or WarningDisplay.has_encountered_warnings()
                                    else '')
 
+    print()
+
     if cards_total > 0:
         if cards_total > cards_total_unique:
             print('Generated {0} ({1} unique) {2} on {3} {4}{5}.\n{6}'
@@ -793,5 +795,7 @@ def make(data_paths: list,
     else:
         print('Generated 0 cards{0}.\n{1}'
               .format(warnings_and_errors_message, output_location_message))
+
+    print()
 
     open_path(output_path)

@@ -61,7 +61,9 @@ def warn(message: str, in_context: WarningContext = None, as_error=False) -> Non
 def info(message: str, in_context: WarningContext = None) -> None:
     message_context = '[-]'
 
-    display(message, message_context, in_context, force_verbosity=True)
+    color = WarningDisplay.apply_info_color
+
+    display(message, message_context, in_context, apply_color=color, force_verbosity=True)
 
 
 def display(message: str,
@@ -105,10 +107,14 @@ class WarningDisplay:
 
     is_verbose = False
 
+    # lots of colors defined here: http://stackoverflow.com/a/21786287/144433
+
     apply_error_color = '\033[0;31m' if terminal_supports_color() else ''
     apply_error_color_underlined = '\033[4;31m' if terminal_supports_color() else ''
     apply_warning_color = '\033[0;33m' if terminal_supports_color() else ''
     apply_warning_color_underlined = '\033[4;33m' if terminal_supports_color() else ''
+    apply_info_color = '\033[0;32m' if terminal_supports_color() else ''
+    apply_info_color_underlined = '\033[4;32m' if terminal_supports_color() else ''
     apply_normal_color = '\033[0m' if terminal_supports_color() else ''
     apply_normal_color_underlined = '\033[4m' if terminal_supports_color() else ''
 
@@ -231,7 +237,7 @@ class WarningDisplay:
     def using_automatically_found_definitions_info(definitions_path: str) -> None:
         info('No definitions have been specified. Using definitions automatically found at: '
              '{0}\'{1}\''
-             .format(WarningDisplay.apply_normal_color_underlined, definitions_path))
+             .format(WarningDisplay.apply_info_color_underlined, definitions_path))
 
     @staticmethod
     def assume_backs_info(context: WarningContext) -> None:
