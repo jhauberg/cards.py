@@ -11,7 +11,7 @@ Usage:
              [--preview] [--verbose]
   cards new  [<name>] [--output-path=<path>] [--verbose]
   cards -h | --help
-  cards -v | --version
+  cards --version
 
 Examples:
   cards make cards.csv
@@ -26,7 +26,6 @@ Examples:
 
 Options:
   -h --help                  Show program help
-  -v --version               Show program version
   -o --output-path=<path>    Specify output directory
   -f --output-file=<file>    Specify output filename [default: index.html]
   -d --definitions=<defs>    Specify definitions filename
@@ -36,6 +35,7 @@ Options:
   --disable-backs            Do not render card backs
   --preview                  Only render 1 of each card
   --verbose                  Show more information
+  --version                  Show program version
 """
 
 import os
