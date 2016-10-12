@@ -4,32 +4,35 @@ import re
 
 # matches any variation of bounding *'s:
 # e.g. "emphasize *this*", or "strong **this**"
-strong_pattern = '\*\*(.*?)\*\*'
-emphasis_pattern = '\*(.*?)\*'
+strong_pattern = r'(?<!\\)\*\*(.+?)\*\*'
+emphasis_pattern = r'(?<!\\)\*(.+?)\*'
 
 # matches any variation of bounding _'s:
 # e.g. "emphasize _this_", or "strong __this__"
 # note that _'s applies under slightly different rules than *'s; it only kicks in
 # when preceded and superceded by a special character or whitespace;
 # e.g. "this_does not work_", "but _this does_" and "this (_works too_)"
-strong_pattern_alt = '(?:(?<=\s|[^a-zA-Z0-9])|^)__(.*?)__(?=$|\s|[^a-zA-Z0-9])'
-emphasis_pattern_alt = '(?:(?<=\s|[^a-zA-Z0-9])|^)_(.*?)_(?=$|\s|[^a-zA-Z0-9])'
+strong_pattern_alt = r'(?:(?<=\s|[^a-zA-Z0-9\\])|^)__(.+?)__(?=$|\s|[^a-zA-Z0-9])'
+emphasis_pattern_alt = r'(?:(?<=\s|[^a-zA-Z0-9\\])|^)_(.+?)_(?=$|\s|[^a-zA-Z0-9])'
 
 # match preceding ^; e.g. "5 kg/m^3"
-super_pattern = '\^(.+?)(?=\s|\n|$)'
+super_pattern = r'\^(.+?)(?=\s|\n|$)'
 
 # matches any variation of bounding ~~'s': e.g. "deleted ~~this~~"
-deleted_pattern = '~~(.*?)~~'
+deleted_pattern = r'~~(.+?)~~'
 # matches any variation of bounding ++'s': e.g. "inserted ++this++"
-inserted_pattern = '\+\+(.*?)\+\+'
+inserted_pattern = r'\+\+(.+?)\+\+'
 
 # matches any variation of 2 whitespace:
 # e.g. "break this  line", or "break this    line twice"
-break_line_pattern = '\s{2}'
+break_line_pattern = r'\s{2}'
 # matches exactly: "break this   line twice"
 # 4 whitespaces should produce same result, but this is a shortcut since 2 breaks is common
 # note that this requires non-whitespace before, and after; so multiples of 3 does not work
-break_line_pattern_alt = '(?<=\S)\s{3}(?=\S)'
+break_line_pattern_alt = r'(?<=\S)\s{3}(?=\S)'
+
+# match any escapes and get rid of them
+escape_pattern = r'\\(?=\*|_)'
 
 
 def markdown(content: str) -> str:
@@ -64,5 +67,7 @@ def markdown(content: str) -> str:
     content = re.sub(break_line_pattern_alt, '<br /><br />', content)
     # then any double spaces
     content = re.sub(break_line_pattern, '<br />', content)
+
+    content = re.sub(escape_pattern, '', content)
 
     return content
