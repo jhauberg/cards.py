@@ -8,6 +8,7 @@ import itertools
 
 from typing import List
 
+from cards.markdown import markdown
 from cards.resource import get_resource_path, is_resource
 
 from cards.util import dequote, lower_first_row, get_line_number
@@ -19,7 +20,11 @@ from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDesc
 class TemplateField:
     """ Represents a field in a template. """
 
-    def __init__(self, inner_content: str, name: str, context: str, start_index: int, end_index: int):
+    def __init__(self,
+                 inner_content: str,
+                 name: str, context: str,
+                 start_index: int,
+                 end_index: int):
         self.inner_content = inner_content  # the inner content between the field braces
         self.name = name  # the name of the field
         self.context = context  # the context passed to the field name
@@ -778,7 +783,6 @@ def get_back_data(row: dict) -> dict:
     return {column[:-len(ColumnDescriptors.BACK_ONLY)]: value for column, value in row.items()
             if not is_special_column(column) and is_back_column(column)}
 
-
 def get_column_reference(field_name: str,
                          in_reference_row: dict,
                          in_data_path: str) -> (str, dict):
@@ -975,56 +979,3 @@ def is_back_column(column: str) -> bool:
     """ Determine whether a column is only intended for the back of a card. """
 
     return column.endswith(ColumnDescriptors.BACK_ONLY) if column is not None else False
-
-
-def markdown(content: str) -> str:
-    """ Transform any Markdown formatting into HTML.
-
-        Supports:
-            *emphasis*, _emphasis_
-            **strong**, __strong__, "they can _also be **combined**_"
-            ~~deleted~~, ++inserted++
-            superscript^5
-
-            Line break using multiples of 2 whitespace:
-                "break  once", "break    twice", "break      thrice"
-            or break twice by using 3 whitespace:
-                "break   twice"
-            note that multiples of 3 is not possible; e.g. 6 whitespace will be treated as 3 breaks.
-    """
-
-    # match any variation of bounding *'s:
-    # e.g. "emphasize *this*", or "strong **this**"
-    content = re.sub('(\*\*)(.+?)(\*\*)', '<strong>\\2</strong>', content)
-    content = re.sub('(\*)(.+?)(\*)', '<em>\\2</em>', content)
-
-    # match any variation of bounding _'s:
-    # e.g. "emphasize _this_", or "strong __this__"
-    # note that _'s applies under slightly different rules than *'s; it only kicks in
-    # when preceded and superceded by a special character or whitespace;
-    # e.g. "this_does not work_", "but _this does_" and "this (_works too_)"
-    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(__)(.+?)(__)(?=(\s|[^a-zA-Z0-9]))', '<em>\\3</em>', content)
-    content = re.sub('(?<=(\s|[^a-zA-Z0-9]))(_)(.+?)(_)(?=(\s|[^a-zA-Z0-9]))', '<em>\\3</em>', content)
-
-    # match any variation of bounding ^'s:
-    # e.g. "5 kg/m^3^"
-    # content = re.sub('\^(.+)\^', '<sup>\\1</sup>', content)
-
-    # match preceding ^; e.g. "5 kg/m^3"
-    # note that this is preferred over using bounding ^'s, as both do not work together without
-    # applying extended rules (like with the _'s)
-    content = re.sub('\^(.+?)(?=(\s|\n|$))', '<sup>\\1</sup>', content)
-
-    # matches any variation of bounding ~~'s': e.g. "deleted ~~this~~"
-    content = re.sub('~~(.+)~~', '<del>\\1</del>', content)
-    # matches any variation of bounding ++'s': e.g. "inserted ++this++"
-    content = re.sub('\+\+(.+)\+\+', '<ins>\\1</ins>', content)
-
-    # matches exactly: "break this   line twice"
-    # 4 whitespaces should produce same result, but this is a shortcut since 2 breaks is common
-    content = re.sub('(?<=\S)((\s{3})(?=\S))', '<br /><br />', content)
-    # matches any variation of 2 whitespace:
-    # e.g. "break this  line", or "break this    line twice"
-    content = re.sub('\s\s', '<br />', content)
-
-    return content
