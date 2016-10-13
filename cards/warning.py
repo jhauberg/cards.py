@@ -152,6 +152,14 @@ class WarningDisplay:
              in_context=context)
 
     @staticmethod
+    def potential_ambiguous_references(context: WarningContext,
+                                       ambiguous_references: list) -> None:
+        warn('You have ambiguous references that could refer to '
+             'both a column or a definition: {0}'
+             .format(ambiguous_references),
+             in_context=context)
+
+    @staticmethod
     def ambiguous_reference(context: WarningContext,
                             reference: str,
                             result: str) -> None:
@@ -292,15 +300,19 @@ class WarningDisplay:
                                    unknown_fields: list,
                                    is_back_template: bool=False) -> None:
         if len(unknown_fields) > 1:
-            msg = ('The back template contains fields that are not present for this card: {0}'
+            msg = ('The back template contains fields that are not present for this card, '
+                   'or could not be resolved: {0}'
                    if is_back_template else
-                   'The template contains fields that are not present for this card: {0}')
+                   'The template contains fields that are not present for this card, '
+                   'or could not be resolved: {0}')
         else:
             unknown_fields = unknown_fields[0]
 
-            msg = ('The back template contains a field that is not present for this card: \'{0}\''
+            msg = ('The back template contains a field that is not present for this card, '
+                   'or could not be resolved: \'{0}\''
                    if is_back_template else
-                   'The template contains a field that is not present for this card: \'{0}\'')
+                   'The template contains a field that is not present for this card, '
+                   'or could not be resolved: \'{0}\'')
 
         warn(msg.format(unknown_fields),
              in_context=context)
@@ -326,11 +338,11 @@ class WarningDisplay:
     @staticmethod
     def unused_definitions(unused_definitions: list) -> None:
         if len(unused_definitions) > 1:
-            warning = 'You have definitions that seem to be unused: {0}'
+            warning = 'You have unused definitions: {0}'
         else:
             unused_definitions = unused_definitions[0]
 
-            warning = 'You have a definition that seem to be unused: \'{0}\''
+            warning = 'You have an unused definition: \'{0}\''
 
         warn(warning.format(unused_definitions))
 
