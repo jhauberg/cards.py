@@ -163,6 +163,15 @@ def make_empty_project(in_path: str,
     return False
 
 
+def determine_ambiguous_references(columns: set, definitions: set) -> set:
+    unambiguous_columns = columns - definitions
+    unambiguous_definitions = definitions - columns
+
+    ambiguous_references = ((columns | definitions) - unambiguous_definitions) - unambiguous_columns
+
+    return ambiguous_references
+
+
 def make(data_paths: list,
          definitions_path: str=None,
          output_path: str=None,
@@ -170,15 +179,36 @@ def make(data_paths: list,
          force_page_breaks: bool=False,
          disable_backs: bool=False,
          default_card_size_identifier: str='standard',
-         is_preview: bool=False):
+         is_preview: bool=False,
+         discover_datasources: bool=False):
     """ Build cards for all specified datasources. """
+
+    if discover_datasources:
+        # todo: discover any CSV files in current working directory and append those to data_paths
+        # todo: then clear duplicates by doing data_paths = list(set(data_paths))
+        pass
+
+    data_path_names = [os.path.basename(data_path) for data_path in data_paths]
+
+    datasource_count = len(data_paths)
+
+    if datasource_count > 0:
+        print('Generating cards from {0} {1}:\n{2}'.format(
+            datasource_count,
+            'datasources' if datasource_count > 1 else 'datasource',
+            data_path_names))
+        print()
+    else:
+        print('No datasources.')
+
+    if datasource_count == 0:
+        print('Generated 0 cards.')
+
+        return
 
     disable_auto_templating = False
 
-    if is_preview:
-        WarningDisplay.preview_enabled_info()
-
-    if definitions_path is None:
+    if definitions_path is None and discover_datasources:
         # no definitions file has been explicitly specified, so try looking for it automatically
         found, potential_definitions_path = find_file_path('definitions.csv', data_paths)
 
@@ -189,6 +219,9 @@ def make(data_paths: list,
                 definitions_path)
 
     definitions = get_definitions_from_file(definitions_path)
+
+    if is_preview:
+        WarningDisplay.preview_enabled_info()
 
     # dict of all image paths discovered for each context during card generation
     context_image_paths = {}
@@ -388,7 +421,9 @@ def make(data_paths: list,
                 data_file_raw.seek(0)
 
                 # and start over
-                data = csv.DictReader(lower_first_row(data_file), fieldnames=stripped_column_names)
+                data = csv.DictReader(
+                    lower_first_row(data_file),
+                    fieldnames=stripped_column_names)
 
                 # setting fieldnames explicitly causes the first row
                 # to be treated as data, so skip it
@@ -413,6 +448,14 @@ def make(data_paths: list,
                 # that the layout remains correct
                 empty_back = get_sized_card(
                     card, size_class=card_size.style, content='')
+
+            ambiguous_references = determine_ambiguous_references(
+                set(stripped_column_names),
+                set(definitions.keys()))
+
+            if len(ambiguous_references) > 0:
+                WarningDisplay.potential_ambiguous_references(
+                    WarningContext(context), list(ambiguous_references))
 
             row_index = 1
 
@@ -469,7 +512,7 @@ def make(data_paths: list,
 
                     # determine which template to use for this card, if any
                     template_path = get_column_content(
-                        row, Columns.TEMPLATE, data_path, definitions, default_content='')
+                        Columns.TEMPLATE, row, data_path, definitions, default_content='')
 
                     template_path = template_path.strip()
 
@@ -534,7 +577,7 @@ def make(data_paths: list,
 
                     if not disable_backs:
                         template_path_back = get_column_content(
-                            row, Columns.TEMPLATE_BACK, data_path, definitions, default_content='')
+                            Columns.TEMPLATE_BACK, row, data_path, definitions, default_content='')
 
                         template_path_back = template_path_back.strip()
                         template_back = None
@@ -684,32 +727,33 @@ def make(data_paths: list,
     with open(output_filepath, 'w') as result:
         # on all pages, fill any {{ cards_total }} fields
         pages = fill_template_fields(
-            field_name=TemplateFields.CARDS_TOTAL,
+            field_inner_content=TemplateFields.CARDS_TOTAL,
             field_value=str(cards_total),
             in_template=pages)
 
         pages = fill_template_fields(
-            field_name=TemplateFields.PAGES_TOTAL,
+            field_inner_content=TemplateFields.PAGES_TOTAL,
             field_value=str(pages_total),
             in_template=pages)
 
         # pages must be inserted prior to filling metadata fields,
         # since each page may contain fields that should be filled
         index = fill_template_fields(
-            field_name=TemplateFields.PAGES,
+            field_inner_content=TemplateFields.PAGES,
             field_value=pages,
             in_template=index,
             indenting=True)
 
         index = fill_template_fields(
-            field_name=TemplateFields.PROGRAM_VERSION,
+            field_inner_content=TemplateFields.PROGRAM_VERSION,
             field_value=__version__,
             in_template=index)
 
         # note that most of these fields could potentially be filled already when first getting the
         # page template; however, we instead do it as the very last thing to allow cards
         # using these fields (even if that might only be on rare occasions)
-        title = get_definition_content(definitions, definition=TemplateFields.TITLE).strip()
+        title = get_definition_content(
+            definition=TemplateFields.TITLE, in_definitions=definitions).strip()
 
         if len(title) == 0:
             if cards_total > 0:
@@ -719,9 +763,14 @@ def make(data_paths: list,
             else:
                 title = 'Nothing to see here'
 
-        description = get_definition_content(definitions, definition=TemplateFields.DESCRIPTION)
-        copyright_notice = get_definition_content(definitions, definition=TemplateFields.COPYRIGHT)
-        version_identifier = get_definition_content(definitions, definition=TemplateFields.VERSION)
+        description = get_definition_content(
+            definition=TemplateFields.DESCRIPTION, in_definitions=definitions).strip()
+
+        copyright_notice = get_definition_content(
+            definition=TemplateFields.COPYRIGHT, in_definitions=definitions).strip()
+
+        version_identifier = get_definition_content(
+            definition=TemplateFields.VERSION, in_definitions=definitions).strip()
 
         index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
         index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
@@ -729,7 +778,7 @@ def make(data_paths: list,
         index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
 
         # fill any image fields that might have appeared by populating the metadata fields
-        index, filled_image_paths = fill_image_fields(index, definitions)
+        index, filled_image_paths = fill_image_fields(in_template=index)
 
         if len(filled_image_paths) > 0:
             context_image_paths[definitions_path] = list(set(filled_image_paths))
@@ -773,7 +822,7 @@ def make(data_paths: list,
     warnings_and_errors_message = (' ({0} errors, {1} warnings{2})'
                                    .format(WarningDisplay.error_count,
                                            WarningDisplay.warning_count,
-                                           ('; set --verbose to see warnings'
+                                           ('; set --verbose for more'
                                             if not WarningDisplay.is_verbose else ''))
                                    if WarningDisplay.has_encountered_errors()
                                    or WarningDisplay.has_encountered_warnings()

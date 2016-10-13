@@ -189,10 +189,6 @@ html, body {
   bottom: -2.5mm;
 }
 
-@page {
-  size: A4 portrait;
-}
-
 @media screen {
   html, body {
     background-color: #eee;
@@ -208,6 +204,12 @@ html, body {
 }
 
 @media print {
+  @page {
+    /* This can be set to 'landscape'. Browsers that support this field will default to that
+       orientation, others will just ignore it. */
+    size: A4 portrait;
+  }
+
   html, body {
     background-color: #fff;
   }

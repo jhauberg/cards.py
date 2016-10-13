@@ -8,7 +8,7 @@ Usage:
   cards make [<datasource>]... [--definitions=<defs>]
              [--output-path=<path>] [--output-file=<file>]
              [--card-size=<size>] [--force-page-breaks] [--disable-backs]
-             [--preview] [--verbose]
+             [--discover] [--preview] [--verbose]
   cards new  [<name>] [--output-path=<path>] [--verbose]
   cards -h | --help
   cards --version
@@ -33,6 +33,7 @@ Options:
                              Other options include: \'domino\', \'jumbo\' or \'token\'
   --force-page-breaks        Force a page break after each datasource
   --disable-backs            Do not render card backs
+  --discover                 Automatically set CSV-files in the current directory as datasources
   --preview                  Only render 1 of each card
   --verbose                  Show more information
   --version                  Show program version
@@ -71,13 +72,15 @@ def main():
         force_page_breaks = arguments['--force-page-breaks']
         disable_backs = arguments['--disable-backs']
         is_preview = arguments['--preview']
+        discover = arguments['--discover']
 
         make(data_paths, definitions_path,
              output_path, output_filename,
              force_page_breaks,
              disable_backs,
              default_card_size_identifier,
-             is_preview)
+             is_preview,
+             discover)
 
 
 if __name__ == '__main__':
