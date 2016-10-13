@@ -12,7 +12,7 @@ class ColumnDescriptors:
 
 
 class TemplateFieldDescriptors:
-    COPY_ONLY = '@copy-only'                    # Descriptor that can be applied to an image-field to prevent it from being transformed into an <img> tag (only keeping the image path and copying the image to the output directory)
+    COPY_ONLY = 'copy-only'                    # Descriptor that can be applied to an image-field to prevent it from being transformed into an <img> tag (only keeping the image path and copying the image to the output directory)
 
 
 class TemplateFields:
