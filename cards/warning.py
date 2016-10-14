@@ -160,13 +160,24 @@ class WarningDisplay:
              in_context=context)
 
     @staticmethod
-    def ambiguous_reference(context: WarningContext,
-                            reference: str,
-                            result: str) -> None:
+    def ambiguous_reference_used_column(context: WarningContext,
+                                        reference: str,
+                                        result: str) -> None:
         truncated_result = (result if len(result) < 18 else result[:18] + '…')
 
         warn('A reference named \'{0}\' could refer to both a column or a definition. '
              'The column data \'{1}\' was used.'
+             .format(reference, truncated_result),
+             in_context=context)
+
+    @staticmethod
+    def ambiguous_reference_used_definition(context: WarningContext,
+                                            reference: str,
+                                            result: str) -> None:
+        truncated_result = (result if len(result) < 18 else result[:18] + '…')
+
+        warn('A reference named \'{0}\' could refer to both a column or a definition. '
+             'The definition data \'{1}\' was used.'
              .format(reference, truncated_result),
              in_context=context)
 

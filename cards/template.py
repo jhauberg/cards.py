@@ -465,6 +465,8 @@ def fill_include_fields(from_base_path: str,
                 else:
                     WarningDisplay.included_file_not_found_error(
                         WarningContext(os.path.basename(from_base_path)), include_path)
+
+                    include_content = '<strong>&lt;included file not found&gt;</strong>'
             else:
                 WarningDisplay.include_should_specify_file(
                     WarningContext('{0}:{1}'.format(
@@ -474,7 +476,9 @@ def fill_include_fields(from_base_path: str,
 
             # populate the include field with the content; or blank if unresolved
             template_content = fill_template_field(
-                field, include_content, template_content, indenting=is_include_command)
+                field, include_content, template_content,
+                # inlines should not be indented
+                indenting=is_include_command)
 
             # since we're using fill_template_field, we have to recursively start over,
             # otherwise the next field objects would have invalid indices and would not be
@@ -488,13 +492,28 @@ def fill_include_fields(from_base_path: str,
 def fill_partial_definition(definition: str,
                             value: str,
                             in_template: str) -> (str, int):
+    """ Populate any partial definitions in a template.
+
+        A partial definition is a definition that is included in another template field;
+        e.g. {{ my_column my_partial_definition }}, or {{ my_partial_definition 16x16 }}.
+
+        Populating a partial definition is essentially just replacing the definition key with
+        its resolved value, but otherwise leaving the field as it was.
+
+        For example, {{ my_column my_partial_definition }} would become {{ my_column some_value }}.
+    """
+
     partial_definition_occurences = 0
 
     template_content = in_template
 
+    # only match as a partial definition if it is isolated by whitespace,
+    # otherwise it might just be part of something else;
+    # for example, the definition 'monster' should not match {{ path/to/monster.svg 16x16 }}
     pattern = '(?:^|\s)(' + definition + ')(?:$|\s)'
 
     def next_partial_field():
+        # find the next field that matches- but only one
         fields = get_template_fields(
             in_template=template_content, limit=1,
             with_name_like=pattern,
@@ -515,13 +534,15 @@ def fill_partial_definition(definition: str,
         if partial_definition_field.context is not None:
             new_context = re.sub(pattern, value, partial_definition_field.context)
 
-        # essentially replace the field with a new and transformed field
+        # essentially replace the field with a new and transformed field where the
+        # partial definition is resolved and populated
         new_field = '{{ ' + new_name + ' ' + new_context + ' }}'
 
         template_content = fill_template_field(
             partial_definition_field, field_value=new_field, in_template=template_content)
 
         partial_definition_occurences += 1
+        # keep searching for more matches
         partial_definition_field = next_partial_field()
 
     return template_content, partial_definition_occurences
@@ -543,9 +564,6 @@ def fill_definitions(definitions: dict,
         resolved_definition_value, resolution_data = get_definition_content(
             definition, in_definitions=definitions, tracking_references=True)
 
-        referenced_definitions.extend(
-            list(resolution_data.definition_references))
-
         # fill any definite occurences of the definition (e.g. '{{ my_definition }}')
         template_content, definite_occurences = fill_template_fields(
             field_inner_content=definition,
@@ -554,10 +572,15 @@ def fill_definitions(definitions: dict,
             counting_occurences=True)
 
         template_content, partial_occurences = fill_partial_definition(
-            definition, resolved_definition_value, template_content)
+            definition, resolved_definition_value,
+            in_template=template_content)
 
         if definite_occurences > 0 or partial_occurences > 0:
+            # the definition was used somewhere, so flag it as referenced
             referenced_definitions.append(definition)
+            # and also flag any definitions referenced during the resolution of the definition
+            referenced_definitions.extend(
+                list(resolution_data.definition_references))
 
     return template_content, set(referenced_definitions)
 
@@ -604,8 +627,8 @@ def fill_template(template: str,
     for column in row:
         # fetch the content for the field
         field_content, resolution_data = get_column_content(
-            column, row, in_data_path, definitions,
-            default_content='', tracking_references=True)
+            column, row, definitions, in_data_path,
+            tracking_references=True)
 
         # fill content into the provided template
         template, occurences = fill_template_fields(
@@ -655,7 +678,7 @@ def fill_template(template: str,
                 field, in_reference_row=row, in_data_path=in_data_path)
 
             field_content = get_column_content(
-                column_reference, reference_row, in_data_path, definitions)
+                column_reference, reference_row, definitions, in_data_path)
 
             if field_content is not None:
                 template = fill_template_fields(
@@ -845,8 +868,8 @@ def get_row_reference(field: TemplateField,
 
 def get_column_content(column: str,
                        in_row: dict,
-                       in_data_path: str,
                        definitions: dict,
+                       in_data_path: str=None,
                        default_content: str=None,
                        tracking_references: bool=False) -> str:
     """ Return the content of a column, recursively resolving any column/definition references. """
@@ -857,7 +880,7 @@ def get_column_content(column: str,
     column_references = []
     definition_references = []
 
-    if column_content is not None:
+    if column_content is not None and len(column_content) > 0:
         # strip excess whitespace
         column_content = column_content.strip()
         # fill any include fields before doing anything else
@@ -865,22 +888,25 @@ def get_column_content(column: str,
         # clear out any empty fields
         column_content = fill_empty_fields(column_content)
 
+        is_resolving_definition = in_row == definitions
+
         reference_fields = get_template_fields(column_content)
 
         for reference_field in reference_fields:
-            column_reference, reference_row = get_row_reference(
+            # determine whether this field is a row reference
+            reference_column, reference_row = get_row_reference(
                 reference_field, in_reference_row=in_row, in_data_path=in_data_path)
 
-            if column_reference is None:
+            if reference_column is None:
                 # it was not a row reference
-                column_reference = reference_field.inner_content
+                reference_column = reference_field.inner_content
 
             # determine if the field occurs as a definition
-            is_definition = column_reference in definitions
+            is_definition = reference_column in definitions
             # determine if the field occurs as a column in the current row- note that if
             # the current row is actually the definitions, then it actually *is* a column,
             # but it should not be treated as such
-            is_column = column_reference in reference_row and reference_row is not definitions
+            is_column = reference_column in reference_row and not is_resolving_definition
 
             if not is_column and not is_definition:
                 # the field is not a reference that can be resolved right now, so skip it
@@ -890,16 +916,37 @@ def get_column_content(column: str,
             # recursively get the content of the referenced column to ensure any further
             # references are determined and filled prior to filling the originating reference
 
-            if is_column:
+            # this field refers to the column in the same row that is already being resolved;
+            # i.e. an infinite cycle (if it was another row it might not be infinite)
+            is_infinite_column_reference = reference_column == column and reference_row is in_row
+            # this definition field refers to itself; also leading to an infinite cycle
+            is_infinite_definition_reference = (is_infinite_column_reference
+                                                and is_definition
+                                                and not is_column)
+
+            # only resolve further if it would not lead to an infinite cycle
+            use_column = is_column and not is_infinite_column_reference
+            # however, the field might ambiguously refer to a definition too,
+            # so if this could be resolved, use the definition value instead
+            use_definition = (is_definition
+                              and not use_column
+                              and not is_infinite_definition_reference)
+
+            if not use_column and not use_definition:
+                # could not resolve this field at all
+                print('could not resolve: ' + reference_column)
+                continue
+
+            if use_column:
                 # prioritize the column reference by resolving it first,
                 # even if it could also be a definition instead (but warn about that later)
                 column_reference_content, resolution_data = get_column_content(
-                    column_reference, reference_row, in_data_path, definitions, default_content,
+                    reference_column, reference_row, definitions, in_data_path, default_content,
                     tracking_references=True)
-            elif is_definition:
+            elif use_definition:
                 # resolve the definition reference, keeping track of any discovered references
                 column_reference_content, resolution_data = get_definition_content(
-                    definition=column_reference, in_definitions=definitions,
+                    definition=reference_column, in_definitions=definitions,
                     tracking_references=True)
 
             column_references.extend(list(resolution_data.column_references))
@@ -912,19 +959,27 @@ def get_column_content(column: str,
                 in_template=column_content,
                 counting_occurences=True)
 
-            if occurences > 0 and tracking_references:
-                if is_column:
-                    column_references.append(column_reference)
-                elif is_definition:
-                    definition_references.append(column_reference)
+            if occurences > 0:
+                if tracking_references:
+                    if use_column:
+                        column_references.append(reference_column)
+                    elif use_definition:
+                        definition_references.append(reference_column)
 
-            if occurences > 0 and (is_definition and is_column and
-                                   reference_row is not definitions):
-                # the reference appears multiple places
-                context = os.path.basename(in_data_path)
-                # so warn about it
-                WarningDisplay.ambiguous_reference(
-                    WarningContext(context), column_reference, column_reference_content)
+                if is_definition and is_column and not is_resolving_definition:
+                    # the reference appears multiple places
+                    context = os.path.basename(in_data_path)
+
+                    if use_column:
+                        # the column data was preferred over the definition data
+                        WarningDisplay.ambiguous_reference_used_column(
+                            WarningContext(context), reference_column, column_reference_content)
+                    elif use_definition:
+                        # the definition data was preferred over the column data;
+                        # this is likely because the column reference was an infinite reference
+                        # don't inform about that detail, but do warn that the definition was used
+                        WarningDisplay.ambiguous_reference_used_definition(
+                            WarningContext(context), reference_column, column_reference_content)
 
         # transform content to html using any applied markdown formatting
         column_content = markdown(column_content)
@@ -942,8 +997,8 @@ def get_definition_content(definition: str,
     """ Return the content of a definition, recursively resolving any references. """
 
     definition_content, resolution_data = get_column_content(
-        column=definition, in_row=in_definitions, in_data_path='', definitions=in_definitions,
-        default_content='', tracking_references=True)
+        column=definition, in_row=in_definitions, definitions=in_definitions,
+        tracking_references=True)
 
     return ((definition_content, resolution_data) if tracking_references
             else definition_content)

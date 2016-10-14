@@ -512,9 +512,9 @@ def make(data_paths: list,
 
                     # determine which template to use for this card, if any
                     template_path = get_column_content(
-                        Columns.TEMPLATE, row, data_path, definitions, default_content='')
+                        Columns.TEMPLATE, row, definitions, data_path)
 
-                    template_path = template_path.strip()
+                    template = None
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
@@ -577,9 +577,8 @@ def make(data_paths: list,
 
                     if not disable_backs:
                         template_path_back = get_column_content(
-                            Columns.TEMPLATE_BACK, row, data_path, definitions, default_content='')
+                            Columns.TEMPLATE_BACK, row, definitions, data_path)
 
-                        template_path_back = template_path_back.strip()
                         template_back = None
 
                         if template_path_back is not None and len(template_path_back) > 0:
