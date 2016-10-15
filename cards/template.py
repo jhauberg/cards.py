@@ -148,34 +148,32 @@ def image(field: TemplateField) -> (str, str):
 
         return None, None  # no image, no tag
 
-    return image_path, image_tag_from_path(
-        image_path, width=explicit_width, height=explicit_height, copy_only=no_transform)
-
-
-def image_tag_from_path(image_path: str,
-                        width: int=None,
-                        height: int=None,
-                        copy_only: bool=False) -> str:
-    """ Return a HTML-compliant image tag using the specified image path. """
-
     resource_path = image_path
 
     if is_resource(image_path):
-        # the path is relative and goes back
         image_name = os.path.basename(image_path)
-        # transform this path so that it is relative within the output directory,
-        # so that we can keep every resource contained
+        # transform the path so that it is relative within the output directory,
+        # this way we can keep every resource contained
         resource_path = get_resource_path(image_name)
 
-    if copy_only:
-        # the image should only be copied - so the "tag" is simply the image path
-        return resource_path
-    elif width is not None and height is not None:
+    if no_transform:
+        return resource_path, ''  # image path in resources, no tag
+
+    return image_path, image_tag(
+        resource_path, width=explicit_width, height=explicit_height)
+
+
+def image_tag(image_path: str,
+              width: int=None,
+              height: int=None) -> str:
+    """ Return a HTML-compliant image tag using the specified image path. """
+
+    if width is not None and height is not None:
         # make a tag with the image at the specified dimensions
-        return '<img src="{0}" width="{1}" height="{2}">'.format(resource_path, width, height)
-    else:
-        # make a tag with the image at its intrinsic size
-        return '<img src="{0}">'.format(resource_path)
+        return '<img src="{0}" width="{1}" height="{2}">'.format(image_path, width, height)
+
+    # make a tag with the image at its intrinsic size
+    return '<img src="{0}">'.format(image_path)
 
 
 def get_template_fields(in_template: str,
