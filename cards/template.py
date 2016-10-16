@@ -157,15 +157,15 @@ def image(field: TemplateField) -> (str, str):
         resource_path = get_resource_path(image_name)
 
     if no_transform:
-        return resource_path, ''  # image path in resources, no tag
+        return image_path, resource_path  # image path in resources, no tag
 
-    return image_path, image_tag(
+    return image_path, get_image_tag(
         resource_path, width=explicit_width, height=explicit_height)
 
 
-def image_tag(image_path: str,
-              width: int=None,
-              height: int=None) -> str:
+def get_image_tag(image_path: str,
+                  width: int=None,
+                  height: int=None) -> str:
     """ Return a HTML-compliant image tag using the specified image path. """
 
     if width is not None and height is not None:
