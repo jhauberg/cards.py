@@ -752,9 +752,9 @@ def make(data_paths: list,
         # page template; however, we instead do it as the very last thing to allow cards
         # using these fields (even if that might only be on rare occasions)
         title = get_definition_content(
-            definition=TemplateFields.TITLE, in_definitions=definitions).strip()
+            definition=TemplateFields.TITLE, in_definitions=definitions)
 
-        if len(title) == 0:
+        if title is None or len(title) == 0:
             if cards_total > 0:
                 title = '{0} {1} on {2} {3}'.format(
                     cards_total, cards_or_card,
@@ -763,13 +763,19 @@ def make(data_paths: list,
                 title = 'Nothing to see here'
 
         description = get_definition_content(
-            definition=TemplateFields.DESCRIPTION, in_definitions=definitions).strip()
+            definition=TemplateFields.DESCRIPTION, in_definitions=definitions)
+
+        description = description if description is not None else ''
 
         copyright_notice = get_definition_content(
-            definition=TemplateFields.COPYRIGHT, in_definitions=definitions).strip()
+            definition=TemplateFields.COPYRIGHT, in_definitions=definitions)
+
+        copyright_notice = copyright_notice if copyright_notice is not None else ''
 
         version_identifier = get_definition_content(
-            definition=TemplateFields.VERSION, in_definitions=definitions).strip()
+            definition=TemplateFields.VERSION, in_definitions=definitions)
+
+        version_identifier = version_identifier if version_identifier is not None else ''
 
         index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
         index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
