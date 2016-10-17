@@ -42,6 +42,9 @@ html, body {
   /* We want this stuff floating around */
   position: fixed;
 
+  /* ..and it should float on top of any content */
+  z-index: 2;
+
   margin-top: .5cm;
 }
 
