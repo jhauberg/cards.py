@@ -649,11 +649,6 @@ def fill_template(template: str,
 
     discovered_definition_references.extend(referenced_definitions)
 
-    # in case data might contain a column that clashes with the date field; i.e. named 'date'
-    # just do this last so that the column always overrules
-    template = fill_date_fields(
-        datetime.date.today(), in_template=template)
-
     # replace any image fields with HTML compliant <img> tags
     template, filled_image_paths = fill_image_fields(in_template=template)
 

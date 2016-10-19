@@ -13,8 +13,12 @@ import os
 import csv
 import math
 import shutil
+import datetime
 
-from cards.template import fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
+from cards.template import (
+    fill_template_fields, fill_image_fields, fill_card_front, fill_card_back, fill_date_fields
+)
+
 from cards.template import template_from_path
 from cards.template import get_column_content, get_definition_content, get_sized_card
 
@@ -781,6 +785,8 @@ def make(data_paths: list,
         index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
         index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
         index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
+
+        index = fill_date_fields(datetime.date.today(), in_template=index)
 
         # fill any image fields that might have appeared by populating the metadata fields
         index, filled_image_paths = fill_image_fields(in_template=index)
