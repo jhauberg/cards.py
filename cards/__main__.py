@@ -50,6 +50,8 @@ from cards.version import __version__
 
 
 def main():
+    """ Entry point for invoking the cards module. """
+
     arguments = docopt(__doc__, version='cards ' + __version__)
 
     output_path = arguments['--output-path']

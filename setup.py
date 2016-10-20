@@ -15,24 +15,32 @@ import re
 
 from setuptools import setup
 
-if sys.version_info < (3, 5):
-    sys.exit('Python 3.5 or newer is required for cards.py')
 
-version = open('cards/version.py', 'rt').read()
-version_search = r'^__version__ = [\'"]([^\'"]*)[\'"]'
+def determine_version_or_exit() -> str:
+    """ Determine version identifier or exit the program. """
 
-matches = re.search(version_search, version, re.M)
+    if sys.version_info < (3, 5):
+        sys.exit('Python 3.5 or newer is required for cards.py')
 
-if matches:
-    version_identifier = matches.group(1)
-else:
-    sys.exit('Version could not be determined')
+    version = open('cards/version.py', 'rt').read()
+    version_search = r'^__version__ = [\'"]([^\'"]*)[\'"]'
+
+    matches = re.search(version_search, version, re.M)
+
+    if matches:
+        version_identifier = matches.group(1)
+
+        return version_identifier
+    else:
+        sys.exit('Version could not be determined')
+
+VERSION_IDENTIFIER = determine_version_or_exit()
 
 setup(
     name='cards.py',
-    version=version_identifier,
+    version=VERSION_IDENTIFIER,
     description='Generate Print-and-Play cards for your board games',
-    long_description=open('README.md', 'r').read(),
+    long_description=open('README.md').read(),
     url='https://github.com/jhauberg/cards.py',
     download_url='https://github.com/jhauberg/cards.py/archive/master.zip',
     author='Jacob Hauberg Hansen',

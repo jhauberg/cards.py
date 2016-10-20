@@ -1,42 +1,50 @@
 # coding=utf-8
 
+"""
+This module provides Markdown formatting.
+"""
+
 import re
 
 # matches any variation of bounding *'s:
 # e.g. "emphasize *this*", or "strong **this**"
-strong_pattern = r'(?<!\\)\*\*(.+?)\*\*'
-emphasis_pattern = r'(?<!\\)\*(.+?)\*'
+STRONG_PATTERN = r'(?<!\\)\*\*(.+?)\*\*'
+EMPHASIS_PATTERN = r'(?<!\\)\*(.+?)\*'
 
 # matches any variation of bounding _'s:
 # e.g. "emphasize _this_", or "strong __this__"
 # note that _'s applies under slightly different rules than *'s; it only kicks in
 # when preceded and superceded by a special character or whitespace;
 # e.g. "this_does not work_", "but _this does_" and "this (_works too_)"
-strong_pattern_alt = r'(?:(?<=\s|[^a-zA-Z0-9\\])|^)__(.+?)__(?=$|\s|[^a-zA-Z0-9])'
-emphasis_pattern_alt = r'(?:(?<=\s|[^a-zA-Z0-9\\])|^)_(.+?)_(?=$|\s|[^a-zA-Z0-9])'
+STRONG_PATTERN_ALT = r'(?:(?<=\s|[^a-zA-Z0-9\\])|^)__(.+?)__(?=$|\s|[^a-zA-Z0-9])'
+EMPHASIS_PATTERN_ALT = r'(?:(?<=\s|[^a-zA-Z0-9\\])|^)_(.+?)_(?=$|\s|[^a-zA-Z0-9])'
 
 # match preceding ^; e.g. "5 kg/m^3"
-super_pattern = r'\^(.+?)(?=\s|\n|$)'
+SUPER_PATTERN = r'\^(.+?)(?=\s|\n|$)'
 
 # matches any variation of bounding ~~'s': e.g. "deleted ~~this~~"
-deleted_pattern = r'~~(.+?)~~'
+DELETED_PATTERN = r'~~(.+?)~~'
 # matches any variation of bounding ++'s': e.g. "inserted ++this++"
-inserted_pattern = r'\+\+(.+?)\+\+'
+INSERTED_PATTERN = r'\+\+(.+?)\+\+'
 
 # matches any variation of 2 whitespace:
 # e.g. "break this  line", or "break this    line twice"
-break_line_pattern = r'\s{2}'
+BREAK_LINE_PATTERN = r'\s{2}'
 # matches exactly: "break this   line twice"
 # 4 whitespaces should produce same result, but this is a shortcut since 2 breaks is common
 # note that this requires non-whitespace before, and after; so multiples of 3 does not work
-break_line_pattern_alt = r'(?<=\S)\s{3}(?=\S)'
+BREAK_LINE_PATTERN_ALT = r'(?<=\S)\s{3}(?=\S)'
 
 # match any escapes and get rid of them
-escape_pattern = r'\\(?=\*|_)'
+ESCAPE_PATTERN = r'\\(?=\*|_)'
 
 
 def markdown(content: str) -> str:
     """ Transform any Markdown formatting into HTML.
+
+        This implementation provides only a subset of the Markdown specification
+        (e.g. there's no support for headers, tables or images).  Additionally, it
+        adds some things that are not part of the specification (e.g. line breaks).
 
         Supports:
             *emphasis*, _emphasis_
@@ -52,22 +60,22 @@ def markdown(content: str) -> str:
     """
 
     # apply patterns with most constraints first, e.g. ** should overrule *, and __ overrule _
-    content = re.sub(strong_pattern, '<strong>\\1</strong>', content)
-    content = re.sub(strong_pattern_alt, '<strong>\\1</strong>', content)
+    content = re.sub(STRONG_PATTERN, '<strong>\\1</strong>', content)
+    content = re.sub(STRONG_PATTERN_ALT, '<strong>\\1</strong>', content)
 
-    content = re.sub(emphasis_pattern, '<em>\\1</em>', content)
-    content = re.sub(emphasis_pattern_alt, '<em>\\1</em>', content)
+    content = re.sub(EMPHASIS_PATTERN, '<em>\\1</em>', content)
+    content = re.sub(EMPHASIS_PATTERN_ALT, '<em>\\1</em>', content)
 
-    content = re.sub(super_pattern, '<sup>\\1</sup>', content)
+    content = re.sub(SUPER_PATTERN, '<sup>\\1</sup>', content)
 
-    content = re.sub(deleted_pattern, '<del>\\1</del>', content)
-    content = re.sub(inserted_pattern, '<ins>\\1</ins>', content)
+    content = re.sub(DELETED_PATTERN, '<del>\\1</del>', content)
+    content = re.sub(INSERTED_PATTERN, '<ins>\\1</ins>', content)
 
     # most constraints first; resolve three spaces first
-    content = re.sub(break_line_pattern_alt, '<br /><br />', content)
+    content = re.sub(BREAK_LINE_PATTERN_ALT, '<br /><br />', content)
     # then any double spaces
-    content = re.sub(break_line_pattern, '<br />', content)
+    content = re.sub(BREAK_LINE_PATTERN, '<br />', content)
 
-    content = re.sub(escape_pattern, '', content)
+    content = re.sub(ESCAPE_PATTERN, '', content)
 
     return content
