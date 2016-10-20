@@ -1,13 +1,17 @@
 # coding=utf-8
 
+"""
+This module provides functions for handling and dealing with the resources used in a project.
+"""
+
 import os
 import stat
 
-from cards.util import is_url, copy_file_if_necessary, create_missing_directories_if_necessary
+from cards.util import is_url, copy_file_if_necessary, create_directories_if_necessary
 from cards.warning import WarningDisplay, WarningContext
 
 
-def should_retain_relative_resource_structure() -> bool:
+def retain_relative_structure() -> bool:
     """ Determine whether resources should be copied retaining their relative directory structure.
 
         When this is True, a resource located at e.g. "images/my-image.png" will be copied as is.
@@ -27,7 +31,7 @@ def is_resource(file_path: str) -> bool:
     # /resources/copied, or if they should retain their directory structure as is
     # in either case, absolute or relative paths going back should always be copied
     return (file_path.startswith('..') or os.path.isabs(file_path)
-            if should_retain_relative_resource_structure()
+            if retain_relative_structure()
             else True)
 
 
@@ -66,15 +70,16 @@ def has_hidden_attribute(path: str) -> bool:
 
 
 def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list:
+    """ Return a list of all files in path that are not one of the copied files. """
+
     existing_resource_filenames = []
 
     resources_path = os.path.join(in_directory_path, get_resources_path())
 
     try:
-        existing_resource_filenames = filter(
-            lambda resource_path:
-                not is_hidden(os.path.join(resources_path, resource_path)),
-            os.listdir(resources_path))
+        existing_resource_filenames = list(filter(
+            lambda resource_path: not is_hidden(os.path.join(resources_path, resource_path)),
+            os.listdir(resources_path)))
     except IOError:
         pass
 
@@ -115,7 +120,7 @@ def copy_images_to_output_directory(
                     output_path, resource_path)
 
                 # make sure any missing directories are created as needed
-                create_missing_directories_if_necessary(
+                create_directories_if_necessary(
                     os.path.dirname(relative_destination_path))
 
                 resource_was_copied, resource_already_existed = copy_file_if_necessary(

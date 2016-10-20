@@ -1,5 +1,9 @@
 # coding=utf-8
 
+"""
+This module provides utility functions for common file, path, data and string operations.
+"""
+
 import os
 import sys
 import subprocess
@@ -11,7 +15,7 @@ import errno
 from urllib.parse import urlparse
 
 
-class FileWrapper:
+class FileWrapper:  # pylint: disable=too-few-public-methods
     """ Provides access to the last read line of a file.
 
         Useful in combination with parsers such as DictReader when
@@ -44,16 +48,13 @@ def lower_first_row(rows):
     return itertools.chain([next(rows).lower()], rows)
 
 
-def dequote(s):
-    """
-    If a string has single or double quotes around it, remove them.
-    Make sure the pair of quotes match.
-    If a matching pair of quotes is not found, return the string unchanged.
-    """
-    if (s[0] == s[-1]) and s.startswith(('\'', '"')):
-        return s[1:-1]
+def dequote(string: str) -> str:
+    """ Return string by removing surrounding double or single quotes. """
 
-    return s
+    if (string[0] == string[-1]) and string.startswith(('\'', '"')):
+        return string[1:-1]
+
+    return string
 
 
 def is_url(string: str) -> bool:
@@ -62,7 +63,7 @@ def is_url(string: str) -> bool:
     return urlparse(string).scheme != ""
 
 
-def terminal_supports_color():
+def terminal_supports_color() -> bool:
     """ Determine whether the current terminal supports colored output. """
 
     platform = sys.platform
@@ -77,6 +78,8 @@ def terminal_supports_color():
 
 
 def get_line_number(from_index: int, in_string: str) -> int:
+    """ Return the line number of which the character at an index in a string is located. """
+
     return in_string.count('\n', 0, from_index) + 1
 
 
@@ -156,7 +159,7 @@ def copy_file_if_necessary(source_path: str, destination_path: str) -> (bool, bo
     return False, file_already_exists
 
 
-def create_missing_directories_if_necessary(path: str) -> bool:
+def create_directories_if_necessary(path: str) -> bool:
     """ Attempt to create any missing directories in a path.
 
         Essentially mimics the command 'mkdir -p'.
@@ -166,8 +169,8 @@ def create_missing_directories_if_necessary(path: str) -> bool:
         os.makedirs(path)
 
         return True
-    except OSError as e:
-        if e.errno == errno.EEXIST and os.path.isdir(path):
+    except OSError as error:
+        if error.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else:
             raise

@@ -31,7 +31,7 @@ from cards.warning import WarningDisplay, WarningContext
 
 from cards.util import (
     FileWrapper, find_file_path, open_path, lower_first_row, terminal_supports_color,
-    copy_file_if_necessary, create_missing_directories_if_necessary
+    copy_file_if_necessary, create_directories_if_necessary
 )
 
 from cards.version import __version__
@@ -718,7 +718,7 @@ def make(data_paths: list,
     output_path = os.path.join(output_path, output_directory_name)
 
     # ensure all directories exist or created if missing
-    create_missing_directories_if_necessary(output_path)
+    create_directories_if_necessary(output_path)
 
     # get the grammar right
     pages_or_page = 'pages' if pages_total > 1 else 'page'
@@ -801,9 +801,9 @@ def make(data_paths: list,
 
     resources_path = os.path.join(output_path, 'resources')
 
-    create_missing_directories_if_necessary(css_path)
-    create_missing_directories_if_necessary(js_path)
-    create_missing_directories_if_necessary(resources_path)
+    create_directories_if_necessary(css_path)
+    create_directories_if_necessary(js_path)
+    create_directories_if_necessary(resources_path)
 
     copy_file_if_necessary(os.path.join(base_path, 'templates/base/css/cards.css'),
                            os.path.join(css_path, 'cards.css'))
