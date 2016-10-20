@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import stat
 
 from cards.util import is_url, copy_file_if_necessary, create_missing_directories_if_necessary
 from cards.warning import WarningDisplay, WarningContext
@@ -44,12 +45,36 @@ def get_resource_path(resource_name: str) -> str:
             else None)
 
 
+def is_hidden(path: str) -> bool:
+    """ Determine whether the file at a path is hidden. """
+
+    if os.path.isfile(path):
+        filename = os.path.basename(os.path.abspath(path))
+
+        return filename.startswith('.') or has_hidden_attribute(path)
+
+    return False
+
+
+def has_hidden_attribute(path: str) -> bool:
+    """ Determine whether the file at a path contains a hidden attribute. """
+
+    try:
+        return bool(os.stat(path).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+    except AttributeError:
+        return False
+
+
 def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list:
     existing_resource_filenames = []
 
+    resources_path = os.path.join(in_directory_path, get_resources_path())
+
     try:
-        existing_resource_filenames = os.listdir(
-            os.path.join(in_directory_path, get_resources_path()))
+        existing_resource_filenames = filter(
+            lambda resource_path:
+                not is_hidden(os.path.join(resources_path, resource_path)),
+            os.listdir(resources_path))
     except IOError:
         pass
 
