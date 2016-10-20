@@ -1,4 +1,4 @@
-<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/cards.svg" alt="cards.py" align="left">
+<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/_logo.svg" alt="cards.py" align="left">
 
 # cards.py
 
