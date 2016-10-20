@@ -83,6 +83,39 @@ def get_line_number(from_index: int, in_string: str) -> int:
     return in_string.count('\n', 0, from_index) + 1
 
 
+def get_padded_string(string: str,
+                      in_string: str,
+                      from_char_index: int) -> str:
+    """ Return a string that is appropriately padded/indented, given a starting position.
+
+        For example, if a starting index of 4 is given for a string "    content\ngoes here",
+        the resulting string becomes "    content\n    goes here".
+    """
+
+    pad_count = 0
+    index = from_char_index
+
+    while index >= 0:
+        # keep going backwards in the string
+        index -= 1
+
+        if index < 0 or in_string[index] == '\n':
+            # we found the previous line or beginning of string
+            break
+
+        pad_count += 1
+
+    if pad_count > 0:
+        # split content up into separate lines
+        lines = string.splitlines(keepends=True)
+        # then append padding between each line
+        string = (' ' * pad_count).join(lines)
+        # and get rid of any trailing newlines
+        string = string.rstrip()
+
+    return string
+
+
 def open_path(path: str) -> None:
     """ Open a path in a cross-platform manner;
         i.e. open Finder on MacOS and Explorer on Windows.

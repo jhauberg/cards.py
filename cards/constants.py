@@ -1,48 +1,86 @@
 # coding=utf-8
 
-
-class Columns:
-    COUNT = '@count'                            # Determines how many cards should be generated
-    TEMPLATE = '@template'                      # Determines which template to use for the front of the card (must be a filepath)
-    TEMPLATE_BACK = '@template-back'            # Determines which template to use for the back of the card (must be a filepath)
+"""
+This module provides access to reserved constants; column names, card sizes and such.
+"""
 
 
-class ColumnDescriptors:
-    BACK_ONLY = '@back-only'                    # Descriptor that can be applied to a column to make its contents only be used when generating the back of the card
+class Columns:  # pylint: disable=too-few-public-methods
+    """ Reserved column names. """
+
+    # Determines how many cards should be generated
+    COUNT = '@count'
+    # Determines which template to use for the front of the card (must be a filepath)
+    TEMPLATE = '@template'
+    # Determines which template to use for the back of the card (must be a filepath)
+    TEMPLATE_BACK = '@template-back'
 
 
-class TemplateFieldDescriptors:
-    COPY_ONLY = 'copy-only'                    # Descriptor that can be applied to an image-field to prevent it from being transformed into an <img> tag (only keeping the image path and copying the image to the output directory)
+class ColumnDescriptors:  # pylint: disable=too-few-public-methods
+    """ Descriptors that can be appended to columns for special processing. """
+
+    # The content of the column should only be used when generating the back of the card
+    BACK_ONLY = '@back-only'
 
 
-class TemplateFields:
+class TemplateFieldDescriptors:  # pylint: disable=too-few-public-methods
+    """ Descriptors that can be applied to template fields for special processing. """
+
+    # An image field should copy the resource but not transform into an image tag
+    COPY_ONLY = 'copy-only'
+
+
+class TemplateFields:  # pylint: disable=too-few-public-methods
+    """ Reserved template field names. """
+
     # Required fields (system fields)
-    PAGES = '_pages'                             # Field in index.html to be replaced with all generated pages
-    PAGE_NUMBER = '_page_number'                 # Field in page.html to be replaced with current page number
-    PAGES_TOTAL = '_pages_total'                 # Field in page.html to be replaced with total amount of pages
-    CARDS = '_cards'                             # Field in page.html to be replaced with all generated cards for a single page
-    CARD_SIZE = '_card_size'                     # Field in card.html to be replaced with the size-type of the card
-    CARD_CONTENT = '_card_content'               # Field in card.html to be replaced with the generated content of the card
+
+    # Populated by all generated pages
+    PAGES = '_pages'
+    # Populated by the current page number (1 being the first)
+    PAGE_NUMBER = '_page_number'
+    # Populated by the total number of pages
+    PAGES_TOTAL = '_pages_total'
+    # Populated by all generated cards on a single page
+    CARDS = '_cards'
+    # Populated by the CSS size class of a single card
+    CARD_SIZE = '_card_size'
+    # Populated by the content of a single card
+    CARD_CONTENT = '_card_content'
 
     # Optional fields (user fields)
-    CARD_INDEX = '_card_index'                   # Optional field that is replaced with the index of the card (1 being the first index)
-    CARD_COPY_INDEX = '_card_copy_index'         # Optional field that is replaced with the copy index of the card (1 being the first index). This is the same index for any instance of this card
-    CARD_ROW_INDEX = '_card_row_index'           # Optional field that is replaced with the index of the card in the datasource (2 being the first index, since the CSV header counts as the first row)
-    CARD_TEMPLATE_PATH = '_card_template_path'   # Optional field that is replaced with the path of the template used to generate the card
-    CARDS_TOTAL = '_cards_total'                 # Optional field that is replaced with the total amount of all generated cards
 
-    INCLUDE = 'include'                          # Optional field that is replaced with the contents of a file (content is copied *as is*)
-    INLINE = 'inline'                            # Optional field that works like 'include', except that it strips any excess whitespace from each line in the file
-    DATE = 'date'                                # Optional field that is replaced with current date
+    # Populated by the current card index (1 being the first, also increments for duplicates)
+    CARD_INDEX = '_card_index'
+    # Populated by the current card copy index (1 being the first, not incremented for duplicates)
+    CARD_COPY_INDEX = '_card_copy_index'
+    # Populated by the row index of the current card (2 being the first- as CSV headers counts)
+    CARD_ROW_INDEX = '_card_row_index'
+    # Populated by the path of the template (if any) used to generate the current card
+    CARD_TEMPLATE_PATH = '_card_template_path'
+    # Populated by the total number of cards (duplicates count)
+    CARDS_TOTAL = '_cards_total'
 
-    VERSION = '_version'                         # Optional field that is replaced with the version identifier of the project
-    PROGRAM_VERSION = '_program_version'         # Optional field that is replaced with the version identifier of the program
-    TITLE = '_title'                             # Optional field that is replaced with the title of the project
-    DESCRIPTION = '_description'                 # Optional field that is replaced with the description of the project
-    COPYRIGHT = '_copyright'                     # Optional field that is replaced with the copyright notice for the project
+    # Used to include the contents of a file (e.g. include 'path/to/file.html')
+    INCLUDE = 'include'
+    # Used to include the contents of a file (similar to 'include', except this strips any newlines)
+    INLINE = 'inline'
+    # Populated by the current time and date (can specify a date/time format; e.g. date '%d %m %Y')
+    DATE = 'date'
+
+    # Populated by the version of the project (as defined in a definitions source)
+    VERSION = '_version'
+    # Populated by the version of the program
+    PROGRAM_VERSION = '_program_version'
+    # Populated by the title of the project (as defined in a definitions source)
+    TITLE = '_title'
+    # Populated by the description of the project (as defined in a definitions source)
+    DESCRIPTION = '_description'
+    # Populated by the copyright notice of the project (as defined in a definitions source)
+    COPYRIGHT = '_copyright'
 
 
-class CardSize:
+class CardSize:  # pylint: disable=too-few-public-methods
     """ Represents a card size. """
 
     def __init__(self, identifier: str, style: str, size_in_inches: tuple):
@@ -61,6 +99,8 @@ class CardSize:
 
 
 class CardSizes:
+    """ Provides functions for retrieving card size objects. """
+
     @staticmethod
     def get_card_size(identifier: str) -> CardSize:
         """ Return the card size that matches the identifier. """

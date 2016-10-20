@@ -37,7 +37,7 @@ from cards.util import (
 from cards.version import __version__
 
 
-class InvalidColumnError:
+class InvalidColumnError:  # pylint: disable=too-few-public-methods
     """ Provides additional data about the rendering of a template. """
 
     def __init__(self, column_name: str, reason: str):
@@ -52,6 +52,8 @@ class InvalidColumnError:
 
 
 def get_definitions_from_file(path: str) -> dict:
+    """ Return a dict with all definitions found in file. """
+
     definitions = {}
 
     if path is not None and len(path) > 0:
@@ -79,6 +81,8 @@ def is_line_excluded(line: str) -> bool:
 
 
 def get_page(page_number: int, cards: str, page_template: str) -> str:
+    """ Populate a page with cards. """
+
     numbered_page = fill_template_fields(
         TemplateFields.PAGE_NUMBER, str(page_number), page_template)
 
@@ -86,14 +90,14 @@ def get_page(page_number: int, cards: str, page_template: str) -> str:
         TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
 
 
-def get_size_identifier_from_columns(column_names: list) -> (str, list):
+def size_identifier_from_columns(column_names: list) -> (str, list):
+    """ Parse and determine card size identifier from a list of column names. """
+
     size_identifier = None
 
     parsed_column_names = column_names
 
-    for column_index in range(len(column_names)):
-        column_name = column_names[column_index]
-
+    for column_index, column_name in enumerate(column_names):
         # look for the '@template' column
         if column_name.startswith(Columns.TEMPLATE):
             # and isn't just '@template-back'
@@ -168,9 +172,13 @@ def make_empty_project(in_path: str,
 
 
 def determine_ambiguous_references(columns: set, definitions: set) -> set:
+    """ Return the set of reference names that exist as both a column and a definition. """
+
+    # get the diffs between the two sets
     unambiguous_columns = columns - definitions
     unambiguous_definitions = definitions - columns
 
+    # then, by removing all the unambiguous names, we'll be left with the ambiguous ones
     ambiguous_references = ((columns | definitions) - unambiguous_definitions) - unambiguous_columns
 
     return ambiguous_references
@@ -234,9 +242,9 @@ def make(data_paths: list,
 
     card_template_path = os.path.join(base_path, 'templates/base/card.html')
 
-    with open(card_template_path) as c:
+    with open(card_template_path) as card_template:
         # load the container template for a card
-        card = c.read()
+        card = card_template.read()
 
         # fill any image fields defined by the default card template
         card, filled_image_paths = fill_image_fields(card)
@@ -246,9 +254,9 @@ def make(data_paths: list,
 
     page_template_path = os.path.join(base_path, 'templates/base/page.html')
 
-    with open(page_template_path) as p:
+    with open(page_template_path) as page_template:
         # load the container template for a page
-        page = p.read()
+        page = page_template.read()
 
         # fill any image fields defined by the default page template
         page, filled_image_paths = fill_image_fields(page)
@@ -258,9 +266,9 @@ def make(data_paths: list,
 
     index_template_path = os.path.join(base_path, 'templates/base/index.html')
 
-    with open(index_template_path) as i:
+    with open(index_template_path) as index_template:
         # load the container template for the final html file
-        index = i.read()
+        index = index_template.read()
 
         # fill any image fields defined by the default index template
         index, filled_image_paths = fill_image_fields(index)
@@ -268,20 +276,20 @@ def make(data_paths: list,
         if len(filled_image_paths) > 0:
             context_image_paths[index_template_path] = list(set(filled_image_paths))
 
-    # error template for the output on cards specifying a template that was not found,
-    # or could not be opened
-    with open(os.path.join(base_path, 'templates/base/error/could_not_open.html')) as e:
-        template_not_opened = e.read()
+    not_found_template_path = os.path.join(base_path, 'templates/base/error/could_not_open.html')
 
-    # error template for the output on cards when a default template has not been specified,
-    # and the card hasn't specified one either
-    with open(os.path.join(base_path, 'templates/base/error/not_provided.html')) as e:
-        template_not_provided = e.read()
+    with open(not_found_template_path) as error_template:
+        template_not_opened = error_template.read()
 
-    # error template for the output on cards when a template back has not been specified,
-    # and backs are not disabled
-    with open(os.path.join(base_path, 'templates/base/error/back_not_provided.html')) as e:
-        template_back_not_provided = e.read()
+    no_front_template_path = os.path.join(base_path, 'templates/base/error/not_provided.html')
+
+    with open(no_front_template_path) as error_template:
+        template_not_provided = error_template.read()
+
+    no_back_template_path = os.path.join(base_path, 'templates/base/error/back_not_provided.html')
+
+    with open(no_back_template_path) as error_template:
+        template_back_not_provided = error_template.read()
 
     default_card_size = CardSizes.get_card_size(default_card_size_identifier)
 
@@ -345,7 +353,7 @@ def make(data_paths: list,
             column_names = [column_name.strip() for column_name in data.fieldnames]
 
             # then determine the size identifier (if any; e.g. '@template:jumbo')
-            size_identifier, stripped_column_names = get_size_identifier_from_columns(column_names)
+            size_identifier, stripped_column_names = size_identifier_from_columns(column_names)
 
             # determine whether this datasource contains invalid columns
             invalid_column_names = get_invalid_columns(stripped_column_names)
@@ -555,8 +563,8 @@ def make(data_paths: list,
                         card_index, cards_total_unique,
                         definitions)
 
-                    if (template is not template_not_provided and
-                       template is not template_not_opened):
+                    if (template is not template_not_provided
+                            and template is not template_not_opened):
                         if len(render_data.unused_fields) > 0:
                             WarningDisplay.missing_fields_in_template(
                                 WarningContext(context, row_index, card_index, card_copy_index),
@@ -609,8 +617,8 @@ def make(data_paths: list,
                             card_index, cards_total_unique,
                             definitions)
 
-                        if (template_back is not template_back_not_provided and
-                           template_back is not template_not_opened):
+                        if (template_back is not template_back_not_provided
+                                and template_back is not template_not_opened):
                             if len(render_data.unused_fields) > 0:
                                 WarningDisplay.missing_fields_in_template(
                                     WarningContext(context, row_index, card_index, card_copy_index),

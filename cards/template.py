@@ -1,5 +1,9 @@
 # coding=utf-8
 
+"""
+This module provides functions for working with and populating templates.
+"""
+
 import os
 import re
 import csv
@@ -9,15 +13,15 @@ import itertools
 from typing import List
 
 from cards.markdown import markdown
-from cards.resource import get_resource_path, is_resource
+from cards.resource import get_resource_path, is_resource, is_image, supported_image_types
 
-from cards.util import dequote, lower_first_row, get_line_number
+from cards.util import dequote, lower_first_row, get_line_number, get_padded_string
 from cards.warning import WarningDisplay, WarningContext
 
 from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
 
 
-class TemplateField:
+class TemplateField:  # pylint: disable=too-few-public-methods
     """ Represents a field in a template. """
 
     def __init__(self,
@@ -32,7 +36,7 @@ class TemplateField:
         self.end_index = end_index  # the index of the last '}' wrapping brace
 
 
-class TemplateRenderData:
+class TemplateRenderData:  # pylint: disable=too-few-public-methods
     """ Provides additional data about the rendering of a template. """
 
     def __init__(self,
@@ -46,7 +50,7 @@ class TemplateRenderData:
         self.referenced_definitions = referenced_definitions
 
 
-class ColumnResolutionData:
+class ColumnResolutionData:  # pylint: disable=too-few-public-methods
     """ Provides additional data about the resolution of a column. """
 
     def __init__(self,
@@ -75,8 +79,8 @@ def template_from_path(template_path: str,
                     template_path)
 
         try:
-            with open(template_path) as t:
-                template = t.read().strip()
+            with open(template_path) as template_file:
+                template = template_file.read().strip()
         except IOError:
             template_not_found = True
     else:
@@ -85,61 +89,73 @@ def template_from_path(template_path: str,
     return template, template_not_found, template_path
 
 
+def image_size(image_path: str, from_context: str) -> (int, int):
+    """ Return the size specified by the context of an image field. """
+
+    explicit_width = None
+
+    # get each size specification separately (removing blanks)
+    size_components = list(filter(None, from_context.split('x')))
+
+    if len(size_components) > 0:
+        width_specification = size_components[0]
+
+        try:
+            explicit_width = int(width_specification)
+        except ValueError:
+            explicit_width = None
+
+            WarningDisplay.unknown_size_specification(
+                WarningContext(image_path), from_context)
+        else:
+            if explicit_width < 0:
+                WarningDisplay.invalid_width_specification(
+                    WarningContext(image_path), explicit_width)
+
+                explicit_width = None
+
+    if len(size_components) > 1:
+        height_specification = size_components[1]
+
+        try:
+            explicit_height = int(height_specification)
+        except ValueError:
+            explicit_height = None
+
+            WarningDisplay.unknown_size_specification(
+                WarningContext(image_path), from_context)
+        else:
+            if explicit_height < 0:
+                WarningDisplay.invalid_height_specification(
+                    WarningContext(image_path), explicit_height)
+
+                explicit_height = None
+    else:
+        # default to a squared size using the width specification
+        explicit_height = explicit_width
+
+    return explicit_width, explicit_height
+
+
 def image(field: TemplateField) -> (str, str):
+    """ Transform an image field into an image tag, unless field specifies otherwise.  """
+
     image_path = field.name
 
     no_transform = False
 
-    explicit_width = None
-    explicit_height = None
+    width = None
+    height = None
 
     if field.context is not None:
         if field.context == TemplateFieldDescriptors.COPY_ONLY:
             no_transform = True
         else:
-            # get each size specification separately (removing blanks)
-            size_components = list(filter(None, field.context.split('x')))
-
-            if len(size_components) > 0:
-                width_specification = size_components[0]
-
-                try:
-                    explicit_width = int(width_specification)
-                except ValueError:
-                    explicit_width = None
-
-                    WarningDisplay.unknown_size_specification(
-                        WarningContext(image_path), field.context)
-                else:
-                    if explicit_width < 0:
-                        WarningDisplay.invalid_width_specification(
-                            WarningContext(image_path), explicit_width)
-
-                        explicit_width = None
-
-            if len(size_components) > 1:
-                height_specification = size_components[1]
-
-                try:
-                    explicit_height = int(height_specification)
-                except ValueError:
-                    explicit_height = None
-
-                    WarningDisplay.unknown_size_specification(
-                        WarningContext(image_path), field.context)
-                else:
-                    if explicit_height < 0:
-                        WarningDisplay.invalid_height_specification(
-                            WarningContext(image_path), explicit_height)
-
-                        explicit_height = None
-            else:
-                # default to a squared size using the width specification
-                explicit_height = explicit_width
+            width, height = image_size(image_path, field.context)
 
     if not is_image(image_path):
         # the file is not an image; or something has gone wrong
-        if no_transform or explicit_width is not None or explicit_height is not None:
+        if no_transform or (width is not None or height is not None):
             # if either of these attributes exist, then it likely was supposed to be an image
             # but we could not resolve it properly- so warn about it
             WarningDisplay.unresolved_image_reference_error(
@@ -159,8 +175,7 @@ def image(field: TemplateField) -> (str, str):
     if no_transform:
         return image_path, resource_path  # image path in resources, no tag
 
-    return image_path, get_image_tag(
-        resource_path, width=explicit_width, height=explicit_height)
+    return image_path, get_image_tag(resource_path, width, height)
 
 
 def get_image_tag(image_path: str,
@@ -201,13 +216,13 @@ def get_template_fields(in_template: str,
             start_index=field_match.start(),
             end_index=field_match.end())
 
-        satisfies_name_filter = (with_name_like is None
-                                 or (with_name_like is not None and field.name is not None
-                                     and re.search(with_name_like, field.name) is not None))
+        satisfies_name_filter = (with_name_like is None or
+                                 (with_name_like is not None and field.name is not None
+                                  and re.search(with_name_like, field.name) is not None))
 
-        satisfies_context_filter = (with_context_like is None
-                                    or (with_context_like is not None and field.context is not None
-                                        and re.search(with_context_like, field.context) is not None))
+        satisfies_context_filter = (with_context_like is None or
+                                    (with_context_like is not None and field.context is not None
+                                     and re.search(with_context_like, field.context) is not None))
 
         satisfies_filter = (satisfies_name_filter and satisfies_context_filter
                             if strictly_matching
@@ -276,53 +291,20 @@ def fill_image_fields(in_template: str) -> (str, List[str]):
     return content, image_paths
 
 
-def get_padded_content(content: str,
-                       from_start_index: int,
-                       in_template: str) -> str:
-    """ Return content that is appropriately padded/indented, given a starting position.
-
-        For example, if a starting index of 4 is given for a template "    content\ngoes here",
-        the resulting content becomes "    content\n    goes here".
-    """
-
-    pad_count = 0
-    index = from_start_index
-
-    while index >= 0:
-        # keep going backwards in the string
-        index -= 1
-
-        if index < 0 or in_template[index] == '\n':
-            # we found the previous line or beginning of string
-            break
-
-        pad_count += 1
-
-    if pad_count > 0:
-        # split content up into separate lines
-        lines = content.splitlines(keepends=True)
-        # then append padding between each line
-        content = (' ' * pad_count).join(lines)
-        # and get rid of any trailing newlines
-        content = content.rstrip()
-
-    return content
-
-
 def fill_template_field(field: TemplateField,
                         field_value: str,
                         in_template: str,
                         indenting: bool=False) -> str:
     """ Populate a single template field in the template. """
 
-    if (field.start_index < 0 or field.start_index > len(in_template) or
-       field.end_index < 0 or field.end_index > len(in_template)):
+    if ((field.start_index < 0 or field.start_index > len(in_template)) or
+            (field.end_index < 0 or field.end_index > len(in_template))):
         raise ValueError('Template field \'{0}\' out of range ({1}-{2}).'
                          .format(field.inner_content, field.start_index, field.end_index))
 
     if indenting:
-        field_value = get_padded_content(
-            field_value, field.start_index, in_template)
+        field_value = get_padded_string(
+            field_value, in_template, field.start_index)
 
     return in_template[:field.start_index] + field_value + in_template[field.end_index:]
 
@@ -340,7 +322,7 @@ def fill_template_fields(field_inner_content: str,
     # template fields are always represented by wrapping {{ }}'s,
     # however, both {{my_field}} and {{ my_field }} should be valid;
     # i.e. any leading or trailing whitespace should simply be ignored
-    field_search = r'{{\s*' + field_inner_content + '\s*}}'
+    field_search = r'{{\s*' + field_inner_content + r'\s*}}'
 
     # find any occurences of the field, using a case-insensitive
     # comparison, to ensure that e.g. {{name}} is populated with the
@@ -351,9 +333,10 @@ def fill_template_fields(field_inner_content: str,
         match = search.search(in_template)
 
         if match is not None:
-            start_index, end_index = match.span()
+            # we only need the start index
+            start_index = match.span()[0]
 
-            field_value = get_padded_content(field_value, start_index, in_template)
+            field_value = get_padded_string(field_value, in_template, start_index)
 
     # finally replace any found occurences of the template field with its value
     content, occurences = search.subn(field_value, in_template)
@@ -380,7 +363,7 @@ def fill_date_fields(date: datetime, in_template: str) -> str:
         template_content, limit=1, with_name_like='date')
 
     for field in date_fields:
-        # default date format: 07, Oct 2016
+        # default date format: 07 Oct, 2016
         date_format = '%B %-d, %Y'
 
         if field.context is not None:
@@ -510,10 +493,11 @@ def fill_partial_definition(definition: str,
     # only match as a partial definition if it is isolated by whitespace,
     # otherwise it might just be part of something else;
     # for example, the definition 'monster' should not match {{ path/to/monster.svg 16x16 }}
-    pattern = '(?:^|\s)(' + definition + ')(?:$|\s)'
+    pattern = r'(?:^|\s)(' + definition + r')(?:$|\s)'
 
     def next_partial_field():
-        # find the next field that matches- but only one
+        """ Return the next matching field, if any. """
+
         fields = get_template_fields(
             in_template=template_content, limit=1,
             with_name_like=pattern,
@@ -590,7 +574,7 @@ def fill_template(template: str,
                   row: dict,
                   in_data_path: str,
                   definitions: dict) -> (str, TemplateRenderData):
-    """ Populate all template fields in the template.
+    """ Populate all template fields in a template.
 
         Populating a template is done in 4 steps:
 
@@ -621,7 +605,7 @@ def fill_template(template: str,
     unused_columns = []
 
     column_references_in_data = []
-    discovered_definition_references = []
+    discovered_definition_refs = []
 
     # go through each data field for this card (row)
     for column in row:
@@ -644,12 +628,12 @@ def fill_template(template: str,
             # this field was found and populated in the template, so save any column references
             # made in the column content, so we can later compare that to the list of missing fields
             column_references_in_data.extend(list(resolution_data.column_references))
-            discovered_definition_references.extend(list(resolution_data.definition_references))
+            discovered_definition_refs.extend(list(resolution_data.definition_references))
 
     # fill any definition fields
     template, referenced_definitions = fill_definitions(definitions, in_template=template)
 
-    discovered_definition_references.extend(referenced_definitions)
+    discovered_definition_refs.extend(referenced_definitions)
 
     # replace any image fields with HTML compliant <img> tags
     template, filled_image_paths = fill_image_fields(in_template=template)
@@ -695,10 +679,12 @@ def fill_template(template: str,
         image_paths=set(filled_image_paths),
         unknown_fields=set(unknown_fields),
         unused_fields=set(unused_columns),
-        referenced_definitions=set(discovered_definition_references))
+        referenced_definitions=set(discovered_definition_refs))
 
 
 def fill_empty_fields(in_template: str) -> str:
+    """ Populate all empty fields in a template (with nothing). """
+
     return fill_template_fields(
         field_inner_content='',
         field_value='',
@@ -913,19 +899,19 @@ def get_column_content(column: str,
 
             # this field refers to the column in the same row that is already being resolved;
             # i.e. an infinite cycle (if it was another row it might not be infinite)
-            is_infinite_column_reference = reference_column == column and reference_row is in_row
+            is_infinite_column_ref = reference_column == column and reference_row is in_row
             # this definition field refers to itself; also leading to an infinite cycle
-            is_infinite_definition_reference = (is_infinite_column_reference
-                                                and is_definition
-                                                and not is_column)
+            is_infinite_definition_ref = (is_infinite_column_ref
+                                          and is_definition
+                                          and not is_column)
 
             # only resolve further if it would not lead to an infinite cycle
-            use_column = is_column and not is_infinite_column_reference
+            use_column = is_column and not is_infinite_column_ref
             # however, the field might ambiguously refer to a definition too,
             # so if this could be resolved, use the definition value instead
             use_definition = (is_definition
                               and not use_column
-                              and not is_infinite_definition_reference)
+                              and not is_infinite_definition_ref)
 
             if not use_column and not use_definition:
                 # could not resolve this field at all
@@ -1009,18 +995,6 @@ def get_sized_card(card: str,
                                 indenting=True)
 
     return card
-
-
-def supported_image_types() -> tuple:
-    return '.svg', '.png', '.jpg', '.jpeg', '.bmp'
-
-
-def is_image(image_path: str) -> bool:
-    """ Determine whether a path points to an image. """
-
-    return (image_path.strip().lower().endswith(supported_image_types())
-            if image_path is not None
-            else False)
 
 
 def is_special_column(column: str) -> bool:

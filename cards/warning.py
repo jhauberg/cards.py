@@ -5,7 +5,7 @@ from cards.constants import Columns
 from cards.util import terminal_supports_color
 
 
-class WarningContext:
+class WarningContext:  # pylint: disable=too-few-public-methods
     """ Represents the context of a warning. """
 
     def __init__(self,
@@ -41,7 +41,7 @@ class WarningContext:
         return None
 
 
-def warn(message: str, in_context: WarningContext = None, as_error=False) -> None:
+def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
     """ Display a command-line warning, optionally within a context. """
 
     # trigger increment even if we don't end up printing it
@@ -58,7 +58,7 @@ def warn(message: str, in_context: WarningContext = None, as_error=False) -> Non
     display(message, message_context, in_context, apply_color=color, force_verbosity=as_error)
 
 
-def info(message: str, in_context: WarningContext = None) -> None:
+def info(message: str, in_context: WarningContext=None) -> None:
     message_context = '[-]'
 
     color = WarningDisplay.apply_info_color

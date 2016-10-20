@@ -35,6 +35,20 @@ def is_resource(file_path: str) -> bool:
             else True)
 
 
+def supported_image_types() -> tuple:
+    """ Return all supported and recognized image types. """
+
+    return '.svg', '.png', '.jpg', '.jpeg', '.bmp'
+
+
+def is_image(image_path: str) -> bool:
+    """ Determine whether a path points to an image. """
+
+    return (image_path.strip().lower().endswith(supported_image_types())
+            if image_path is not None
+            else False)
+
+
 def get_resources_path() -> str:
     """ Get path for copied resources. """
 
