@@ -303,6 +303,8 @@ def get_padded_content(content: str,
         lines = content.splitlines(keepends=True)
         # then append padding between each line
         content = (' ' * pad_count).join(lines)
+        # and get rid of any trailing newlines
+        content = content.rstrip()
 
     return content
 
