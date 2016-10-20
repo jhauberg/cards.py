@@ -52,7 +52,7 @@ def is_image(image_path: str) -> bool:
 def get_resources_path() -> str:
     """ Get path for copied resources. """
 
-    return 'resources'
+    return 'res'
 
 
 def get_resource_path(resource_name: str) -> str:

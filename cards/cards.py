@@ -807,7 +807,7 @@ def make(data_paths: list,
     css_path = os.path.join(output_path, 'css')
     js_path = os.path.join(output_path, 'js')
 
-    resources_path = os.path.join(output_path, 'resources')
+    resources_path = os.path.join(output_path, get_resources_path())
 
     create_directories_if_necessary(css_path)
     create_directories_if_necessary(js_path)
