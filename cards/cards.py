@@ -797,9 +797,12 @@ def make(data_paths: list,
         result.write(index)
 
     css_path = os.path.join(output_path, 'css')
+    js_path = os.path.join(output_path, 'js')
+
     resources_path = os.path.join(output_path, 'resources')
 
     create_missing_directories_if_necessary(css_path)
+    create_missing_directories_if_necessary(js_path)
     create_missing_directories_if_necessary(resources_path)
 
     copy_file_if_necessary(os.path.join(base_path, 'templates/base/css/cards.css'),
@@ -807,6 +810,9 @@ def make(data_paths: list,
 
     copy_file_if_necessary(os.path.join(base_path, 'templates/base/css/index.css'),
                            os.path.join(css_path, 'index.css'))
+
+    copy_file_if_necessary(os.path.join(base_path, 'templates/base/js/index.js'),
+                           os.path.join(js_path, 'index.js'))
 
     all_copied_image_filenames = []
 

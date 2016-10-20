@@ -1,8 +1,20 @@
 <div class="card {{ _card_size }}">
-  <img src="{{ resources/_cut.svg copy-only }}" class="cut-guide cut-guide-top cut-guide-left">
-  <img src="{{ resources/_cut.svg copy-only }}" class="cut-guide cut-guide-top cut-guide-right">
-  <img src="{{ resources/_cut.svg copy-only }}" class="cut-guide cut-guide-bottom cut-guide-left">
-  <img src="{{ resources/_cut.svg copy-only }}" class="cut-guide cut-guide-bottom cut-guide-right">
+  <svg class="cut-guide cut-guide-top cut-guide-left" viewBox="0 0 10 10">
+    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
+    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+  </svg>
+  <svg class="cut-guide cut-guide-top cut-guide-right" viewBox="0 0 10 10">
+    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
+    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+  </svg>
+  <svg class="cut-guide cut-guide-bottom cut-guide-left" viewBox="0 0 10 10">
+    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
+    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+  </svg>
+  <svg class="cut-guide cut-guide-bottom cut-guide-right" viewBox="0 0 10 10">
+    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
+    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+  </svg>
   <div class="card-content">
     {{ _card_content }}
   </div>

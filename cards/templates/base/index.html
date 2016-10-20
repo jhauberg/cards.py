@@ -10,101 +10,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="Cards generated using https://github.com/jhauberg/cards.py {{ _program_version }}">
 
-    <script type="text/javascript">
-      function removeOverlappingCutGuides() {
-        var elements = document.getElementsByClassName('cut-guide');
-
-        if (elements.length > 0) {
-          for (var i = 0; i < elements.length; i++) {
-            var element = elements[i];
-            var elementFrame = element.getBoundingClientRect();
-
-            for (var j = 0; j < elements.length; j++) {
-              if (i == j) {
-                continue;
-              }
-
-              var otherElement = elements[j];
-              var otherElementFrame = otherElement.getBoundingClientRect();
-
-              var overlap = !(elementFrame.right < otherElementFrame.left ||
-                              elementFrame.left > otherElementFrame.right ||
-                              elementFrame.bottom < otherElementFrame.top ||
-                              elementFrame.top > otherElementFrame.bottom);
-
-              if (overlap) {
-                otherElement.parentNode.removeChild(otherElement);
-              }
-            }
-          }
-        }
-      }
-
-      function toggleVisibility(className) {
-        var elements = document.getElementsByClassName(className);
-
-        if (elements.length > 0) {
-          for (var i = 0; i < elements.length; i++) {
-            var element = elements[i];
-            var previousVisibility = element.style.visibility;
-
-            element.style.visibility =
-              (!previousVisibility || previousVisibility == 'visible') ?
-                'hidden' :
-                'visible';
-          }
-
-          return elements[0].style.visibility;
-        }
-      }
-
-      function toggleButtons(buttonOn, buttonOff, on) {
-        var toggleButtonOn = document.getElementById(buttonOn);
-        var toggleButtonOff = document.getElementById(buttonOff);
-
-        toggleButtonOn.style.display = on ? 'inline' : 'none';
-        toggleButtonOff.style.display = on ? 'none' : 'inline';
-      }
-
-      function toggleFooter() {
-        toggleButtons('toggle-footer-on', 'toggle-footer-off',
-          (toggleVisibility('page-footer') == 'visible'));
-      }
-
-      function toggleCutGuides() {
-        toggleButtons('toggle-cut-guides-on', 'toggle-cut-guides-off',
-          (toggleVisibility('cut-guide') == 'visible'));
-      }
-
-      function toggleHelp(on) {
-        var modal = document.getElementById('ui-modal-help');
-
-        if (modal) {
-          modal.style.display = on ? 'block' : 'none';
-
-          if (on) {
-            window.onclick = function(event) {
-              if (event.target == modal) {
-                toggleHelp(false)
-              }
-            }
-          } else {
-            window.onclick = null;
-          }
-        }
-      }
-
-      window.onload = function() {
-        removeOverlappingCutGuides();
-      };
-    </script>
+    <script type="text/javascript" src="js/index.js"></script>
   </head>
   <body>
     <div class="ui">
       <!-- SVG icons (report, print, help, toggle on/off) from https://design.google.com/icons/
            Licensed under Apache License Version 2.0 -->
       <div class="ui-action" onclick="window.location='https://github.com/jhauberg/cards.py/issues/new';" title="Find any bugs? Missing a feature? Let me know!">
-        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg width="18" height="18" viewBox="0 0 24 24">
           <path class="hoverable" fill="#000000" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
         </svg>
         <div>
@@ -113,32 +26,32 @@
       </div>
       <div class="ui-inner">
         <div class="ui-other" onclick="toggleHelp(true);" title="Show some helpful information">
-          <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg width="24" height="24" viewBox="0 0 24 24">
             <path class="hoverable" fill="#000000" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
           </svg>
         </div>
-        <div class="ui-other" style="cursor: initial; text-align: right;">
-          <!--<small>A new version is available ({{ _program_version }})</small>-->
+        <div class="ui-other ui-note">
+          A new version is available ({{ _program_version }})
         </div>
         <div class="ui-action" style="margin-right: 1.5cm;" onclick="window.print();" title="Print pages">
-          <svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg width="32" height="32" viewBox="0 0 24 24">
             <path class="hoverable" fill="#000000" d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
           </svg>
         </div>
         <div class="ui-action" onclick="toggleFooter();" title="Toggle page footers">
-          <svg id="toggle-footer-on" width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg id="toggle-footer-on" width="18" height="18" viewBox="0 0 24 24">
             <path class="hoverable" fill="#000000" d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.11 0 2-.9 2-2V5c0-1.1-.89-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
-          <svg id="toggle-footer-off" width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <svg id="toggle-footer-off" width="18" height="18" viewBox="0 0 24 24" style="display: none;">
             <path class="hoverable" fill="#000000" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
           </svg>
           <div>PAGE FOOTER</div>
         </div>
         <div class="ui-action" onclick="toggleCutGuides();" title="Toggle cut guides">
-          <svg id="toggle-cut-guides-on" width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg id="toggle-cut-guides-on" width="18" height="18" viewBox="0 0 24 24">
             <path class="hoverable" fill="#000000" d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.11 0 2-.9 2-2V5c0-1.1-.89-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
-          <svg id="toggle-cut-guides-off" width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <svg id="toggle-cut-guides-off" width="18" height="18" viewBox="0 0 24 24" style="display: none;">
             <path class="hoverable" fill="#000000" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
           </svg>
           <div>CUT GUIDES</div>
@@ -155,8 +68,10 @@
           </a>
         </div>
         <div class="ui-modal-body">
-          <p>Support or contribute to this project by sending <a href="mailto:jacob.hauberg@gmail.com">feedback</a>, <a href="https://github.com/jhauberg/cards.py/issues/new">bug reports</a> or <a href="https://github.com/jhauberg/cards.py/pull/new/master">pull requests</a>!</p>
+          <p>These pages were generated using {{ resources/_logo.svg 12x11 }} <a href="https://github.com/jhauberg/cards.py" title="cards.py" target="_blank">cards.py</a> — a <strong>free</strong> and <strong>open-source</strong> project for game makers.</p>
+          <p>You can support or contribute to the project by sending <a href="mailto:jacob.hauberg@gmail.com" title="Send a mail with your feedback">feedback</a>, <a href="https://github.com/jhauberg/cards.py/issues/new" title="Submit a bug report" target="_blank">bug reports</a> or <a href="https://github.com/jhauberg/cards.py/pull/new/master" title="Submit a pull request">pull requests</a>.</p>
           <p>It would be appreciated!</p>
+          <p style="text-align: center;">***</p>
         </div>
       </div>
     </div>

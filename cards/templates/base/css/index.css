@@ -33,7 +33,7 @@ html, body {
   padding: 0;
   border: 1px solid #888;
 
-  width: 500px;
+  width: 480px;
 
   -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, .5);
   box-shadow: 0 5px 15px rgba(0, 0, 0, .5)
@@ -46,9 +46,12 @@ html, body {
   border-bottom: 1px solid #e5e5e5;
 }
 
+div.ui-modal-body a,
 div.ui-modal-header a {
   color: black;
-  
+}
+
+div.ui-modal-header a {
   text-decoration: none;
 }
 
@@ -161,6 +164,16 @@ div.ui-action a:hover {
   cursor: pointer;
 }
 
+.ui-note {
+  cursor: initial;
+
+  font-size: .85em;
+
+  margin-top: 4px;
+
+  text-align: right;
+}
+
 .ui-footer {
   text-align: center;
 
@@ -256,6 +269,17 @@ svg:hover .hoverable {
 
   /* Cut guides should appear on top of any content. Use -1 to appear below */
   z-index: 1;
+}
+
+.cut-guide-line {
+  fill: none;
+
+  stroke: #000000;
+  stroke-width: .5;
+
+  opacity: .5;
+
+  shape-rendering: crispEdges;
 }
 
 .cut-guide-top {
