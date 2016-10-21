@@ -526,8 +526,6 @@ def make(data_paths: list,
                     template_path = get_column_content(
                         Columns.TEMPLATE, row, definitions, data_path)
 
-                    template = None
-
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
                             template_path, relative_to_path=data_path)
