@@ -298,6 +298,14 @@ svg:hover .hoverable {
   bottom: -2.5mm;
 }
 
+@media
+(-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+  .cut-guide-line {
+    stroke-width: .5;
+  }
+}
+
 @media screen {
   html, body {
     background-color: #eee;
