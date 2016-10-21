@@ -13,18 +13,17 @@ import os
 import csv
 import math
 import shutil
-import datetime
 
 from cards.template import (
-    fill_template_fields, fill_image_fields, fill_card_front, fill_card_back, fill_date_fields
+    fill_index, fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
 )
 
-from cards.template import template_from_path
-from cards.template import get_column_content, get_definition_content, get_sized_card
+from cards.template import template_from_path, get_sized_card
+from cards.autotemplate import template_from_data
+
+from cards.column import get_invalid_columns, size_identifier_from_columns
 
 from cards.resource import copy_images_to_output_directory, get_unused_resources, get_resources_path
-
-from cards.autotemplate import template_from_data
 
 from cards.constants import Columns, TemplateFields, CardSizes
 from cards.warning import WarningDisplay, WarningContext
@@ -33,22 +32,6 @@ from cards.util import (
     FileWrapper, find_file_path, open_path, lower_first_row, terminal_supports_color,
     copy_file_if_necessary, create_directories_if_necessary
 )
-
-from cards.version import __version__
-
-
-class InvalidColumnError:  # pylint: disable=too-few-public-methods
-    """ Provides additional data about the rendering of a template. """
-
-    def __init__(self, column_name: str, reason: str):
-        self.column_name = column_name
-        self.reason = reason
-
-    def __str__(self):
-        return '\'{0}\' {1}'.format(self.column_name, self.reason)
-
-    def __repr__(self):
-        return self.__str__()
 
 
 def get_definitions_from_file(path: str) -> dict:
@@ -88,42 +71,6 @@ def get_page(page_number: int, cards: str, page_template: str) -> str:
 
     return fill_template_fields(
         TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
-
-
-def size_identifier_from_columns(column_names: list) -> (str, list):
-    """ Parse and determine card size identifier from a list of column names. """
-
-    size_identifier = None
-
-    parsed_column_names = column_names
-
-    for column_index, column_name in enumerate(column_names):
-        # look for the '@template' column
-        if column_name.startswith(Columns.TEMPLATE):
-            # and isn't just '@template-back'
-            if column_name != Columns.TEMPLATE_BACK:
-                # then determine preferred card size, if any.
-                # it should look like e.g. '@template:standard'
-                size_index = column_name.rfind(':')
-
-                if size_index != -1:
-                    # a size identifier was found- so isolate it from the rest of the column
-                    size_identifier = column_name[size_index + 1:].strip()
-                    # and remove it so we have a clean column name (important for any column
-                    # references to resolve properly)
-                    parsed_column_names[column_index] = column_name[:size_index].strip()
-
-                break
-
-    return size_identifier, parsed_column_names
-
-
-def get_invalid_columns(column_names: list) -> list:
-    """ Return a list of errors for each invalid column. """
-
-    return [InvalidColumnError(column_name, reason='contains whitespace (should be an underscore)')
-            for column_name in column_names
-            if ' ' in column_name]
 
 
 def get_base_path() -> str:
@@ -523,8 +470,7 @@ def make(data_paths: list,
                     card_index = cards_total + 1
 
                     # determine which template to use for this card, if any
-                    template_path = get_column_content(
-                        Columns.TEMPLATE, row, definitions, data_path)
+                    template_path = row.get(Columns.TEMPLATE, None)
 
                     if template_path is not None and len(template_path) > 0:
                         template, not_found, template_path = template_from_path(
@@ -586,8 +532,7 @@ def make(data_paths: list,
                     cards_total += 1
 
                     if not disable_backs:
-                        template_path_back = get_column_content(
-                            Columns.TEMPLATE_BACK, row, definitions, data_path)
+                        template_path_back = row.get(Columns.TEMPLATE_BACK, None)
 
                         template_back = None
 
@@ -734,71 +679,18 @@ def make(data_paths: list,
 
     # begin writing pages to the output file (overwriting any existing file)
     with open(output_filepath, 'w') as result:
-        # on all pages, fill any {{ cards_total }} fields
-        pages = fill_template_fields(
-            field_inner_content=TemplateFields.CARDS_TOTAL,
-            field_value=str(cards_total),
-            in_template=pages)
+        default_title = 'Nothing to see here'
 
-        pages = fill_template_fields(
-            field_inner_content=TemplateFields.PAGES_TOTAL,
-            field_value=str(pages_total),
-            in_template=pages)
+        if cards_total > 0:
+            default_title = '{0} {1} on {2} {3}'.format(cards_total, cards_or_card,
+                                                        pages_total, pages_or_page)
 
-        # pages must be inserted prior to filling metadata fields,
-        # since each page may contain fields that should be filled
-        index = fill_template_fields(
-            field_inner_content=TemplateFields.PAGES,
-            field_value=pages,
-            in_template=index,
-            indenting=True)
+        index, render_data = fill_index(
+            index, pages, pages_total, cards_total, definitions, default_title)
 
-        index = fill_template_fields(
-            field_inner_content=TemplateFields.PROGRAM_VERSION,
-            field_value=__version__,
-            in_template=index)
-
-        # note that most of these fields could potentially be filled already when first getting the
-        # page template; however, we instead do it as the very last thing to allow cards
-        # using these fields (even if that might only be on rare occasions)
-        title = get_definition_content(
-            definition=TemplateFields.TITLE, in_definitions=definitions)
-
-        if title is None or len(title) == 0:
-            if cards_total > 0:
-                title = '{0} {1} on {2} {3}'.format(
-                    cards_total, cards_or_card,
-                    pages_total, pages_or_page)
-            else:
-                title = 'Nothing to see here'
-
-        description = get_definition_content(
-            definition=TemplateFields.DESCRIPTION, in_definitions=definitions)
-
-        description = description if description is not None else ''
-
-        copyright_notice = get_definition_content(
-            definition=TemplateFields.COPYRIGHT, in_definitions=definitions)
-
-        copyright_notice = copyright_notice if copyright_notice is not None else ''
-
-        version_identifier = get_definition_content(
-            definition=TemplateFields.VERSION, in_definitions=definitions)
-
-        version_identifier = version_identifier if version_identifier is not None else ''
-
-        index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
-        index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
-        index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
-        index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
-
-        index = fill_date_fields(datetime.date.today(), in_template=index)
-
-        # fill any image fields that might have appeared by populating the metadata fields
-        index, filled_image_paths = fill_image_fields(in_template=index)
-
-        if len(filled_image_paths) > 0:
-            context_image_paths[definitions_path] = list(set(filled_image_paths))
+        if len(render_data.image_paths) > 0:
+            # we assume that any leftover images would have been from a definition
+            context_image_paths[definitions_path] = list(set(render_data.image_paths))
 
         result.write(index)
 

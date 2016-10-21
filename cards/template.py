@@ -6,58 +6,40 @@ This module provides functions for working with and populating templates.
 
 import os
 import re
-import csv
 import datetime
-import itertools
+
 
 from typing import List
 
-from cards.markdown import markdown
+from cards.templatefield import TemplateField, get_template_fields
+
+from cards.column import (
+    get_column_content, get_definition_content,
+    get_row_reference, get_front_data, get_back_data
+)
+
 from cards.resource import get_resource_path, is_resource, is_image, supported_image_types
 
-from cards.util import dequote, lower_first_row, get_line_number, get_padded_string
+from cards.util import dequote, get_line_number, get_padded_string
 from cards.warning import WarningDisplay, WarningContext
 
-from cards.constants import ColumnDescriptors, TemplateFields, TemplateFieldDescriptors
+from cards.constants import TemplateFields, TemplateFieldDescriptors, FIXED_TIMESTAMP
 
-
-class TemplateField:  # pylint: disable=too-few-public-methods
-    """ Represents a field in a template. """
-
-    def __init__(self,
-                 inner_content: str,
-                 name: str, context: str,
-                 start_index: int,
-                 end_index: int):
-        self.inner_content = inner_content  # the inner content between the field braces
-        self.name = name  # the name of the field
-        self.context = context  # the context passed to the field name
-        self.start_index = start_index  # the index of the first '{' wrapping brace
-        self.end_index = end_index  # the index of the last '}' wrapping brace
+from cards.version import __version__
 
 
 class TemplateRenderData:  # pylint: disable=too-few-public-methods
     """ Provides additional data about the rendering of a template. """
 
     def __init__(self,
-                 image_paths: set,
-                 unknown_fields: set,
-                 unused_fields: set,
-                 referenced_definitions: set):
+                 image_paths: set=None,
+                 unknown_fields: set=None,
+                 unused_fields: set=None,
+                 referenced_definitions: set=None):
         self.image_paths = image_paths
         self.unknown_fields = unknown_fields
         self.unused_fields = unused_fields
         self.referenced_definitions = referenced_definitions
-
-
-class ColumnResolutionData:  # pylint: disable=too-few-public-methods
-    """ Provides additional data about the resolution of a column. """
-
-    def __init__(self,
-                 column_references: set,
-                 definition_references: set):
-        self.column_references = column_references
-        self.definition_references = definition_references
 
 
 def template_from_path(template_path: str,
@@ -189,63 +171,6 @@ def get_image_tag(image_path: str,
 
     # make a tag with the image at its intrinsic size
     return '<img src="{0}">'.format(image_path)
-
-
-def get_template_fields(in_template: str,
-                        limit: int=None,
-                        with_name_like: str=None,
-                        with_context_like: str=None,
-                        strictly_matching: bool=True) -> List[TemplateField]:
-    """ Return a list of all template fields (e.g. '{{ a_field }}') that occur in a template. """
-
-    pattern = r'{{\s?(([^}}\s]*)\s?(.*?))\s?}}'
-
-    fields = []
-
-    for field_match in list(re.finditer(pattern, in_template)):
-        inner_content = field_match.group(1).strip()
-        name = field_match.group(2).strip()
-        context = field_match.group(3).strip()
-
-        inner_content = inner_content if len(inner_content) > 0 else None
-        name = name if len(name) > 0 else None
-        context = context if len(context) > 0 else None
-
-        field = TemplateField(
-            inner_content, name, context,
-            start_index=field_match.start(),
-            end_index=field_match.end())
-
-        satisfies_name_filter = (with_name_like is None or
-                                 (with_name_like is not None and field.name is not None
-                                  and re.search(with_name_like, field.name) is not None))
-
-        satisfies_context_filter = (with_context_like is None or
-                                    (with_context_like is not None and field.context is not None
-                                     and re.search(with_context_like, field.context) is not None))
-
-        satisfies_filter = (satisfies_name_filter and satisfies_context_filter
-                            if strictly_matching
-                            else satisfies_name_filter or satisfies_context_filter)
-
-        if satisfies_filter:
-            fields.append(field)
-
-        if limit is not None and len(fields) == limit:
-            break
-
-    return fields
-
-
-def get_template_field_names(in_template: str) -> List[str]:
-    """ Return a list of all template field names that occur in a template. """
-
-    # get all the fields
-    template_fields = get_template_fields(in_template)
-    # adding each field name to a set ensures we only get unique fields
-    template_field_names = {field.inner_content for field in template_fields}
-
-    return list(template_field_names)
 
 
 def fill_image_fields(in_template: str) -> (str, List[str]):
@@ -490,10 +415,10 @@ def fill_partial_definition(definition: str,
 
     template_content = in_template
 
-    # only match as a partial definition if it is isolated by whitespace,
+    # only match as a partial definition if it is isolated by whitespace (or {{}}'s),
     # otherwise it might just be part of something else;
     # for example, the definition 'monster' should not match {{ path/to/monster.svg 16x16 }}
-    pattern = r'(?:^|\s)(' + definition + r')(?:$|\s)'
+    pattern = r'(?:^|\s|{{)(' + definition + r')(?:$|\s|}})'
 
     def next_partial_field():
         """ Return the next matching field, if any. """
@@ -534,19 +459,27 @@ def fill_partial_definition(definition: str,
 
 def fill_definitions(definitions: dict,
                      in_template: str) -> (str, set):
-    """ Populate all definition fields in the template.
-
-        Note that this does not currently include definitions used in image fields.
-    """
+    """ Populate all definition fields in the template. """
 
     referenced_definitions = []
 
     template_content = in_template
 
+    resolved_definitions = {}
+
+    # first resolve definitions and populate any definite definition fields (e.g. not partials)
     for definition in definitions:
+        # note that this is an un-optimized solution; it loops through each definition, even if
+        # that particular definition is not even used- AND it loops again after this one
+
         # recursively resolve the content of the definition
         resolved_definition_value, resolution_data = get_definition_content(
-            definition, in_definitions=definitions, tracking_references=True)
+            definition, in_definitions=definitions,
+            content_resolver=resolve_column_content, field_resolver=resolve_column_field,
+            tracking_references=True)
+
+        # we can save this for the partial pass coming up, to avoid having to resolve again
+        resolved_definitions[definition] = resolved_definition_value
 
         # fill any definite occurences of the definition (e.g. '{{ my_definition }}')
         template_content, definite_occurences = fill_template_fields(
@@ -555,18 +488,118 @@ def fill_definitions(definitions: dict,
             in_template=template_content,
             counting_occurences=True)
 
-        template_content, partial_occurences = fill_partial_definition(
-            definition, resolved_definition_value,
-            in_template=template_content)
-
-        if definite_occurences > 0 or partial_occurences > 0:
+        if definite_occurences > 0:
             # the definition was used somewhere, so flag it as referenced
             referenced_definitions.append(definition)
             # and also flag any definitions referenced during the resolution of the definition
             referenced_definitions.extend(
                 list(resolution_data.definition_references))
 
+    # then populate any partial definitions using the previously resolved definitions
+    for definition in definitions:
+        # we need this second loop, because a later definition might resolve to contain a partial
+        # definition that the loop already went through; this second loop solves that problem
+        template_content, partial_occurences = fill_partial_definition(
+            definition, resolved_definitions[definition],
+            in_template=template_content)
+
+        if partial_occurences > 0:
+            # the definition was used somewhere, so flag it as referenced
+            referenced_definitions.append(definition)
+
     return template_content, set(referenced_definitions)
+
+
+def resolve_column_content(content, in_data_path):
+    # fill any include fields before doing anything else
+    content = fill_include_fields(in_data_path, in_template=content)
+    # clear out any empty fields
+    content = fill_empty_fields(content)
+    # then fill any date fields
+    content = fill_date_fields(FIXED_TIMESTAMP, in_template=content)
+
+    return content
+
+
+def resolve_column_field(field_name, field_value, in_content):
+    return fill_template_fields(
+        field_inner_content=field_name,
+        field_value=field_value,
+        in_template=in_content,
+        counting_occurences=True)
+
+
+def fill_index(index: str,
+               pages: str,
+               pages_total: int,
+               cards_total: int,
+               definitions: dict,
+               default_title: str='') -> (str, TemplateRenderData):
+    pages = fill_template_fields(
+        field_inner_content=TemplateFields.CARDS_TOTAL,
+        field_value=str(cards_total),
+        in_template=pages)
+
+    pages = fill_template_fields(
+        field_inner_content=TemplateFields.PAGES_TOTAL,
+        field_value=str(pages_total),
+        in_template=pages)
+
+    # pages must be inserted prior to filling metadata fields,
+    # since each page may contain fields that should be filled
+    index = fill_template_fields(
+        field_inner_content=TemplateFields.PAGES,
+        field_value=pages,
+        in_template=index,
+        indenting=True)
+
+    index = fill_template_fields(
+        field_inner_content=TemplateFields.PROGRAM_VERSION,
+        field_value=__version__,
+        in_template=index)
+
+    # note that most of these fields could potentially be filled already when first getting the
+    # page template; however, we instead do it as the very last thing to allow cards
+    # using these fields (even if that might only be on rare occasions)
+    title = get_definition_content(
+        definition=TemplateFields.TITLE, in_definitions=definitions,
+        content_resolver=resolve_column_content, field_resolver=resolve_column_field)
+
+    if title is None or len(title) == 0:
+        title = default_title
+
+    description = get_definition_content(
+        definition=TemplateFields.DESCRIPTION, in_definitions=definitions,
+        content_resolver=resolve_column_content, field_resolver=resolve_column_field)
+
+    description = description if description is not None else ''
+
+    copyright_notice = get_definition_content(
+        definition=TemplateFields.COPYRIGHT, in_definitions=definitions,
+        content_resolver=resolve_column_content, field_resolver=resolve_column_field)
+
+    copyright_notice = copyright_notice if copyright_notice is not None else ''
+
+    version_identifier = get_definition_content(
+        definition=TemplateFields.VERSION, in_definitions=definitions,
+        content_resolver=resolve_column_content, field_resolver=resolve_column_field)
+
+    version_identifier = version_identifier if version_identifier is not None else ''
+
+    index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
+    index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
+    index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
+    index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
+
+    index = fill_date_fields(FIXED_TIMESTAMP, in_template=index)
+    index, referenced_definitions = fill_definitions(definitions, in_template=index)
+
+    # fill any image fields that might have appeared by populating the metadata fields
+    index, filled_image_paths = fill_image_fields(in_template=index)
+
+    return index, TemplateRenderData(
+        image_paths=set(filled_image_paths),
+        referenced_definitions=referenced_definitions)
 
 
 def fill_template(template: str,
@@ -612,6 +645,8 @@ def fill_template(template: str,
         # fetch the content for the field
         field_content, resolution_data = get_column_content(
             column, row, definitions, in_data_path,
+            content_resolver=resolve_column_content,
+            field_resolver=resolve_column_field,
             tracking_references=True)
 
         # fill content into the provided template
@@ -634,6 +669,8 @@ def fill_template(template: str,
     template, referenced_definitions = fill_definitions(definitions, in_template=template)
 
     discovered_definition_refs.extend(referenced_definitions)
+
+    template = fill_date_fields(FIXED_TIMESTAMP, in_template=template)
 
     # replace any image fields with HTML compliant <img> tags
     template, filled_image_paths = fill_image_fields(in_template=template)
@@ -771,220 +808,6 @@ def fill_card_back(
                      card_index, card_copy_index, definitions)
 
 
-def get_front_data(row: dict) -> dict:
-    """ Return a dict containing only items fit for the front of a card. """
-
-    return {column: value for column, value in row.items()
-            if not is_special_column(column) and not is_back_column(column)}
-
-
-def get_back_data(row: dict) -> dict:
-    """ Return a dict containing only items fit for the back of a card. """
-
-    return {column[:-len(ColumnDescriptors.BACK_ONLY)]: value for column, value in row.items()
-            if not is_special_column(column) and is_back_column(column)}
-
-
-def is_row_reference(field: TemplateField) -> bool:
-    """ Determine whether a field contains a row reference. """
-
-    return (field.context is not None and field.context.startswith('#')
-            if field is not None
-            else False)
-
-
-def get_row_reference(field: TemplateField,
-                      in_reference_row: dict,
-                      in_data_path: str) -> (str, dict):
-    """ Return the column and row of data that a template field references.
-
-        If a field like 'title #6' is passed, then return 'title' and row number 6.
-
-        If it is not a reference, return the row passed.
-    """
-
-    # set default field name and row to whatever is passed
-    reference_column = None
-    reference_row = in_reference_row
-
-    if in_data_path is not None and len(in_data_path) > 0:
-        # a data path has been supplied, so we can attempt determining whether this
-        # field is a reference to a column in another row
-
-        if is_row_reference(field):
-            # it might be, because there's multiple components in the field name
-            # we've determined that this is probably a reference to another row
-            # so get the row number
-            row_number = field.context[1:]
-
-            try:
-                row_number = int(row_number)
-            except ValueError:
-                row_number = None
-
-            if row_number is not None:
-                # when looking at rows in a CSV they are not zero-based, and the first row
-                # is always the headers, which makes the first row of actual data (that
-                # you see) appear visually at row #2, like for example:
-                #   #1 'rank,title'
-                #   #2 '2,My Card'
-                #   #2 '4,My Other Card'
-                # however, of course, when reading from the file, the first row is
-                # actually at index 0, so we have to take this into account
-                row_number -= 2
-
-                # the above logic essentially makes '#0' and '#1' invalid row numbers
-                if row_number >= 0:
-                    # open a new instance of the current data file
-                    with open(in_data_path) as data_file:
-                        # actual field name is only the first part
-                        reference_column = field.name
-                        # read data appropriately
-                        data = csv.DictReader(lower_first_row(data_file))
-                        # then read rows until reaching the target row_number
-                        reference_row = next(itertools.islice(data, row_number, None))
-
-    return reference_column, reference_row
-
-
-def get_column_content(column: str,
-                       in_row: dict,
-                       definitions: dict,
-                       in_data_path: str=None,
-                       default_content: str=None,
-                       tracking_references: bool=False) -> str:
-    """ Return the content of a column, recursively resolving any column/definition references. """
-
-    # get the raw content of the column, optionally assigning a default value
-    column_content = in_row.get(column, default_content)
-
-    column_references = []
-    definition_references = []
-
-    if column_content is not None and len(column_content) > 0:
-        # strip excess whitespace
-        column_content = column_content.strip()
-        # fill any include fields before doing anything else
-        column_content = fill_include_fields(in_data_path, in_template=column_content)
-        # clear out any empty fields
-        column_content = fill_empty_fields(column_content)
-
-        is_resolving_definition = in_row == definitions
-
-        reference_fields = get_template_fields(column_content)
-
-        for reference_field in reference_fields:
-            # determine whether this field is a row reference
-            reference_column, reference_row = get_row_reference(
-                reference_field, in_reference_row=in_row, in_data_path=in_data_path)
-
-            if reference_column is None:
-                # it was not a row reference
-                reference_column = reference_field.inner_content
-
-            # determine if the field occurs as a definition
-            is_definition = reference_column in definitions
-            # determine if the field occurs as a column in the current row- note that if
-            # the current row is actually the definitions, then it actually *is* a column,
-            # but it should not be treated as such
-            is_column = reference_column in reference_row and not is_resolving_definition
-
-            if not is_column and not is_definition:
-                # the field is not a reference that can be resolved right now, so skip it
-                # (it might be an image reference)
-                continue
-
-            # recursively get the content of the referenced column to ensure any further
-            # references are determined and filled prior to filling the originating reference
-
-            # this field refers to the column in the same row that is already being resolved;
-            # i.e. an infinite cycle (if it was another row it might not be infinite)
-            is_infinite_column_ref = reference_column == column and reference_row is in_row
-            # this definition field refers to itself; also leading to an infinite cycle
-            is_infinite_definition_ref = (is_infinite_column_ref
-                                          and is_definition
-                                          and not is_column)
-
-            # only resolve further if it would not lead to an infinite cycle
-            use_column = is_column and not is_infinite_column_ref
-            # however, the field might ambiguously refer to a definition too,
-            # so if this could be resolved, use the definition value instead
-            use_definition = (is_definition
-                              and not use_column
-                              and not is_infinite_definition_ref)
-
-            if not use_column and not use_definition:
-                # could not resolve this field at all
-                print('could not resolve: ' + reference_column)
-                continue
-
-            if use_column:
-                # prioritize the column reference by resolving it first,
-                # even if it could also be a definition instead (but warn about that later)
-                column_reference_content, resolution_data = get_column_content(
-                    reference_column, reference_row, definitions, in_data_path, default_content,
-                    tracking_references=True)
-            elif use_definition:
-                # resolve the definition reference, keeping track of any discovered references
-                column_reference_content, resolution_data = get_definition_content(
-                    definition=reference_column, in_definitions=definitions,
-                    tracking_references=True)
-
-            column_references.extend(list(resolution_data.column_references))
-            definition_references.extend(list(resolution_data.definition_references))
-
-            # and ultimately fill any occurences
-            column_content, occurences = fill_template_fields(
-                field_inner_content=reference_field.inner_content,
-                field_value=column_reference_content,
-                in_template=column_content,
-                counting_occurences=True)
-
-            if occurences > 0:
-                if tracking_references:
-                    if use_column:
-                        column_references.append(reference_column)
-                    elif use_definition:
-                        definition_references.append(reference_column)
-
-                if is_definition and is_column and not is_resolving_definition:
-                    # the reference appears multiple places
-                    context = os.path.basename(in_data_path)
-
-                    if use_column:
-                        # the column data was preferred over the definition data
-                        WarningDisplay.ambiguous_reference_used_column(
-                            WarningContext(context), reference_column, column_reference_content)
-                    elif use_definition:
-                        # the definition data was preferred over the column data;
-                        # this is likely because the column reference was an infinite reference
-                        # don't inform about that detail, but do warn that the definition was used
-                        WarningDisplay.ambiguous_reference_used_definition(
-                            WarningContext(context), reference_column, column_reference_content)
-
-        # transform content to html using any applied markdown formatting
-        column_content = markdown(column_content)
-
-    resolution_data = ColumnResolutionData(
-        set(column_references), set(definition_references))
-
-    return ((column_content, resolution_data) if tracking_references
-            else column_content)
-
-
-def get_definition_content(definition: str,
-                           in_definitions: dict,
-                           tracking_references: bool=False) -> str:
-    """ Return the content of a definition, recursively resolving any references. """
-
-    definition_content, resolution_data = get_column_content(
-        column=definition, in_row=in_definitions, definitions=in_definitions,
-        tracking_references=True)
-
-    return ((definition_content, resolution_data) if tracking_references
-            else definition_content)
-
-
 def get_sized_card(card: str,
                    size_class: str,
                    content: str) -> str:
@@ -995,15 +818,3 @@ def get_sized_card(card: str,
                                 indenting=True)
 
     return card
-
-
-def is_special_column(column: str) -> bool:
-    """ Determine whether a column is to be treated as a special column. """
-
-    return column.startswith('@') if column is not None else False
-
-
-def is_back_column(column: str) -> bool:
-    """ Determine whether a column is only intended for the back of a card. """
-
-    return column.endswith(ColumnDescriptors.BACK_ONLY) if column is not None else False

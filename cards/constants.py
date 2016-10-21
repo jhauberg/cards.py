@@ -4,6 +4,10 @@
 This module provides access to reserved constants; column names, card sizes and such.
 """
 
+import datetime
+
+FIXED_TIMESTAMP = datetime.date.today()
+
 
 class Columns:  # pylint: disable=too-few-public-methods
     """ Reserved column names. """

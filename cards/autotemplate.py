@@ -2,7 +2,7 @@
 
 import csv
 
-from cards.template import is_special_column
+from cards.column import is_special_column
 
 from cards.util import most_common
 
