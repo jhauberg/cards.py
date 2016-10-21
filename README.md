@@ -56,6 +56,46 @@ This project strives to keep dependencies at an absolute minimum.
 
 See [Trickbook](https://github.com/jhauberg/trickbook), or [Dungeon Deck](https://github.com/jhauberg/dungeon-deck) for examples of real projects.
 
+## Full usage
+
+```
+Generate print-ready cards for your tabletop game
+
+Usage:
+  cards make [<datasource>]... [--definitions=<defs>]
+             [--output-path=<path>] [--output-file=<file>]
+             [--card-size=<size>] [--force-page-breaks] [--disable-backs]
+             [--discover] [--preview] [--verbose]
+  cards new  [<name>] [--output-path=<path>] [--verbose]
+  cards -h | --help
+  cards --version
+
+Examples:
+  cards make cards.csv
+    Builds the 'cards.csv' datasource and outputs to the current directory.
+
+  cards make cards.csv tokens.csv -d defs.csv -o ~/Desktop
+    Builds both 'cards.csv' and 'tokens.csv' datasources with the definitions 'defs.csv',
+    and outputs to the specified path (the desktop in this case).
+
+  cards new "Empty Game"
+    Creates an empty project in the current directory.
+
+Options:
+  -h --help                  Show program help
+  -o --output-path=<path>    Specify output directory
+  -f --output-file=<file>    Specify output filename [default: index.html]
+  -d --definitions=<defs>    Specify definitions filename
+  --card-size=<size>         Specify default card size [default: standard]
+                             Other options include: 'domino', 'jumbo' or 'token'
+  --force-page-breaks        Force a page break after each datasource
+  --disable-backs            Do not render card backs
+  --discover                 Automatically set CSV-files in the current directory as datasources
+  --preview                  Only render 1 of each card
+  --verbose                  Show more information
+  --version                  Show program version
+```
+
 # Why make this?
 
 I'm making this because it should be easier getting your ideas to the table.
@@ -68,7 +108,7 @@ Though these tools provide you with a wide range of options and possibilities, y
 
 The hope and intent of this tool is to provide a way to get a prototype built quickly and with as little hassle and setup as possible, while still providing options for customizing your cards as much- or as little, as you want to.
 
-It's also just a fun project to work on; so there's that.
+It's also just a fun project to work on; so there's that!
 
 # Contributing
 
