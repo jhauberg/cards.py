@@ -84,6 +84,11 @@ class TemplateFields:  # pylint: disable=too-few-public-methods
     COPYRIGHT = '_copyright'
 
 
+class DateField:  # pylint: disable=too-few-public-methods
+    # The date/time used whenever populating a date field, e.g. {{ date }}
+    TODAY = datetime.date.today()
+
+
 class CardSize:  # pylint: disable=too-few-public-methods
     """ Represents a card size. """
 

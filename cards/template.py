@@ -23,7 +23,7 @@ from cards.resource import get_resource_path, is_resource, is_image, supported_i
 from cards.util import dequote, get_line_number, get_padded_string
 from cards.warning import WarningDisplay, WarningContext
 
-from cards.constants import TemplateFields, TemplateFieldDescriptors, FIXED_TIMESTAMP
+from cards.constants import TemplateFields, TemplateFieldDescriptors, DateField
 
 from cards.version import __version__
 
@@ -269,7 +269,7 @@ def fill_template_fields(field_inner_content: str,
     return (content, occurences) if counting_occurences else content
 
 
-def fill_date_fields(date: datetime, in_template: str) -> str:
+def fill_date_fields(in_template: str, date: datetime=DateField.TODAY) -> str:
     """ Populate all date fields in the template.
 
         A 'date' field provides an easy way of putting the current date into a template.
@@ -310,7 +310,7 @@ def fill_date_fields(date: datetime, in_template: str) -> str:
         # otherwise the next field objects would have invalid indices and would not be
         # resolved properly
         template_content = fill_date_fields(
-            date, in_template=template_content)
+            in_template=template_content, date=date)
 
     return template_content
 
@@ -418,6 +418,8 @@ def fill_partial_definition(definition: str,
     # only match as a partial definition if it is isolated by whitespace (or {{}}'s),
     # otherwise it might just be part of something else;
     # for example, the definition 'monster' should not match {{ path/to/monster.svg 16x16 }}
+    # note that this pattern actually has a limitation that it won't match more than one hit
+    # in a single field, so e.g. {{ partial partial }} would only match the first
     pattern = r'(?:^|\s|{{)(' + definition + r')(?:$|\s|}})'
 
     def next_partial_field():
@@ -516,7 +518,7 @@ def resolve_column_content(content, in_data_path):
     # clear out any empty fields
     content = fill_empty_fields(content)
     # then fill any date fields
-    content = fill_date_fields(FIXED_TIMESTAMP, in_template=content)
+    content = fill_date_fields(in_template=content)
 
     return content
 
@@ -591,7 +593,7 @@ def fill_index(index: str,
     index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
     index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
 
-    index = fill_date_fields(FIXED_TIMESTAMP, in_template=index)
+    index = fill_date_fields(in_template=index)
     index, referenced_definitions = fill_definitions(definitions, in_template=index)
 
     # fill any image fields that might have appeared by populating the metadata fields
@@ -670,7 +672,7 @@ def fill_template(template: str,
 
     discovered_definition_refs.extend(referenced_definitions)
 
-    template = fill_date_fields(FIXED_TIMESTAMP, in_template=template)
+    template = fill_date_fields(in_template=template)
 
     # replace any image fields with HTML compliant <img> tags
     template, filled_image_paths = fill_image_fields(in_template=template)
