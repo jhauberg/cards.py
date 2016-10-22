@@ -66,11 +66,16 @@ def is_line_excluded(line: str) -> bool:
     return line.strip().startswith('#')
 
 
-def get_page(page_number: int, cards: str, page_template: str) -> str:
+def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bool=False) -> str:
     """ Populate a page with cards. """
 
+    page_class = 'page page-backs' if is_card_backs else 'page'
+
+    page = fill_template_fields(
+        '_page_class', page_class, page_template)
+
     numbered_page = fill_template_fields(
-        TemplateFields.PAGE_NUMBER, str(page_number), page_template)
+        TemplateFields.PAGE_NUMBER, str(page_number), page)
 
     return fill_template_fields(
         TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
@@ -365,7 +370,7 @@ def make(data_paths: list,
                     backs_row = ''
 
                     # fill another page with the backs
-                    pages += get_page(pages_total + 1, backs, page)
+                    pages += get_page(pages_total + 1, backs, page, is_card_backs=True)
                     pages_total += 1
 
                     backs = ''
@@ -635,7 +640,7 @@ def make(data_paths: list,
 
                         if not disable_backs:
                             # and one full of backs
-                            pages += get_page(pages_total + 1, backs, page)
+                            pages += get_page(pages_total + 1, backs, page, is_card_backs=True)
                             pages_total += 1
 
                             # reset to prepare for the next page
@@ -671,7 +676,7 @@ def make(data_paths: list,
                 backs_row = ''
 
                 # fill another page with the backs
-                pages += get_page(pages_total + 1, backs, page)
+                pages += get_page(pages_total + 1, backs, page, is_card_backs=True)
                 pages_total += 1
 
                 backs = ''
@@ -719,6 +724,9 @@ def make(data_paths: list,
         if cards_total > 0:
             default_title = '{0} {1} on {2} {3}'.format(cards_total, cards_or_card,
                                                         pages_total, pages_or_page)
+
+        index = fill_template_fields(
+            '_toggle_card_backs_display', 'none' if disable_backs else 'block', index)
 
         index, render_data = fill_index(
             index, pages, pages_total, cards_total, definitions, default_title)
