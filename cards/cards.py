@@ -134,6 +134,14 @@ def determine_ambiguous_references(columns: set, definitions: set) -> set:
     return ambiguous_references
 
 
+def previous_or_current_path(current_path: str, previous_path: str) -> str:
+    """ Return previous path only if the current path is used as a pointer
+        to the contents of the previous path.
+    """
+
+    return previous_path if current_path.strip() == '^' else current_path
+
+
 def make(data_paths: list,
          definitions_path: str=None,
          output_path: str=None,
@@ -421,6 +429,9 @@ def make(data_paths: list,
                 WarningDisplay.potential_ambiguous_references(
                     WarningContext(context), list(ambiguous_references))
 
+            previous_template_path = None
+            previous_template_path_back = None
+
             row_index = 1
 
             for row in data:
@@ -470,15 +481,28 @@ def make(data_paths: list,
                     # only render 1 card unless it should be skipped
                     count = 1
 
+                # determine which template to use for this card, if any
+                template_path = row.get(Columns.TEMPLATE, None)
+                template_path = previous_or_current_path(
+                    template_path, previous_template_path)
+
+                previous_template_path = template_path
+
+                if not disable_backs:
+                    template_path_back = row.get(Columns.TEMPLATE_BACK, None)
+                    template_path_back = previous_or_current_path(
+                        template_path_back, previous_template_path_back)
+
+                    previous_template_path_back = template_path_back
+
                 for i in range(count):
                     card_copy_index = i + 1
                     card_index = cards_total + 1
 
-                    # determine which template to use for this card, if any
-                    template_path = row.get(Columns.TEMPLATE, None)
+                    resolved_template_path = None
 
                     if template_path is not None and len(template_path) > 0:
-                        template, not_found, template_path = template_from_path(
+                        template, not_found, resolved_template_path = template_from_path(
                             template_path, relative_to_path=data_path)
 
                         if not_found:
@@ -486,13 +510,13 @@ def make(data_paths: list,
 
                             WarningDisplay.bad_template_path_error(
                                 WarningContext(context, row_index, card_index, card_copy_index),
-                                template_path)
+                                resolved_template_path)
                         elif len(template) == 0:
                             template = default_template
 
                             WarningDisplay.empty_template(
                                 WarningContext(context, row_index, card_index, card_copy_index),
-                                template_path)
+                                resolved_template_path)
                     else:
                         template = default_template
 
@@ -507,7 +531,7 @@ def make(data_paths: list,
                             WarningContext(context, row_index, card_index, card_copy_index))
 
                     card_content, render_data = fill_card_front(
-                        template, template_path,
+                        template, resolved_template_path,
                         row, row_index, data_path,
                         card_index, cards_total_unique,
                         definitions)
@@ -537,12 +561,12 @@ def make(data_paths: list,
                     cards_total += 1
 
                     if not disable_backs:
-                        template_path_back = row.get(Columns.TEMPLATE_BACK, None)
-
                         template_back = None
 
+                        resolved_template_path = None
+
                         if template_path_back is not None and len(template_path_back) > 0:
-                            template_back, not_found, template_path_back = template_from_path(
+                            template_back, not_found, resolved_template_path = template_from_path(
                                 template_path_back, relative_to_path=data_path)
 
                             if not_found:
@@ -550,17 +574,17 @@ def make(data_paths: list,
 
                                 WarningDisplay.bad_template_path_error(
                                     WarningContext(context, row_index, card_index, card_copy_index),
-                                    template_path_back, is_back=True)
+                                    resolved_template_path, is_back=True)
                             elif len(template_back) == 0:
                                 WarningDisplay.empty_template(
                                     WarningContext(context, row_index, card_index, card_copy_index),
-                                    template_path_back, is_back_template=True)
+                                    resolved_template_path, is_back_template=True)
 
                         if template_back is None:
                             template_back = template_back_not_provided
 
                         back_content, render_data = fill_card_back(
-                            template_back, template_path_back,
+                            template_back, resolved_template_path,
                             row, row_index, data_path,
                             card_index, cards_total_unique,
                             definitions)
