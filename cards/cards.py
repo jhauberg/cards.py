@@ -446,9 +446,6 @@ def make(data_paths: list,
                     # this row should be ignored - so skip and continue
                     continue
 
-                # this is also the shared index for any instance of this card
-                cards_total_unique += 1
-
                 # determine how many instances of this card to generate
                 # (defaults to a single instance if not specified)
                 count = row.get(Columns.COUNT, '1')
@@ -494,6 +491,15 @@ def make(data_paths: list,
                         template_path_back, previous_template_path_back)
 
                     previous_template_path_back = template_path_back
+
+                if count == 0:
+                    # might as well move on to the next card-
+                    # this card should not count towards number of unique cards either
+                    # note, however, that we *do* want to register the template paths
+                    continue
+
+                # this is also the shared index for any instance of this card
+                cards_total_unique += 1
 
                 for i in range(count):
                     card_copy_index = i + 1
