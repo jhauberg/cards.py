@@ -13,6 +13,9 @@ import os
 import csv
 import math
 import shutil
+import datetime
+
+from datetime import timedelta
 
 from cards.template import (
     fill_index, fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
@@ -141,6 +144,8 @@ def make(data_paths: list,
          is_preview: bool=False,
          discover_datasources: bool=False):
     """ Build cards for all specified datasources. """
+
+    time_started_make = datetime.datetime.now()
 
     if discover_datasources:
         # todo: discover any CSV files in current working directory and append those to data_paths
@@ -743,6 +748,13 @@ def make(data_paths: list,
                                    or WarningDisplay.has_encountered_warnings()
                                    else '')
 
+    now = datetime.datetime.now()
+
+    time_difference = now - time_started_make
+    time_difference_in_seconds = time_difference / timedelta(seconds=1)
+
+    print()
+    print('Finished in {0} seconds'.format(time_difference_in_seconds))
     print()
 
     if cards_total > 0:
