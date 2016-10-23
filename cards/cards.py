@@ -147,6 +147,34 @@ def previous_or_current_path(current_path: str, previous_path: str) -> str:
     return previous_path if current_path.strip() == '^' else current_path
 
 
+def determine_count(row: dict) -> (int, bool):
+    # determine how many instances of this card to generate
+    # (defaults to a single instance if not specified)
+    count = row.get(Columns.COUNT, '1')
+
+    was_indeterminable = False
+
+    if len(count.strip()) > 0:
+        # the count column has content, so attempt to parse it
+        try:
+            count = int(count)
+        except ValueError:
+            # count could not be determined, so default to skip this card
+            count = 0
+
+            was_indeterminable = True
+    else:
+        # the count column did not have content, so default count to 1
+        count = 1
+
+    if count < 0:
+        count = 0
+
+        was_indeterminable = True
+
+    return count, was_indeterminable
+
+
 def make(data_paths: list,
          definitions_path: str=None,
          output_path: str=None,
@@ -171,8 +199,7 @@ def make(data_paths: list,
 
     if datasource_count > 0:
         print('Generating cards from {0} {1}:\n{2}'.format(
-            datasource_count,
-            'datasources' if datasource_count > 1 else 'datasource',
+            datasource_count, 'datasources' if datasource_count > 1 else 'datasource',
             data_path_names))
         print()
     else:
@@ -451,28 +478,13 @@ def make(data_paths: list,
                     # this row should be ignored - so skip and continue
                     continue
 
-                # determine how many instances of this card to generate
-                # (defaults to a single instance if not specified)
-                count = row.get(Columns.COUNT, '1')
+                count, indeterminable_count = determine_count(row)
 
-                if len(count.strip()) > 0:
-                    # the count column has content, so attempt to parse it
-                    try:
-                        count = int(count)
-                    except ValueError:
-                        # count could not be determined, so default to skip this card
-                        count = 0
-                        # and warn about it
-                        WarningDisplay.indeterminable_count(
-                            WarningContext(context, row_index))
-                else:
-                    # the count column did not have content, so default count to 1
-                    count = 1
+                if indeterminable_count:
+                    WarningDisplay.indeterminable_count(
+                        WarningContext(context, row_index))
 
-                # if a negative count is specified, treat it as 0
-                count = count if count > 0 else 0
-
-                if count > 1000:
+                if count > 100:
                     # the count was unusually high; ask whether it's an error or not
                     if WarningDisplay.abort_unusually_high_count(
                             WarningContext(context, row_index), count):
