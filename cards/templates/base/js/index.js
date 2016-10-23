@@ -109,6 +109,9 @@ function toggleHelp(on) {
 function updatePageNumbers() {
   var pageElements = document.getElementsByClassName('page');
 
+  var totalPageCount = 0;
+  var totalCardCount = 0;
+
   if (pageElements.length > 0) {
     var visiblePageElements = [];
 
@@ -121,11 +124,20 @@ function updatePageNumbers() {
     }
 
     if (visiblePageElements.length > 0) {
-      var totalPageCount = visiblePageElements.length;
+      totalPageCount = visiblePageElements.length;
 
       for (i = 0; i < visiblePageElements.length; i++) {
         var visiblePageElement = visiblePageElements[i];
         var pageNumberElements = visiblePageElement.getElementsByClassName('page-number-tag');
+
+        if (visiblePageElement.className.split(" ").indexOf("page-backs") == -1) {
+          // pages with backs do not count towards total card count
+          var cardElements = visiblePageElement.getElementsByClassName('card');
+
+          if (cardElements.length > 0) {
+            totalCardCount += cardElements.length;
+          }
+        }
 
         if (pageNumberElements.length > 0) {
           var pageNumberElement = pageNumberElements[0];
@@ -135,6 +147,14 @@ function updatePageNumbers() {
         }
       }
     }
+  }
+
+  var statsElement = document.getElementById('ui-stats');
+
+  if (statsElement) {
+    var cardsAndPagesContent = '' + totalCardCount + ' cards' + '<br />' + totalPageCount + ' pages';
+
+    statsElement.innerHTML = cardsAndPagesContent;
   }
 }
 

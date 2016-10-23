@@ -159,6 +159,8 @@ div.ui-action a:hover {
 .ui-other {
   float: right;
 
+  text-align: right;
+
   margin-left: .3cm;
 
   cursor: pointer;
@@ -170,8 +172,6 @@ div.ui-action a:hover {
   font-size: .85em;
 
   margin-top: 4px;
-
-  text-align: right;
 }
 
 .ui-footer {

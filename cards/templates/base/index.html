@@ -33,10 +33,14 @@
         <div class="ui-other ui-note">
           <!-- TODO: can be used to display announcements or similar notices. -->
         </div>
-        <div class="ui-action" style="margin-right: 1.5cm;" onclick="window.print();" title="Print pages">
+        <div class="ui-action" onclick="window.print();" title="Print pages">
           <svg width="32" height="32" viewBox="0 0 24 24">
             <path class="hoverable" fill="#000000" d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
           </svg>
+        </div>
+        <div class="ui-action ui-note" id="ui-stats" style="width: 80px;">
+          {{ _cards_total }} cards<br />
+          {{ _pages_total }} pages
         </div>
         <div class="ui-action" onclick="toggleCardBacks();" title="Toggle card backs" style="display: {{ _toggle_card_backs_display }};">
           <svg id="toggle-card-backs-on" width="18" height="18" viewBox="0 0 24 24">

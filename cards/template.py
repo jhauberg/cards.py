@@ -537,23 +537,21 @@ def fill_index(index: str,
                cards_total: int,
                definitions: dict,
                default_title: str='') -> (str, TemplateRenderData):
-    pages = fill_template_fields(
-        field_inner_content=TemplateFields.CARDS_TOTAL,
-        field_value=str(cards_total),
-        in_template=pages)
-
-    pages = fill_template_fields(
-        field_inner_content=TemplateFields.PAGES_TOTAL,
-        field_value=str(pages_total),
-        in_template=pages)
-
-    # pages must be inserted prior to filling metadata fields,
-    # since each page may contain fields that should be filled
     index = fill_template_fields(
         field_inner_content=TemplateFields.PAGES,
         field_value=pages,
         in_template=index,
         indenting=True)
+
+    index = fill_template_fields(
+        field_inner_content=TemplateFields.CARDS_TOTAL,
+        field_value=str(cards_total),
+        in_template=index)
+
+    index = fill_template_fields(
+        field_inner_content=TemplateFields.PAGES_TOTAL,
+        field_value=str(pages_total),
+        in_template=index)
 
     index = fill_template_fields(
         field_inner_content=TemplateFields.PROGRAM_VERSION,
