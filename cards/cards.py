@@ -518,43 +518,67 @@ def make(data_paths: list,
                     # note, however, that we *do* want to register the template paths
                     continue
 
+                resolved_template_path = None
+
+                if template_path is not None and len(template_path) > 0:
+                    template, not_found, resolved_template_path = template_from_path(
+                        template_path, relative_to_path=data_path)
+
+                    if not_found:
+                        template = template_not_opened
+
+                        WarningDisplay.bad_template_path_error(
+                            WarningContext(context, row_index),
+                            resolved_template_path, cards_affected=count)
+                    elif len(template) == 0:
+                        template = default_template
+
+                        WarningDisplay.empty_template(
+                            WarningContext(context, row_index),
+                            resolved_template_path, cards_affected=count)
+                else:
+                    template = default_template
+
+                    if template is not None:
+                        WarningDisplay.using_auto_template(
+                            WarningContext(context, row_index), cards_affected=count)
+
+                if template is None:
+                    template = template_not_provided
+
+                    WarningDisplay.missing_template_error(
+                        WarningContext(context, row_index), cards_affected=count)
+
+                resolved_template_path_back = None
+
+                if not disable_backs:
+                    template_back = None
+
+                    if template_path_back is not None and len(template_path_back) > 0:
+                        template_back, not_found, resolved_template_path_back = template_from_path(
+                            template_path_back, relative_to_path=data_path)
+
+                        if not_found:
+                            template_back = template_not_opened
+
+                            WarningDisplay.bad_template_path_error(
+                                WarningContext(context, row_index),
+                                resolved_template_path, is_back=True,
+                                cards_affected=count)
+                        elif len(template_back) == 0:
+                            WarningDisplay.empty_template(
+                                WarningContext(context, row_index),
+                                resolved_template_path, is_back_template=True,
+                                cards_affected=count)
+
+                    if template_back is None:
+                        template_back = template_back_not_provided
+
                 # this is also the shared index for any instance of this card
                 cards_total_unique += 1
 
                 for i in range(count):
-                    card_copy_index = i + 1
                     card_index = cards_total + 1
-
-                    resolved_template_path = None
-
-                    if template_path is not None and len(template_path) > 0:
-                        template, not_found, resolved_template_path = template_from_path(
-                            template_path, relative_to_path=data_path)
-
-                        if not_found:
-                            template = template_not_opened
-
-                            WarningDisplay.bad_template_path_error(
-                                WarningContext(context, row_index, card_index, card_copy_index),
-                                resolved_template_path)
-                        elif len(template) == 0:
-                            template = default_template
-
-                            WarningDisplay.empty_template(
-                                WarningContext(context, row_index, card_index, card_copy_index),
-                                resolved_template_path)
-                    else:
-                        template = default_template
-
-                        if template is not None:
-                            WarningDisplay.using_auto_template(
-                                WarningContext(context, row_index, card_index, card_copy_index))
-
-                    if template is None:
-                        template = template_not_provided
-
-                        WarningDisplay.missing_template_error(
-                            WarningContext(context, row_index, card_index, card_copy_index))
 
                     card_content, render_data = fill_card_front(
                         template, resolved_template_path,
@@ -566,13 +590,15 @@ def make(data_paths: list,
                             and template is not template_not_opened):
                         if len(render_data.unused_fields) > 0:
                             WarningDisplay.missing_fields_in_template(
-                                WarningContext(context, row_index, card_index, card_copy_index),
-                                list(render_data.unused_fields))
+                                WarningContext(context, row_index),
+                                list(render_data.unused_fields),
+                                cards_affected=count)
 
                         if len(render_data.unknown_fields) > 0:
                             WarningDisplay.unknown_fields_in_template(
-                                WarningContext(context, row_index, card_index, card_copy_index),
-                                list(render_data.unknown_fields))
+                                WarningContext(context, row_index),
+                                list(render_data.unknown_fields),
+                                cards_affected=count)
 
                     all_referenced_definitions |= render_data.referenced_definitions
 
@@ -587,30 +613,8 @@ def make(data_paths: list,
                     cards_total += 1
 
                     if not disable_backs:
-                        template_back = None
-
-                        resolved_template_path = None
-
-                        if template_path_back is not None and len(template_path_back) > 0:
-                            template_back, not_found, resolved_template_path = template_from_path(
-                                template_path_back, relative_to_path=data_path)
-
-                            if not_found:
-                                template_back = template_not_opened
-
-                                WarningDisplay.bad_template_path_error(
-                                    WarningContext(context, row_index, card_index, card_copy_index),
-                                    resolved_template_path, is_back=True)
-                            elif len(template_back) == 0:
-                                WarningDisplay.empty_template(
-                                    WarningContext(context, row_index, card_index, card_copy_index),
-                                    resolved_template_path, is_back_template=True)
-
-                        if template_back is None:
-                            template_back = template_back_not_provided
-
                         back_content, render_data = fill_card_back(
-                            template_back, resolved_template_path,
+                            template_back, resolved_template_path_back,
                             row, row_index, data_path,
                             card_index, cards_total_unique,
                             definitions)
@@ -619,13 +623,15 @@ def make(data_paths: list,
                                 and template_back is not template_not_opened):
                             if len(render_data.unused_fields) > 0:
                                 WarningDisplay.missing_fields_in_template(
-                                    WarningContext(context, row_index, card_index, card_copy_index),
-                                    list(render_data.unused_fields), is_back_template=True)
+                                    WarningContext(context, row_index),
+                                    list(render_data.unused_fields), is_back_template=True,
+                                    cards_affected=count)
 
                             if len(render_data.unknown_fields) > 0:
                                 WarningDisplay.unknown_fields_in_template(
-                                    WarningContext(context, row_index, card_index, card_copy_index),
-                                    list(render_data.unknown_fields), is_back_template=True)
+                                    WarningContext(context, row_index),
+                                    list(render_data.unknown_fields), is_back_template=True,
+                                    cards_affected=count)
 
                         all_referenced_definitions |= render_data.referenced_definitions
 

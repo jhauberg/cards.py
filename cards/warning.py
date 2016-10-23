@@ -41,7 +41,7 @@ class WarningContext:  # pylint: disable=too-few-public-methods
         return None
 
 
-def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
+def warn(message: str, in_context: WarningContext=None, cards_affected: int=None, as_error=False) -> None:
     """ Display a command-line warning, optionally within a context. """
 
     # trigger increment even if we don't end up printing it
@@ -54,6 +54,9 @@ def warn(message: str, in_context: WarningContext=None, as_error=False) -> None:
              else WarningDisplay.apply_warning_color)
 
     message_context = '[{0}]'.format('!' if as_error else '?')
+
+    if cards_affected is not None and cards_affected > 1:
+        message = '{1} ({0} cards)'.format(cards_affected, message)
 
     display(message, message_context, in_context, apply_color=color, force_verbosity=as_error)
 
@@ -71,6 +74,14 @@ def display(message: str,
             in_context: WarningContext=None,
             apply_color: str='',
             force_verbosity: bool=False) -> None:
+    """ Display a CLI message.
+
+        The message can be optionally colored and will be properly color-terminated on print.
+
+        The message will only display if verbosity is toggled,
+        and the same message will only ever be displayed once.
+    """
+
     if not WarningDisplay.is_verbose and not force_verbosity:
         # only print warnings if verbose flag is enabled, or verbosity is forced
         # (e.g. for errors or info)
@@ -134,8 +145,9 @@ class WarningDisplay:
                              WarningDisplay.apply_error_color, reason),
                      as_error=True)
             else:
-                warn('Could not create empty project at: {0}\'{1}\''
-                     .format(WarningDisplay.apply_error_color_underlined, at_destination_path),
+                warn('Could not create empty project at: {0}\'{1}\'{2}'
+                     .format(WarningDisplay.apply_error_color_underlined, at_destination_path,
+                             WarningDisplay.apply_error_color),
                      as_error=True)
 
     @staticmethod
@@ -216,8 +228,9 @@ class WarningDisplay:
     @staticmethod
     def included_file_not_found_error(context: WarningContext,
                                       included_file_path: str) -> None:
-        warn('An included file was not found: {0}\'{1}\''
-             .format(WarningDisplay.apply_error_color_underlined, included_file_path),
+        warn('An included file was not found: {0}\'{1}\'{2}'
+             .format(WarningDisplay.apply_error_color_underlined, included_file_path,
+                     WarningDisplay.apply_error_color),
              in_context=context,
              as_error=True)
 
@@ -234,29 +247,33 @@ class WarningDisplay:
     @staticmethod
     def image_not_copied(context: WarningContext,
                          image_path: str) -> None:
-        warn('An image was not copied to the output directory: {0}\'{1}\''
-             .format(WarningDisplay.apply_warning_color_underlined, image_path),
+        warn('An image was not copied to the output directory: {0}\'{1}\'{2}'
+             .format(WarningDisplay.apply_warning_color_underlined, image_path,
+                     WarningDisplay.apply_warning_color),
              in_context=context)
 
     @staticmethod
     def missing_image_error(context: WarningContext,
                             image_path: str) -> None:
-        warn('One or more cards contain an image reference that does not exist: {0}\'{1}\''
-             .format(WarningDisplay.apply_error_color_underlined, image_path),
+        warn('One or more cards contain an image reference that does not exist: {0}\'{1}\'{2}'
+             .format(WarningDisplay.apply_error_color_underlined, image_path,
+                     WarningDisplay.apply_error_color),
              in_context=context,
              as_error=True)
 
     @staticmethod
     def bad_definitions_file_error(definitions_path: str) -> None:
-        warn('No definitions file was found at: {0}\'{1}\''
-             .format(WarningDisplay.apply_error_color_underlined, definitions_path),
+        warn('No definitions file was found at: {0}\'{1}\'{2}'
+             .format(WarningDisplay.apply_error_color_underlined, definitions_path,
+                     WarningDisplay.apply_error_color),
              as_error=True)
 
     @staticmethod
     def using_automatically_found_definitions_info(definitions_path: str) -> None:
         info('No definitions have been specified. Using definitions automatically found at: '
-             '{0}\'{1}\''
-             .format(WarningDisplay.apply_info_color_underlined, definitions_path))
+             '{0}\'{1}\'{2}'
+             .format(WarningDisplay.apply_info_color_underlined, definitions_path,
+                     WarningDisplay.apply_info_color))
 
     @staticmethod
     def assume_backs_info(context: WarningContext) -> None:
@@ -283,32 +300,36 @@ class WarningDisplay:
              in_context=context)
 
     @staticmethod
-    def missing_template_error(context: WarningContext) -> None:
+    def missing_template_error(context: WarningContext,
+                               cards_affected: int) -> None:
         warn('The card did not provide a template.',
-             in_context=context,
+             in_context=context, cards_affected=cards_affected,
              as_error=True)
 
     @staticmethod
     def empty_template(context: WarningContext,
                        template_path: str,
+                       cards_affected: int,
                        is_back_template: bool=False) -> None:
         warning = ('The card provided a back template that appears to be empty: {0}\'{1}\'{2}.'
                    if is_back_template else
                    'The card provided a template that appears to be empty: {0}\'{1}\'{2}. '
-                   'The card will use an auto-template instead, if possible.')
+                   'Using an auto-template instead, if possible.')
 
         warn(warning.format(WarningDisplay.apply_warning_color_underlined, template_path,
                             WarningDisplay.apply_warning_color),
-             in_context=context)
+             in_context=context, cards_affected=cards_affected)
 
     @staticmethod
-    def using_auto_template(context: WarningContext) -> None:
-        warn('The card did not provide a template. The card will use an auto-template instead.',
-             in_context=context)
+    def using_auto_template(context: WarningContext,
+                            cards_affected: int) -> None:
+        warn('The card did not provide a template. Using an auto-template instead.',
+             in_context=context, cards_affected=cards_affected)
 
     @staticmethod
     def unknown_fields_in_template(context: WarningContext,
                                    unknown_fields: list,
+                                   cards_affected: int,
                                    is_back_template: bool=False) -> None:
         if len(unknown_fields) > 1:
             msg = ('The back template contains fields that are not present for this card, '
@@ -326,11 +347,12 @@ class WarningDisplay:
                    'or could not be resolved: \'{0}\'')
 
         warn(msg.format(unknown_fields),
-             in_context=context)
+             in_context=context, cards_affected=cards_affected)
 
     @staticmethod
     def missing_fields_in_template(context: WarningContext,
                                    missing_fields: list,
+                                   cards_affected: int,
                                    is_back_template: bool=False) -> None:
         if len(missing_fields) > 1:
             warning = ('The card back has unused columns: {0}'
@@ -344,7 +366,7 @@ class WarningDisplay:
                        'The card has an unused column: \'{0}\'')
 
         warn(warning.format(missing_fields),
-             in_context=context)
+             in_context=context, cards_affected=cards_affected)
 
     @staticmethod
     def unused_definitions(unused_definitions: list) -> None:
@@ -374,28 +396,30 @@ class WarningDisplay:
     @staticmethod
     def bad_data_path_error(context: WarningContext,
                             data_path: str) -> None:
-        warn('The datasource could not be found at: {0}\'{1}\''
-             .format(WarningDisplay.apply_error_color_underlined, data_path),
+        warn('The datasource could not be found at: {0}\'{1}\'{2}'
+             .format(WarningDisplay.apply_error_color_underlined, data_path,
+                     WarningDisplay.apply_error_color),
              in_context=context,
              as_error=True)
 
     @staticmethod
     def bad_template_path_error(context: WarningContext,
                                 template_path: str,
+                                cards_affected: int,
                                 is_back: bool=False) -> None:
-        warning = ('The card provided a back template that could not be opened: {0}\'{1}\''
+        warning = ('The card provided a back template that could not be opened: {0}\'{1}\'{2}'
                    if is_back else
-                   'The card provided a template that could not be opened: {0}\'{1}\'')
+                   'The card provided a template that could not be opened: {0}\'{1}\'{2}')
 
-        warn(warning.format(WarningDisplay.apply_error_color_underlined, template_path),
-             in_context=context,
+        warn(warning.format(WarningDisplay.apply_error_color_underlined, template_path,
+                            WarningDisplay.apply_error_color),
+             in_context=context, cards_affected=cards_affected,
              as_error=True)
 
     @staticmethod
     def abort_unusually_high_count(context: WarningContext,
                                    count: int) -> bool:
-        # arbitrarily determined amount- but if the count is really high
-        # it might just be an error
+        # arbitrarily determined amount- but if the count is really high it might just be an error
         warn('The card has specified a high count: {0}. '
              'Are you sure you want to continue?'.format(count),
              in_context=context)
