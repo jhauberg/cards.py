@@ -144,10 +144,13 @@ def previous_or_current_path(current_path: str, previous_path: str) -> str:
         to the contents of the previous path.
     """
 
-    return previous_path if current_path.strip() == '^' else current_path
+    return (previous_path if (current_path is not None and current_path.strip() == '^')
+            else current_path)
 
 
 def determine_count(row: dict) -> (int, bool):
+    """ Determine and return count value from the @count column in a row. """
+
     # determine how many instances of this card to generate
     # (defaults to a single instance if not specified)
     count = row.get(Columns.COUNT, '1')
