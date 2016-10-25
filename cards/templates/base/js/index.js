@@ -27,6 +27,20 @@ function removeOverlappingCutGuides() {
   }
 }
 
+function removeEmptyFooterTags() {
+  var footerContentElements = document.getElementsByClassName('page-footer-content');
+
+  if (footerContentElements.length > 0) {
+    for (var i = footerContentElements.length - 1; i >= 0; i--) {
+      var footerContentElement = footerContentElements[i];
+
+      if (footerContentElement.innerHTML === '') {
+        footerContentElement.parentNode.removeChild(footerContentElement);
+      }
+    }
+  }
+}
+
 function toggleVisibility(className) {
   var elements = document.getElementsByClassName(className);
 
@@ -161,4 +175,5 @@ function updatePageNumbers() {
 window.onload = function() {
   updatePageNumbers();
   removeOverlappingCutGuides();
+  removeEmptyFooterTags();
 };
