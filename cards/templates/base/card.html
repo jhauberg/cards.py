@@ -1,19 +1,18 @@
 <div class="card {{ _card_size }}">
   <svg class="cut-guide cut-guide-top cut-guide-left" viewBox="0 0 10 10">
-    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
-    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+    <g id="cut-guide-lines">
+      <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
+      <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+    </g>
   </svg>
   <svg class="cut-guide cut-guide-top cut-guide-right" viewBox="0 0 10 10">
-    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
-    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+    <use xlink:href="#cut-guide-lines" />
   </svg>
   <svg class="cut-guide cut-guide-bottom cut-guide-left" viewBox="0 0 10 10">
-    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
-    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+    <use xlink:href="#cut-guide-lines" />
   </svg>
   <svg class="cut-guide cut-guide-bottom cut-guide-right" viewBox="0 0 10 10">
-    <line class="cut-guide-line" x1="5" y1="0" x2="5" y2="10" />
-    <line class="cut-guide-line" x1="0" y1="5" x2="10" y2="5" />
+    <use xlink:href="#cut-guide-lines" />
   </svg>
   <div class="card-content">
     {{ _card_content }}
