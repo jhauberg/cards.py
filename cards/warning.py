@@ -327,6 +327,13 @@ class WarningDisplay:
              in_context=context, cards_affected=cards_affected)
 
     @staticmethod
+    def fields_in_styles(context: WarningContext, fields: list) -> None:
+        warn('The template embeds a style that contains fields that might not be '
+             'resolved properly: {0}'
+             .format(fields),
+             in_context=context)
+
+    @staticmethod
     def unknown_fields_in_template(context: WarningContext,
                                    unknown_fields: list,
                                    cards_affected: int,

@@ -21,7 +21,7 @@ from cards.template import (
     fill_index, fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
 )
 
-from cards.template import template_from_path, get_sized_card
+from cards.template import template_from_path, strip_styles, get_sized_card
 from cards.autotemplate import template_from_data
 
 from cards.column import get_invalid_columns, size_identifier_from_columns
@@ -303,6 +303,8 @@ def make(data_paths: list,
     # buffer for all generated pages
     pages = ''
 
+    embedded_styles = {}
+
     # incremented each time a card is generated, but reset to 0 for each page
     cards_on_page = 0
     # incremented each time a card is generated
@@ -549,6 +551,11 @@ def make(data_paths: list,
                     WarningDisplay.missing_template_error(
                         WarningContext(context, row_index), cards_affected=count)
 
+                styles, template = strip_styles(from_template=template,
+                                                at_template_path=template_path)
+
+                embedded_styles[template_path] = styles
+
                 resolved_template_path_back = None
 
                 if not disable_backs:
@@ -573,6 +580,11 @@ def make(data_paths: list,
 
                     if template_back is None:
                         template_back = template_back_not_provided
+
+                    back_styles, template_back = strip_styles(from_template=template_back,
+                                                              at_template_path=template_path_back)
+
+                    embedded_styles[template_path_back] = back_styles
 
                 # this is also the shared index for any instance of this card
                 cards_total_unique += 1
@@ -739,8 +751,16 @@ def make(data_paths: list,
         index = fill_template_fields(
             '_toggle_card_backs_display', 'none' if disable_backs else 'block', index)
 
+        styles = ''
+
+        for template_path, style in embedded_styles.items():
+            styles = styles + '\n' + style if len(styles) > 0 else style
+
+        if len(styles) == 0:
+            styles = '/* no embedded styles */'
+
         index, render_data = fill_index(
-            index, pages, pages_total, cards_total, definitions)
+            index, styles, pages, pages_total, cards_total, definitions)
 
         if len(render_data.image_paths) > 0:
             # we assume that any leftover images would have been from a definition

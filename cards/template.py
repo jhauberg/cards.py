@@ -11,7 +11,7 @@ import datetime
 
 from typing import List
 
-from cards.templatefield import TemplateField, get_template_fields
+from cards.templatefield import TemplateField, get_template_fields, get_template_field_names
 
 from cards.column import (
     get_column_content, get_definition_content,
@@ -40,6 +40,40 @@ class TemplateRenderData:  # pylint: disable=too-few-public-methods
         self.unknown_fields = unknown_fields
         self.unused_fields = unused_fields
         self.referenced_definitions = referenced_definitions
+
+
+def strip_styles(from_template: str, at_template_path: str) -> (str, str):
+    """ Strip and return any embedded <style></style> content from a template. """
+
+    pattern = r'<style.*?>(.+?)</style>'
+    styles = ''
+
+    search = re.compile(pattern, re.DOTALL)
+
+    # find all style matches and extract embedded styles
+    for style_match in list(re.finditer(pattern, from_template, re.DOTALL)):
+        # note that we only want the inner content of the <style></style> tags
+        style = style_match.group(1).strip()
+        # separating each style block for good measure
+        styles = styles + '\n' + style if len(styles) > 0 else style
+
+    # finally remove all style matches
+    # note that this removes the <style></style> tags too
+    template = re.sub(search, '', from_template)
+
+    # make sure we keep it clean- no unnecessary newlines or excess whitespace
+    styles = styles.strip()
+    template = template.strip()
+
+    template_field_names = get_template_field_names(styles)
+
+    if len(template_field_names) > 0:
+        context = at_template_path # os.path.basename(at_template_path)
+        # if there's any fields in the styles, display a warning about it
+        WarningDisplay.fields_in_styles(
+            WarningContext(context), template_field_names)
+
+    return styles, template
 
 
 def template_from_path(template_path: str,
@@ -532,30 +566,16 @@ def resolve_column_field(field_name, field_value, in_content):
 
 
 def fill_index(index: str,
+               style: str,
                pages: str,
                pages_total: int,
                cards_total: int,
                definitions: dict) -> (str, TemplateRenderData):
-    index = fill_template_fields(
-        field_inner_content=TemplateFields.PAGES,
-        field_value=pages,
-        in_template=index,
-        indenting=True)
-
-    index = fill_template_fields(
-        field_inner_content=TemplateFields.CARDS_TOTAL,
-        field_value=str(cards_total),
-        in_template=index)
-
-    index = fill_template_fields(
-        field_inner_content=TemplateFields.PAGES_TOTAL,
-        field_value=str(pages_total),
-        in_template=index)
-
-    index = fill_template_fields(
-        field_inner_content=TemplateFields.PROGRAM_VERSION,
-        field_value=__version__,
-        in_template=index)
+    index = fill_template_fields('_styles', style, index, indenting=True)
+    index = fill_template_fields(TemplateFields.PAGES, pages, index, indenting=True)
+    index = fill_template_fields(TemplateFields.CARDS_TOTAL, str(cards_total), index)
+    index = fill_template_fields(TemplateFields.PAGES_TOTAL, str(pages_total), index)
+    index = fill_template_fields(TemplateFields.PROGRAM_VERSION, __version__, index)
 
     # note that most of these fields could potentially be filled already when first getting the
     # page template; however, we instead do it as the very last thing to allow cards
