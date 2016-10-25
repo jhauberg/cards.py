@@ -535,8 +535,7 @@ def fill_index(index: str,
                pages: str,
                pages_total: int,
                cards_total: int,
-               definitions: dict,
-               default_title: str='') -> (str, TemplateRenderData):
+               definitions: dict) -> (str, TemplateRenderData):
     index = fill_template_fields(
         field_inner_content=TemplateFields.PAGES,
         field_value=pages,
@@ -565,8 +564,10 @@ def fill_index(index: str,
         definition=TemplateFields.TITLE, in_definitions=definitions,
         content_resolver=resolve_column_content, field_resolver=resolve_column_field)
 
-    if title is None or len(title) == 0:
-        title = default_title
+    if title is None:
+        title = ''
+
+    index_title = title if len(title) > 0 else 'cards.py'
 
     description = get_definition_content(
         definition=TemplateFields.DESCRIPTION, in_definitions=definitions,
@@ -586,6 +587,7 @@ def fill_index(index: str,
 
     version_identifier = version_identifier if version_identifier is not None else ''
 
+    index = fill_template_fields('__title', index_title, in_template=index)
     index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
     index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
     index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)

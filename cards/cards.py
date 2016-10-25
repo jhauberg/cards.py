@@ -732,25 +732,15 @@ def make(data_paths: list,
     # ensure all directories exist or created if missing
     create_directories_if_necessary(output_path)
 
-    # get the grammar right
-    pages_or_page = 'pages' if pages_total > 1 else 'page'
-    cards_or_card = 'cards' if cards_total > 1 else 'card'
-
     output_filepath = os.path.join(output_path, output_filename)
 
     # begin writing pages to the output file (overwriting any existing file)
     with open(output_filepath, 'w') as result:
-        default_title = 'Nothing to see here'
-
-        if cards_total > 0:
-            default_title = '{0} {1} on {2} {3}'.format(cards_total, cards_or_card,
-                                                        pages_total, pages_or_page)
-
         index = fill_template_fields(
             '_toggle_card_backs_display', 'none' if disable_backs else 'block', index)
 
         index, render_data = fill_index(
-            index, pages, pages_total, cards_total, definitions, default_title)
+            index, pages, pages_total, cards_total, definitions)
 
         if len(render_data.image_paths) > 0:
             # we assume that any leftover images would have been from a definition
@@ -817,6 +807,10 @@ def make(data_paths: list,
     print()
 
     if cards_total > 0:
+        # get the grammar right
+        pages_or_page = 'pages' if pages_total > 1 else 'page'
+        cards_or_card = 'cards' if cards_total > 1 else 'card'
+
         if cards_total > cards_total_unique:
             print('Generated {0} ({1} unique) {2} on {3} {4}{5}.\n{6}'
                   .format(cards_total, cards_total_unique, cards_or_card,

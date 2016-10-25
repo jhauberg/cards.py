@@ -179,7 +179,7 @@ div.ui-action a:hover {
 
   font-family: monospace;
 
-  color: #bcbcbc;
+  opacity: 0.3;
 
   margin-bottom: 1cm;
 }

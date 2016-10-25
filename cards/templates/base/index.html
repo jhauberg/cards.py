@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{{ _title }}</title>
+    <title>{{ __title }}</title>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/cards.css">
+
+    <link rel="icon" type="image/svg+xml" href="{{ resources/_logo_mask.svg copy-only }}">
+    <link rel="mask-icon" color="black" type="image/svg+xml" href="{{ resources/_logo_mask.svg copy-only }}">
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="Cards generated using https://github.com/jhauberg/cards.py {{ _program_version }}">
 
     <script type="text/javascript" src="js/index.js"></script>
+
+    <!-- TODO: any embedded styles go here
+    <style type="text/css">
+
+    </style>
+    -->
   </head>
   <body>
     <div class="ui">
@@ -81,7 +90,7 @@
           </a>
         </div>
         <div class="ui-modal-body">
-          <p>These pages were generated using {{ resources/_logo.svg 12x11 }} <a href="https://github.com/jhauberg/cards.py" title="cards.py" target="_blank">cards.py</a> — a <strong>free</strong> and <strong>open-source</strong> tool for game makers.</p>
+          <p>These pages were generated using <a href="https://github.com/jhauberg/cards.py" title="cards.py" target="_blank">cards.py</a> — a <strong>free</strong> and <strong>open-source</strong> tool for game makers.</p>
           <p>You can support or contribute to the project by sending <a href="mailto:jacob.hauberg@gmail.com" title="Send a mail with your feedback">feedback</a>, <a href="https://github.com/jhauberg/cards.py/issues/new" title="Submit a bug report" target="_blank">bug reports</a> or <a href="https://github.com/jhauberg/cards.py/pull/new/master" title="Submit a pull request">pull requests</a>.</p>
           <p>It would be appreciated!</p>
           <p style="text-align: center;">***</p>
@@ -92,7 +101,14 @@
     {{ _pages }}
 
     <div class="ui-footer">
-      Cards generated on {{ date }}
+      Cards generated on {{ date }}<br /><br />
+      <a href="https://github.com/jhauberg/cards.py" title="cards.py" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="34" height="34" viewBox="0 0 89.94 78.44">
+          <path d="M52.6,67.8,20.7,74.1a8,8,0,0,1-9.4-6.3L1.2,16.9A8,8,0,0,1,7.5,7.5L39.4,1.2a8,8,0,0,1,9.4,6.3L58.9,58.4A8.11,8.11,0,0,1,52.6,67.8Z" transform="translate(-0.04 -0.04)" style="stroke:#fff;stroke-miterlimit:10;stroke-width:3px"/>
+          <path d="M59.4,71.6l-32.5-.9a8,8,0,0,1-7.8-8.2l1.4-51.9a8,8,0,0,1,8.2-7.8l32.5.9A8,8,0,0,1,69,11.9L67.6,63.8A8,8,0,0,1,59.4,71.6Z" transform="translate(-0.04 -0.04)" style="stroke:#fff;stroke-miterlimit:10;stroke-width:3px"/>
+          <path d="M68.2,77.3,36.4,70.4a8,8,0,0,1-6.1-9.5L41.4,10.2a8,8,0,0,1,9.5-6.1L82.7,11a8,8,0,0,1,6.1,9.5L77.7,71.2A8,8,0,0,1,68.2,77.3Z" transform="translate(-0.04 -0.04)" style="stroke:#fff;stroke-miterlimit:10;stroke-width:3px"/>
+        </svg>
+      </a>
     </div>
   </body>
 </html>
