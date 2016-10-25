@@ -201,7 +201,7 @@ def make(data_paths: list,
     datasource_count = len(data_paths)
 
     if datasource_count > 0:
-        print('Generating cards from {0} {1}:\n{2}'.format(
+        print('Generating cards from {0} {1}:\n {2}'.format(
             datasource_count, 'datasources' if datasource_count > 1 else 'datasource',
             data_path_names))
         print()

@@ -44,12 +44,6 @@ class WarningContext:  # pylint: disable=too-few-public-methods
 def warn(message: str, in_context: WarningContext=None, cards_affected: int=None, as_error=False) -> None:
     """ Display a command-line warning, optionally within a context. """
 
-    # trigger increment even if we don't end up printing it
-    if as_error:
-        WarningDisplay.error_count += 1
-    else:
-        WarningDisplay.warning_count += 1
-
     color = (WarningDisplay.apply_error_color if as_error
              else WarningDisplay.apply_warning_color)
 
@@ -58,7 +52,12 @@ def warn(message: str, in_context: WarningContext=None, cards_affected: int=None
     if cards_affected is not None and cards_affected > 1:
         message = '{1} ({0} cards)'.format(cards_affected, message)
 
-    display(message, message_context, in_context, apply_color=color, force_verbosity=as_error)
+    if display(message, message_context, in_context, apply_color=color, force_verbosity=as_error):
+        # only trigger an increment if the message was shown (or should have been, if verbose)
+        if as_error:
+            WarningDisplay.error_count += 1
+        else:
+            WarningDisplay.warning_count += 1
 
 
 def info(message: str, in_context: WarningContext=None) -> None:
@@ -73,19 +72,17 @@ def display(message: str,
             message_context: str=None,
             in_context: WarningContext=None,
             apply_color: str='',
-            force_verbosity: bool=False) -> None:
+            force_verbosity: bool=False) -> bool:
     """ Display a CLI message.
+
+        Return True if the message was displayed (or should have been, if verbose).
+        Return False otherwise.
 
         The message can be optionally colored and will be properly color-terminated on print.
 
-        The message will only display if verbosity is toggled,
-        and the same message will only ever be displayed once.
+        The message will only display if verbosity is toggled, and the same message will only ever
+        be displayed once.
     """
-
-    if not WarningDisplay.is_verbose and not force_verbosity:
-        # only print warnings if verbose flag is enabled, or verbosity is forced
-        # (e.g. for errors or info)
-        return
 
     message = '{0} {1}'.format(in_context, message) if in_context is not None else message
     message = '{0} {1}'.format(message_context, message) if message_context is not None else message
@@ -94,10 +91,18 @@ def display(message: str,
 
     times_displayed = WarningDisplay.messages.get(message, 0)
 
-    if times_displayed < 1:
-        print(message)
-
     WarningDisplay.messages[message] = times_displayed + 1
+
+    if times_displayed < 1:
+        if WarningDisplay.is_verbose or force_verbosity:
+            # only print warnings if verbose flag is enabled, or verbosity is forced
+            # (e.g. for errors or info)
+            print(message)
+
+        # but do return that it would have been printed
+        return True
+
+    return False
 
 
 class WarningDisplay:
