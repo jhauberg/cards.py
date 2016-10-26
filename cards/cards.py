@@ -757,7 +757,7 @@ def make(data_paths: list,
             styles = styles + '\n' + style if len(styles) > 0 else style
 
         if len(styles) == 0:
-            styles = '/* no embedded styles */'
+            styles = '<style type="text/css">\n  /* no embedded styles */\n</style>'
 
         index, render_data = fill_index(
             index, styles, pages, pages_total, cards_total, definitions)

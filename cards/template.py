@@ -52,8 +52,8 @@ def strip_styles(from_template: str, at_template_path: str) -> (str, str):
 
     # find all style matches and extract embedded styles
     for style_match in list(re.finditer(pattern, from_template, re.DOTALL)):
-        # note that we only want the inner content of the <style></style> tags
-        style = style_match.group(1).strip()
+        # note that we strip the entire style- not the inner content
+        style = style_match.group(0).strip()
         # separating each style block for good measure
         styles = styles + '\n' + style if len(styles) > 0 else style
 
@@ -587,7 +587,7 @@ def fill_index(index: str,
     if title is None:
         title = ''
 
-    index_title = title if len(title) > 0 else 'cards.py'
+    index_title = title if len(title) > 0 else 'cards.py [Untitled]'
 
     description = get_definition_content(
         definition=TemplateFields.DESCRIPTION, in_definitions=definitions,
