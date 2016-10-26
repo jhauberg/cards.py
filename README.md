@@ -1,8 +1,8 @@
-<img width="90" src="https://rawgit.com/jhauberg/cards.py/master/cards/logo.svg" alt="cards.py" align="left">
+<img width="90" src="https://cdn.rawgit.com/jhauberg/cards.py/master/logo.svg" alt="cards.py" align="left">
 
 # cards.py
 
-A tool for generating print-ready sheets of cards.
+A tool for generating pages full of cards- ready to print.
 
 Feed it with a [CSV file](example/love-letter/cards.csv) containing all your card data and it will output an HTML file with pages of your cards laid out for easy and efficient cutting. It's like a static site generator, but for cards!
 
