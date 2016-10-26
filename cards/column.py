@@ -290,14 +290,24 @@ def get_front_data(row: dict) -> dict:
     """ Return a dict containing only items fit for the front of a card. """
 
     return {column: value for column, value in row.items()
-            if not is_special_column(column) and not is_back_column(column)}
+            if not is_excluded_column(column)
+            and not is_special_column(column)
+            and not is_back_column(column)}
 
 
 def get_back_data(row: dict) -> dict:
     """ Return a dict containing only items fit for the back of a card. """
 
     return {column[:-len(ColumnDescriptors.BACK_ONLY)]: value for column, value in row.items()
-            if not is_special_column(column) and is_back_column(column)}
+            if not is_excluded_column(column)
+            and not is_special_column(column)
+            and is_back_column(column)}
+
+
+def is_excluded_column(column: str) -> bool:
+    """ Determine whether a column should be excluded. """
+
+    return column.startswith('(') and column.endswith(')') if column is not None else False
 
 
 def is_special_column(column: str) -> bool:
