@@ -6,6 +6,7 @@ This module provides utility functions for common file, path, data and string op
 
 import os
 import sys
+import math
 import subprocess
 import filecmp
 import shutil
@@ -34,6 +35,37 @@ class FileWrapper:  # pylint: disable=too-few-public-methods
         self.raw_line = next(self.file)
 
         return self.raw_line
+
+
+def pretty_size(size_in_bytes: int) -> str:
+    """ Return a pretty representation of a file size. """
+
+    if size_in_bytes <= 0:
+        return 'No content'
+
+    sizes = ('B', 'KB', 'MB')
+
+    size_index = int(math.floor(math.log(size_in_bytes, 1024)))
+    size = round(size_in_bytes / math.pow(1024, size_index), 2)
+
+    if size_index > len(sizes) - 1:
+        return '>1 TB'
+
+    return '{0} {1}'.format(size, sizes[size_index])
+
+
+def directory_size(directory_path: str) -> int:
+    """ Return the total size of a directory and all of its sub-directories (in bytes). """
+
+    size_in_bytes = 0
+
+    for file in os.scandir(directory_path):
+        if file.is_file():
+            size_in_bytes += os.path.getsize(file.path)
+        elif file.is_dir():
+            size_in_bytes += directory_size(file.path)
+
+    return size_in_bytes
 
 
 def most_common(objects: list) -> object:
