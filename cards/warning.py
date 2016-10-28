@@ -139,7 +139,7 @@ class WarningDisplay:
                                          already_exists: bool=False,
                                          reason: str=None) -> None:
         if already_exists:
-            warn('Could not create empty project at: {0}\'{1}\'{2}. Directory already exists.'
+            warn('Could not create empty project at: {0}\'{1}\'{2}; the directory already exists'
                  .format(WarningDisplay.apply_error_color_underlined, at_destination_path,
                          WarningDisplay.apply_error_color),
                  as_error=True)
@@ -182,8 +182,8 @@ class WarningDisplay:
                                         result: str) -> None:
         truncated_result = (result if len(result) < 18 else result[:18] + '…')
 
-        warn('A reference named \'{0}\' could refer to both a column or a definition. '
-             'The column data \'{1}\' was used.'
+        warn('A reference named \'{0}\' could refer to both a column or a definition; '
+             'the column data \'{1}\' was used'
              .format(reference, truncated_result),
              in_context=context)
 
@@ -193,40 +193,40 @@ class WarningDisplay:
                                             result: str) -> None:
         truncated_result = (result if len(result) < 18 else result[:18] + '…')
 
-        warn('A reference named \'{0}\' could refer to both a column or a definition. '
-             'The definition data \'{1}\' was used.'
+        warn('A reference named \'{0}\' could refer to both a column or a definition; '
+             'the definition data \'{1}\' was used'
              .format(reference, truncated_result),
              in_context=context)
 
     @staticmethod
     def unknown_size_specification(context: WarningContext,
                                    size_specification: str) -> None:
-        warn('The size specification \'{0}\' has not been defined. '
-             'Image might not display as expected.'
+        warn('The size specification \'{0}\' has not been defined; '
+             'the image might not display as expected'
              .format(size_specification),
              in_context=context)
 
     @staticmethod
     def invalid_width_specification(context: WarningContext,
                                     width: int) -> None:
-        warn('An image cannot have a width of \'{0}\'. '
-             'Image will be shown at its intrinsic size.'
+        warn('An image cannot have a width of \'{0}\'; '
+             'the image will be displayed at its intrinsic size'
              .format(width),
              in_context=context)
 
     @staticmethod
     def invalid_height_specification(context: WarningContext,
                                      height: int) -> None:
-        warn('An image cannot have a height of \'{0}\'. '
-             'Image will be shown at its intrinsic size.'
+        warn('An image cannot have a height of \'{0}\'; '
+             'the image will be displayed at its intrinsic size'
              .format(height),
              in_context=context)
 
     @staticmethod
     def unresolved_image_reference_error(image_reference: str,
                                          closest_resolution_value: str) -> None:
-        warn('An image reference could not be resolved: \'{0}\'. '
-             'Was it supposed to be: \'{1}\'?'
+        warn('An image reference could not be resolved: \'{0}\'; '
+             'was it supposed to be: \'{1}\'?'
              .format(image_reference, closest_resolution_value),
              as_error=True)
 
@@ -241,13 +241,13 @@ class WarningDisplay:
 
     @staticmethod
     def include_should_specify_file(context: WarningContext, is_inline: bool=False) -> None:
-        warn('{0} fields should specify a file path.'
+        warn('{0} fields should specify a file path'
              .format('Inline' if is_inline else 'Include'),
              in_context=context)
 
     @staticmethod
     def preview_enabled_info() -> None:
-        info('Preview is enabled. Only 1 of each card will be rendered.')
+        info('Preview is enabled; only 1 of each card will be rendered')
 
     @staticmethod
     def image_not_copied(context: WarningContext,
@@ -275,7 +275,7 @@ class WarningDisplay:
 
     @staticmethod
     def using_automatically_found_definitions_info(definitions_path: str) -> None:
-        info('No definitions have been specified. Using definitions automatically found at: '
+        info('No definitions have been specified; using definitions automatically found at: '
              '{0}\'{1}\'{2}'
              .format(WarningDisplay.apply_info_color_underlined, definitions_path,
                      WarningDisplay.apply_info_color))
@@ -283,31 +283,31 @@ class WarningDisplay:
     @staticmethod
     def assume_backs_info(context: WarningContext) -> None:
         info('Card backs will be generated since the ' +
-             '\'' + Columns.TEMPLATE_BACK + '\' column has been set. '
-             'You can disable card backs by specifying the --disable-backs option.',
+             '\'' + Columns.TEMPLATE_BACK + '\' column has been set '
+             '(you can disable card backs by specifying the --disable-backs option)',
              in_context=context)
 
     @staticmethod
     def no_backs_info(context: WarningContext) -> None:
         info('Card backs will not be generated since the '
-             '\'' + Columns.TEMPLATE_BACK + '\' column has not been set.',
+             '\'' + Columns.TEMPLATE_BACK + '\' column has not been set',
              in_context=context)
 
     @staticmethod
     def indeterminable_count(context: WarningContext) -> None:
-        warn('The card provided an indeterminable count and was skipped.',
+        warn('The card provided an indeterminable count and was skipped',
              in_context=context)
 
     @staticmethod
     def missing_default_template(context: WarningContext) -> None:
-        warn('A template was not provided and auto-templating is not enabled.'
-             'Cards will not be generated correctly.',
+        warn('A template was not provided and auto-templating is not enabled;'
+             'cards will not be generated correctly',
              in_context=context)
 
     @staticmethod
     def missing_template_error(context: WarningContext,
                                cards_affected: int) -> None:
-        warn('The card did not provide a template.',
+        warn('The card did not provide a template',
              in_context=context, cards_affected=cards_affected,
              as_error=True)
 
@@ -316,10 +316,10 @@ class WarningDisplay:
                        template_path: str,
                        cards_affected: int,
                        is_back_template: bool=False) -> None:
-        warning = ('The card provided a back template that appears to be empty: {0}\'{1}\'{2}.'
+        warning = ('The card provided a back template that appears to be empty: {0}\'{1}\'{2}'
                    if is_back_template else
-                   'The card provided a template that appears to be empty: {0}\'{1}\'{2}. '
-                   'Using an auto-template instead, if possible.')
+                   'The card provided a template that appears to be empty: {0}\'{1}\'{2}; '
+                   'using an auto-template instead')
 
         warn(warning.format(WarningDisplay.apply_warning_color_underlined, template_path,
                             WarningDisplay.apply_warning_color),
@@ -328,7 +328,7 @@ class WarningDisplay:
     @staticmethod
     def using_auto_template(context: WarningContext,
                             cards_affected: int) -> None:
-        warn('The card did not provide a template. Using an auto-template instead.',
+        warn('The card did not provide a template; using an auto-template instead',
              in_context=context, cards_affected=cards_affected)
 
     @staticmethod
@@ -446,11 +446,11 @@ class WarningDisplay:
     @staticmethod
     def bad_card_size(context: WarningContext,
                       size_identifier: str) -> None:
-        warn('The card size \'{0}\' is invalid. Defaulting to \'standard\'.'
+        warn('The card size \'{0}\' is invalid; defaulting to \'standard\''
              .format(size_identifier),
              in_context=context)
 
     @staticmethod
     def card_was_skipped_intentionally_info(context: WarningContext) -> None:
-        info('The card was skipped.',
+        info('The card was skipped',
              in_context=context)
