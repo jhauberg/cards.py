@@ -33,7 +33,7 @@ from cards.warning import WarningDisplay, WarningContext
 
 from cards.util import (
     FileWrapper, find_file_path, open_path, lower_first_row, terminal_supports_color,
-    copy_file_if_necessary, create_directories_if_necessary
+    copy_file_if_necessary, create_directories_if_necessary, directory_size, pretty_size
 )
 
 
@@ -804,13 +804,17 @@ def make(data_paths: list,
         WarningDisplay.unused_resources(
             unused_resources, in_resource_dir=get_resources_path())
 
-    output_location_message = ('See \033[4m\'{0}\'\033[0m'.format(output_filepath)
+    output_location_message = (' → \033[4m\'{0}\'\033[0m'.format(output_filepath)
                                if terminal_supports_color() else
-                               'See \'{0}\''.format(output_filepath))
+                               ' → \'{0}\''.format(output_filepath))
 
-    warnings_and_errors_message = (' ({0} errors, {1} warnings{2})'
-                                   .format(WarningDisplay.error_count,
-                                           WarningDisplay.warning_count,
+    # get the grammar right
+    errors_or_error = 'error' if WarningDisplay.error_count == 1 else 'errors'
+    warnings_or_warning = 'warning' if WarningDisplay.warning_count == 1 else 'warnings'
+
+    warnings_and_errors_message = (' ({0} {1}, {2} {3}{4})'
+                                   .format(WarningDisplay.error_count, errors_or_error,
+                                           WarningDisplay.warning_count, warnings_or_warning,
                                            ('; set --verbose for more'
                                             if not WarningDisplay.is_verbose else ''))
                                    if WarningDisplay.has_encountered_errors()
@@ -823,8 +827,13 @@ def make(data_paths: list,
     time_difference_in_seconds = time_difference / timedelta(seconds=1)
 
     print()
-    print('Finished in {0} seconds'.format(time_difference_in_seconds))
+    print('[{0}] Finished in {1:.3f} seconds{2}'.format(
+        '✔' if not WarningDisplay.has_encountered_errors() else '✖',
+        time_difference_in_seconds, warnings_and_errors_message))
     print()
+
+    # find the total size of the generated directory
+    generated_directory_size = pretty_size(directory_size(output_path))
 
     if cards_total > 0:
         # get the grammar right
@@ -832,18 +841,18 @@ def make(data_paths: list,
         cards_or_card = 'cards' if cards_total > 1 else 'card'
 
         if cards_total > cards_total_unique:
-            print('Generated {0} ({1} unique) {2} on {3} {4}{5}.\n{6}'
+            print('Generated {0} ({1} unique) {2} on {3} {4} ({5})\n{6}'
                   .format(cards_total, cards_total_unique, cards_or_card,
                           pages_total, pages_or_page,
-                          warnings_and_errors_message, output_location_message))
+                          generated_directory_size, output_location_message))
         else:
-            print('Generated {0} {1} on {2} {3}{4}.\n{5}'
+            print('Generated {0} {1} on {2} {3} ({4})\n{5}'
                   .format(cards_total, cards_or_card,
                           pages_total, pages_or_page,
-                          warnings_and_errors_message, output_location_message))
+                          generated_directory_size, output_location_message))
     else:
-        print('Generated 0 cards{0}.\n{1}'
-              .format(warnings_and_errors_message, output_location_message))
+        print('Generated 0 cards ({0})\n{1}'
+              .format(generated_directory_size, output_location_message))
 
     print()
 
