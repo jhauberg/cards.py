@@ -172,8 +172,36 @@ function updatePageNumbers() {
   }
 }
 
+function determineBacksToggleVisibility() {
+  var toggleBacksElement = document.getElementById('toggle-card-backs');
+
+  if (toggleBacksElement) {
+    var backsPageElements = document.getElementsByClassName('page-backs');
+
+    if (backsPageElements.length === 0) {
+      toggleBacksElement.style.display = 'none';
+    }
+  }
+}
+
+function revealUI() {
+  var toolbar = document.getElementById('toolbar');
+
+  if (toolbar) {
+    toolbar.className = 'ui-toolbar ui-toolbar-revealed';
+  }
+}
+
 window.onload = function() {
   updatePageNumbers();
+  determineBacksToggleVisibility();
   removeOverlappingCutGuides();
   removeEmptyFooterTags();
+
+  setTimeout(function() {
+    // assuming the toolbar is hidden by default, we'll do all the DOM modifications we need to
+    // and then wait a while before revealing it fully- this prevents any potential flickering
+    // while we determine e.g. whether or not to show a backs toggle
+    revealUI();
+  }, 500);
 };

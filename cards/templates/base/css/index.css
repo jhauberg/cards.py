@@ -103,14 +103,12 @@ div.ui-modal-header a {
   text-align: center;
 }
 
-.ui {
+.ui-toolbar {
   /* We want this stuff floating around */
   position: fixed;
 
   /* ..and it should float on top of any content */
   z-index: 2;
-
-  top: 0;
 
   width: 100%;
 
@@ -122,9 +120,20 @@ div.ui-modal-header a {
 
   font-family: monospace;
   font-size: 1em;
+
+  -webkit-transition: top .3s;
+  transition: top .3s;
 }
 
-.ui-inner {
+.ui-toolbar-hidden {
+  top: -50px;
+}
+
+.ui-toolbar-revealed {
+  top: 0;
+}
+
+.ui-toolbar-inner {
   margin: 0 auto;
 
   width: 21cm;
@@ -269,6 +278,8 @@ svg:hover .hoverable {
 
   /* Cut guides should appear on top of any content. Use -1 to appear below */
   z-index: 1;
+
+  opacity: .4;
 }
 
 .cut-guide-line {
@@ -276,8 +287,6 @@ svg:hover .hoverable {
 
   stroke: #000000;
   stroke-width: 1;
-
-  opacity: .6;
 
   shape-rendering: crispEdges;
 }

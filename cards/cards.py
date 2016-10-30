@@ -748,9 +748,6 @@ def make(data_paths: list,
 
     # begin writing pages to the output file (overwriting any existing file)
     with open(output_filepath, 'w') as result:
-        index = fill_template_fields(
-            '_toggle_card_backs_display', 'none' if disable_backs else 'block', index)
-
         styles = ''
 
         for template_path, style in embedded_styles.items():
