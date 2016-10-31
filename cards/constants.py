@@ -82,6 +82,8 @@ class TemplateFields:  # pylint: disable=too-few-public-methods
     DESCRIPTION = '_description'
     # Populated by the copyright notice of the project (as defined in a definitions source)
     COPYRIGHT = '_copyright'
+    # Populated by the name of the author
+    AUTHOR = '_author'
 
 
 class DateField:  # pylint: disable=too-few-public-methods

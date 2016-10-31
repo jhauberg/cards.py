@@ -323,6 +323,7 @@ def make(data_paths: list,
     all_referenced_definitions = {TemplateFields.TITLE,
                                   TemplateFields.DESCRIPTION,
                                   TemplateFields.COPYRIGHT,
+                                  TemplateFields.AUTHOR,
                                   TemplateFields.VERSION}
 
     for data_path in data_paths:

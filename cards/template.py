@@ -601,6 +601,12 @@ def fill_index(index: str,
 
     copyright_notice = copyright_notice if copyright_notice is not None else ''
 
+    author = get_definition_content(
+        definition=TemplateFields.AUTHOR, in_definitions=definitions,
+        content_resolver=resolve_column_content, field_resolver=resolve_column_field)
+
+    author = author if author is not None else ''
+
     version_identifier = get_definition_content(
         definition=TemplateFields.VERSION, in_definitions=definitions,
         content_resolver=resolve_column_content, field_resolver=resolve_column_field)
@@ -611,6 +617,7 @@ def fill_index(index: str,
     index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
     index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
     index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
+    index = fill_template_fields(TemplateFields.AUTHOR, author, in_template=index)
     index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
 
     index = fill_date_fields(in_template=index)
