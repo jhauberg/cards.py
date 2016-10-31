@@ -46,6 +46,7 @@ html, body {
   border-bottom: 1px solid #e5e5e5;
 }
 
+div.ui-toolbar a,
 div.ui-modal-body a,
 div.ui-modal-header a {
   color: black;
