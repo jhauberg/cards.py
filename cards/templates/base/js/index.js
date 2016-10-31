@@ -34,7 +34,7 @@ function removeEmptyFooterTags() {
     for (var i = footerContentElements.length - 1; i >= 0; i--) {
       var footerContentElement = footerContentElements[i];
 
-      if (footerContentElement.innerHTML === '') {
+      if (footerContentElement.innerHTML.trim() === '') {
         footerContentElement.parentNode.removeChild(footerContentElement);
       }
     }
