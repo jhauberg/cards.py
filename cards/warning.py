@@ -91,13 +91,13 @@ def display(message: str,
 
     times_displayed = WarningDisplay.messages.get(message, 0)
 
-    WarningDisplay.messages[message] = times_displayed + 1
-
     if times_displayed < 1:
         if WarningDisplay.is_verbose or force_verbosity:
             # only print warnings if verbose flag is enabled, or verbosity is forced
             # (e.g. for errors or info)
             print(message)
+
+            WarningDisplay.messages[message] = times_displayed + 1
 
         # but do return that it would have been printed
         return True
@@ -109,6 +109,10 @@ class WarningDisplay:
     """ Provides functions for conveniently displaying and tracking warning/error messages. """
 
     messages = {}
+
+    @staticmethod
+    def has_displayed_messages() -> bool:
+        return len(WarningDisplay.messages) > 0
 
     @staticmethod
     def has_encountered_errors() -> bool:

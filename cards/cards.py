@@ -823,7 +823,7 @@ def make(data_paths: list,
     time_difference = now - time_started_make
     time_difference_in_seconds = time_difference / timedelta(seconds=1)
 
-    if WarningDisplay.has_encountered_errors() or WarningDisplay.has_encountered_warnings():
+    if WarningDisplay.has_displayed_messages():
         # break line to separate next output
         print()
 
