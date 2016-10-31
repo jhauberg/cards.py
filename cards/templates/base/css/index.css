@@ -232,7 +232,9 @@ svg:hover .hoverable {
 }
 
 .page-footer {
-  font-family: Helvetica, Arial, sans-serif;
+  color: rgb(100, 100, 100);
+
+  font-family: sans-serif;
 
   margin-top: 0.5cm;
   height: 0.4cm;
@@ -245,29 +247,29 @@ svg:hover .hoverable {
   overflow: hidden;
 }
 
-.page-footer-tag {
-  color: white;
-  background-color: rgb(78, 78, 78);
-
-  /* Tag contents should be slightly smaller */
-  font-size: .7em;
-
-  border-radius: 4px;
-
-  padding-top: .04cm;
-  padding-bottom: .04cm;
-  padding-left: .1cm;
-  padding-right: .1cm;
-
-  margin-left: .1cm;
-
-  float: right;
+.page-footer-content a {
+  color: rgb(100, 100, 100);
 }
 
 .page-footer-content {
   margin-right: .4cm;
 
   float: left;
+}
+
+.page-footer-tag {
+  background-color: rgb(231, 231, 231);
+
+  /* Tag contents should be slightly smaller */
+  font-size: .7em;
+
+  border-radius: 4px;
+
+  padding: .04cm .1cm .04cm .1cm;
+
+  margin-left: .1cm;
+
+  float: right;
 }
 
 .cut-guide {
@@ -343,7 +345,7 @@ svg:hover .hoverable {
     background-color: #fff;
   }
 
-  .ui, .ui-footer, .modal {
+  .ui-toolbar, .ui-footer, .ui-modal {
     /* We don't want to just hide these elements; we want to pretend they aren't even there, so that
        they don't take up any space. Note that hiding cut guides or footer uses `visibility: hidden`
        instead, as those *should* still take up space, but just be invisible. */
