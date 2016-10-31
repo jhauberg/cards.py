@@ -51,7 +51,10 @@ def pretty_size(size_in_bytes: int) -> str:
     if size_index > len(sizes) - 1:
         return '>1 TB'
 
-    return '{0} {1}'.format(size, sizes[size_index])
+    size_format = sizes[size_index]
+
+    return '{0:.{precision}f} {1}'.format(
+        size, size_format, precision=(2 if size_index > 1 else 0))
 
 
 def directory_size(directory_path: str) -> int:
