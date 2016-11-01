@@ -1,0 +1,9 @@
+@count,@template,art,rank,name,text
+5,"templates/card.html","{{ art/guard.png copy-only }}",1,"Guard","Name a non-**{{ name }}** card and choose another player.  If that player has that card, he or she is out of the round."
+2,^,"",2,"Priest","Look at another player's hand."
+2,^,"",3,"Baron","You and another player secretly compare hands.  The player with the lower value is out of the round."
+2,^,"",4,"Handmaid","Until your next turn, ignore all effects from other player's cards."
+2,^,"",5,"Prince","Choose any player (_including yourself_) to discard his or her hand and draw a new card."
+1,^,"",6,"King","Trade hands with another player of your choice."
+1,^,"",7,"Countess","If you have this card and the **{{ name #7 }}** or **{{ name #6 }}** in your hand, you must discard this card."
+1,^,"",8,"Princess","If you discard this card, you are out of the round."

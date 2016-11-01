@@ -1,0 +1,103 @@
+<style type="text/css">
+  .templated-card {
+    height: 100%;
+
+    font-family: Garamond;
+  }
+
+  .templated-card-art {
+    position: absolute;
+
+    width: 100%;
+    height: 94%;
+
+    bottom: 0;
+
+    background-repeat: no-repeat;
+    background-position: top;
+    background-size: contain;
+  }
+
+  .templated-card-frame {
+    position: absolute;
+
+    width: 100%;
+    height: 100%;
+
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+  }
+
+  .templated-card-rank {
+    position: absolute;
+
+    margin-left: .6cm;
+    margin-top: .35cm;
+
+    font-size: 2em;
+    font-weight: bold;
+  }
+
+  .templated-card-name-container {
+    position: absolute;
+
+    width: 100%;
+    height: 10%;
+
+    top: .35cm;
+
+    padding: 0 1cm 0 1cm;
+  }
+
+  .templated-card-name {
+    text-align: center;
+
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+
+  .templated-card-text-container {
+    position: absolute;
+
+    width: 100%;
+    height: 25%;
+
+    bottom: .6cm;
+
+    padding: 0 .75cm 0 .75cm;
+  }
+
+  .templated-card-text {
+    text-align: center;
+  }
+
+  .templated-card-vertically-aligned {
+    height: 100%;
+
+    /* use flex display to achieve vertically aligned text */
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+  }
+</style>
+
+<div class="templated-card">
+  <div class="templated-card-art" style="background-image: url({{ art }});"></div>
+  <div class="templated-card-frame" style="background-image: url({{ templates/resources/frame.png copy-only }});">
+    <!-- TODO: issue #107, path should be relative to the template; i.e. just 'resources/frame.png' -->
+  </div>
+  <div class="templated-card-rank">{{ rank }}</div>
+  <div class="templated-card-name-container">
+    <div class="templated-card-vertically-aligned">
+      <span class="templated-card-name">{{ name }}</span>
+    </div>
+  </div>
+  <div class="templated-card-text-container">
+    <div class="templated-card-vertically-aligned">
+      <span class="templated-card-text">{{ text }}</span>
+    </div>
+  </div>
+</div>
