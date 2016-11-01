@@ -458,8 +458,10 @@ def make(data_paths: list,
             if not disable_backs:
                 # empty backs may be necessary to fill in empty spots on a page to ensure
                 # that the layout remains correct
+                # note that we're using a completely empty template, except for the size class field
                 empty_back = get_sized_card(
-                    card, size_class=card_size.style, content='')
+                    '<div class="card {{ ' + TemplateFields.CARD_SIZE + '}}"></div>',
+                    size_class=card_size.style, content='')
 
             ambiguous_references = determine_ambiguous_references(
                 set(stripped_column_names),
