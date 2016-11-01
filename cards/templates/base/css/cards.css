@@ -10,8 +10,14 @@
   height: 100%;
 }
 
-.card-size-075x075 {
+.card-size-05x05 {
   /* Small token */
+  width:  .5in;
+  height: .5in;
+}
+
+.card-size-075x075 {
+  /* Large token */
   width:  .75in;
   height: .75in;
 }

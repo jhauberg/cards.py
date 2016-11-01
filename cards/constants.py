@@ -6,6 +6,8 @@ This module provides access to reserved constants; column names, card sizes and 
 
 import datetime
 
+VERSION_PATTERN = r'^__version__ = [\'"]([^\'"]*)[\'"]'
+
 FIXED_TIMESTAMP = datetime.date.today()
 
 
@@ -118,6 +120,8 @@ class CardSizes:
 
         if identifier is not None:
             if identifier == 'token':
+                return CardSize(identifier, style='card-size-05x05', size_in_inches=(.5, .5))
+            if identifier == 'ltoken':
                 return CardSize(identifier, style='card-size-075x075', size_in_inches=(.75, .75))
             elif identifier == 'standard':
                 return CardSize(identifier, style='card-size-25x35', size_in_inches=(2.5, 3.5))

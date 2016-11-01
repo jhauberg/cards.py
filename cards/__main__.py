@@ -40,6 +40,7 @@ Options:
 """
 
 import os
+import re
 
 from docopt import docopt
 
@@ -47,6 +48,43 @@ from cards.cards import make, make_empty_project
 from cards.warning import WarningDisplay
 
 from cards.version import __version__
+from cards.constants import VERSION_PATTERN
+
+from pkg_resources import parse_version
+
+
+def check_for_update():
+    """ Determine whether a newer version is available remotely. """
+
+    from urllib.request import urlopen
+    from urllib.error import URLError, HTTPError
+
+    url = 'https://raw.githubusercontent.com/jhauberg/cards.py/master/cards/version.py'
+
+    try:
+        # specify a very short timeout, as this is a non-essential feature
+        # and should not stall program exit indefinitely
+        with urlopen(url, timeout=5) as response:
+            # we're certain this file is UTF8, so we'll decode it right away
+            response_body = response.read().decode('utf8')
+            # search for the version string
+            matches = re.search(VERSION_PATTERN, response_body, re.M)
+
+            if matches:
+                # if found, grab it and compare to the current installation
+                remote_version_identifier = matches.group(1)
+
+                if parse_version(__version__) < parse_version(remote_version_identifier):
+                    WarningDisplay.newer_version_available(
+                        new_version_identifier=remote_version_identifier)
+                    # end with empty break
+                    print()
+    except HTTPError:
+        # fail silently
+        pass
+    except URLError:
+        # fail silently
+        pass
 
 
 def main():
@@ -83,6 +121,8 @@ def main():
              default_card_size_identifier,
              is_preview,
              discover)
+
+    check_for_update()
 
 
 if __name__ == '__main__':

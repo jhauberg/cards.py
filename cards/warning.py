@@ -139,6 +139,13 @@ class WarningDisplay:
     apply_normal_color_underlined = '\033[4m' if terminal_supports_color() else ''
 
     @staticmethod
+    def newer_version_available(new_version_identifier: str) -> None:
+        display('A newer version is available ({0})'
+                .format(new_version_identifier),
+                apply_color=WarningDisplay.apply_info_color,
+                force_verbosity=True)
+
+    @staticmethod
     def could_not_make_new_project_error(at_destination_path: str,
                                          already_exists: bool=False,
                                          reason: str=None) -> None:

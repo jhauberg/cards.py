@@ -112,9 +112,11 @@ def make_empty_project(in_path: str,
     try:
         shutil.copytree(empty_project_path, destination_path)
 
-        print('Made new project at: {0}\'{1}\'{2}'.format(
+        print('Made new project\n → {0}\'{1}\'{2}'.format(
             WarningDisplay.apply_normal_color_underlined, destination_path,
             WarningDisplay.apply_normal_color))
+
+        print()
 
         open_path(destination_path)
 
