@@ -180,6 +180,36 @@ def determine_count(row: dict) -> (int, bool):
     return count, was_indeterminable
 
 
+def get_data_path_names(data_paths: list) -> (list, int):
+    """ Return a list of datasource names and total number of duplicates.
+
+        Each name is suffixed appropriately if it's a duplicate.
+    """
+
+    total_duplicates = 0
+    data_path_names = []
+
+    abs_data_paths = [os.path.abspath(data_path) for data_path in data_paths]
+
+    for i, data_path in enumerate(abs_data_paths):
+        data_path_names.append(os.path.basename(data_path))
+
+        for j, other_data_path in reversed(list(enumerate(abs_data_paths))):
+            if i == j:
+                continue
+
+            if data_path == other_data_path:
+                data_path_name = os.path.basename(other_data_path)
+                data_path_name = '{0} (duplicate)'.format(data_path_name)
+                data_path_names.append(data_path_name)
+
+                total_duplicates += 1
+
+                del abs_data_paths[j]
+
+    return data_path_names, total_duplicates
+
+
 def make(data_paths: list,
          definitions_path: str=None,
          output_path: str=None,
@@ -198,13 +228,17 @@ def make(data_paths: list,
         # todo: then clear duplicates by doing data_paths = list(set(data_paths))
         pass
 
-    data_path_names = [os.path.basename(data_path) for data_path in data_paths]
-
     datasource_count = len(data_paths)
 
     if datasource_count > 0:
-        print('Generating cards from {0} {1}:\n {2}'.format(
-            datasource_count, 'datasources' if datasource_count > 1 else 'datasource',
+        data_path_names, duplicates_count = get_data_path_names(data_paths)
+
+        duplicates = (' ({0} {1})'.format(
+            duplicates_count, 'duplicate' if duplicates_count == 1 else 'duplicates')
+                      if duplicates_count > 0 else '')
+
+        print('Generating cards from {0} {1}{2}:\n {3}'.format(
+            datasource_count, 'datasources' if datasource_count > 1 else 'datasource', duplicates,
             data_path_names))
         print()
     else:
