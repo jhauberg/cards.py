@@ -6,6 +6,9 @@
   /* Content should be clipped if too large */
   overflow: hidden;
 
+  /* Position must be relative for clipping to work on absolute positioned child elements */
+  position: relative;
+
   width: 100%;
   height: 100%;
 }
