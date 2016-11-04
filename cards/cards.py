@@ -81,6 +81,23 @@ def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bo
         TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
 
 
+def get_section(name: str, section_index: int, section_template: str) -> str:
+    """ Populate a section with datasource name and index. """
+
+    section = fill_template_fields('_datasource_name', name, section_template)
+    section = fill_template_fields('_datasource_id',
+                                   'datasource-{0}'.format(section_index), section)
+
+    return section + '\n'
+
+
+def get_template(template_path: str) -> (str, list):
+    with open(template_path) as template_file:
+        template = template_file.read()
+
+        return fill_image_fields(template)
+
+
 def get_base_path() -> str:
     """ Return the path of the actual location of the current script; i.e. the path from
         which we can reach included project resources like base templates, icons and so on.
@@ -272,40 +289,28 @@ def make(data_paths: list,
     base_path = get_base_path()
 
     card_template_path = os.path.join(base_path, 'templates/base/card.html')
+    card, filled_image_paths = get_template(card_template_path)
 
-    with open(card_template_path) as card_template:
-        # load the container template for a card
-        card = card_template.read()
-
-        # fill any image fields defined by the default card template
-        card, filled_image_paths = fill_image_fields(card)
-
-        if len(filled_image_paths) > 0:
-            context_image_paths[card_template_path] = list(set(filled_image_paths))
+    if len(filled_image_paths) > 0:
+        context_image_paths[card_template_path] = list(set(filled_image_paths))
 
     page_template_path = os.path.join(base_path, 'templates/base/page.html')
+    page, filled_image_paths = get_template(page_template_path)
 
-    with open(page_template_path) as page_template:
-        # load the container template for a page
-        page = page_template.read()
+    if len(filled_image_paths) > 0:
+        context_image_paths[page_template_path] = list(set(filled_image_paths))
 
-        # fill any image fields defined by the default page template
-        page, filled_image_paths = fill_image_fields(page)
+    section_template_path = os.path.join(base_path, 'templates/base/section.html')
+    section, filled_image_paths = get_template(section_template_path)
 
-        if len(filled_image_paths) > 0:
-            context_image_paths[page_template_path] = list(set(filled_image_paths))
+    if len(filled_image_paths) > 0:
+        context_image_paths[section_template_path] = list(set(filled_image_paths))
 
     index_template_path = os.path.join(base_path, 'templates/base/index.html')
+    index, filled_image_paths = get_template(index_template_path)
 
-    with open(index_template_path) as index_template:
-        # load the container template for the final html file
-        index = index_template.read()
-
-        # fill any image fields defined by the default index template
-        index, filled_image_paths = fill_image_fields(index)
-
-        if len(filled_image_paths) > 0:
-            context_image_paths[index_template_path] = list(set(filled_image_paths))
+    if len(filled_image_paths) > 0:
+        context_image_paths[index_template_path] = list(set(filled_image_paths))
 
     not_found_template_path = os.path.join(base_path, 'templates/base/error/could_not_open.html')
 
@@ -362,7 +367,7 @@ def make(data_paths: list,
                                   TemplateFields.AUTHOR,
                                   TemplateFields.VERSION}
 
-    for data_path in data_paths:
+    for data_path_index, data_path in enumerate(data_paths):
         # define the context as the base filename of the current data- useful when troubleshooting
         context = os.path.basename(data_path)
 
@@ -447,6 +452,9 @@ def make(data_paths: list,
                 # reset to prepare for the next page
                 cards_on_page = 0
                 cards = ''
+
+            if force_page_breaks:
+                pages += get_section(os.path.splitext(context)[0], data_path_index + 1, section)
 
             card_width, card_height = card_size.size_in_inches
             page_width, page_height = page_size.size_in_inches
