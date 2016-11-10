@@ -33,7 +33,7 @@ Options:
                              Other options include: \'domino\', \'jumbo\' or \'token\'
   --force-page-breaks        Force a page break after each datasource
   --disable-backs            Do not render card backs
-  --discover                 Automatically set CSV-files in the current directory as datasources
+  --discover                 Automatically find and use datasources in the current directory
   --preview                  Only render 1 of each card
   --verbose                  Show more information
   --version                  Show program version
