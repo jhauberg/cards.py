@@ -10,39 +10,44 @@ class WarningContext:  # pylint: disable=too-few-public-methods
 
     def __init__(self,
                  name: str=None,
-                 row_index: int=-1,
-                 card_index: int=-1,
-                 card_copy_index: int=-1):
+                 row_index: int=None,
+                 card_index: int=None,
+                 card_copy_index: int=None,
+                 column: str=None):
         self.name = name
         self.row_index = row_index
         self.card_index = card_index
         self.card_copy_index = card_copy_index
+        self.column = column
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
         if self.name is not None and len(self.name) > 0:
-            if self.row_index > -1:
-                if self.card_index > -1:
-                    if self.card_copy_index > -1:
-                        return '[{0}:#{1}.{2}~{3}]'.format(
-                            self.name, self.row_index, self.card_copy_index, self.card_index)
+            if self.row_index is not None and self.row_index > -1:
+                at_column = ':{0}'.format(self.column) if self.column is not None else ''
+
+                if self.card_index is not None and self.card_index > -1:
+                    if self.card_copy_index is not None and self.card_copy_index > -1:
+                        return '[{0}:#{1}.{2}~{3}{4}]'.format(
+                            self.name, self.row_index, self.card_copy_index, self.card_index,
+                            at_column)
                     else:
-                        return '[{0}:#{1}~{2}]'.format(
-                            self.name, self.row_index, self.card_index)
+                        return '[{0}:#{1}~{2}{3}]'.format(
+                            self.name, self.row_index, self.card_index, at_column)
                 else:
-                    return '[{0}:#{1}]'.format(
-                        self.name, self.row_index)
+                    return '[{0}:#{1}{2}]'.format(
+                        self.name, self.row_index, at_column)
             else:
                 return '[{0}]'.format(
                     self.name)
 
-        return None
+        return ''
 
 
 def warn(message: str, in_context: WarningContext=None, cards_affected: int=None, as_error=False) -> None:
-    """ Display a command-line warning, optionally within a context. """
+    """ Display a command-line warning message, optionally within a context. """
 
     color = (WarningDisplay.apply_error_color if as_error
              else WarningDisplay.apply_warning_color)
@@ -61,6 +66,8 @@ def warn(message: str, in_context: WarningContext=None, cards_affected: int=None
 
 
 def info(message: str, in_context: WarningContext=None) -> None:
+    """ Display a command-line info message, optionally within a context. """
+
     message_context = '[-]'
 
     color = WarningDisplay.apply_info_color
@@ -73,7 +80,7 @@ def display(message: str,
             in_context: WarningContext=None,
             apply_color: str='',
             force_verbosity: bool=False) -> bool:
-    """ Display a CLI message.
+    """ Display a command-line message.
 
         Return True if the message was displayed (or should have been, if verbose).
         Return False otherwise.
@@ -207,6 +214,26 @@ class WarningDisplay:
         warn('A reference named \'{0}\' could refer to both a column or a definition; '
              'the definition data \'{1}\' was used'
              .format(reference, truncated_result),
+             in_context=context)
+
+    @staticmethod
+    def unresolved_infinite_definition_reference(context: WarningContext, definition: str) -> None:
+        warn('The field \'{0}\' was not resolved; '
+             'it is referencing its own definition and would cause infinite recursion'
+             .format(definition),
+             in_context=context)
+
+    @staticmethod
+    def unresolved_infinite_column_reference(context: WarningContext, column: str) -> None:
+        warn('The field \'{0}\' was not resolved; '
+             'it is referencing its own column and would cause infinite recursion'
+             .format(column),
+             in_context=context)
+
+    @staticmethod
+    def unresolved_reference(context: WarningContext, reference: str) -> None:
+        warn('The field \'{0}\' could not be resolved'
+             .format(reference),
              in_context=context)
 
     @staticmethod
@@ -406,11 +433,11 @@ class WarningDisplay:
     def invalid_columns_error(context: WarningContext,
                               invalid_columns: list) -> None:
         if len(invalid_columns) > 1:
-            warning = 'Skipping datasource. Some column names are invalid: {0}'
+            warning = 'Skipping datasource; some column names are invalid: {0}'
         else:
             invalid_columns = invalid_columns[0]
 
-            warning = 'Skipping datasource. A column name is invalid: {0}'
+            warning = 'Skipping datasource; a column name is invalid: {0}'
 
         warn(warning.format(invalid_columns),
              in_context=context,
