@@ -11,11 +11,10 @@ import datetime
 
 from typing import List
 
-from cards.templatefield import TemplateField, get_template_fields, get_template_field_names
+from cards.templatefield import TemplateField, first_field, fields
 
 from cards.column import (
-    get_column_content, get_definition_content,
-    get_row_reference, get_front_data, get_back_data
+    Row, get_column_contentd, get_definition_content, get_definition_contentd
 )
 
 from cards.resource import get_resource_path, is_resource, is_image, supported_image_types
@@ -26,6 +25,14 @@ from cards.warning import WarningDisplay, WarningContext
 from cards.constants import TemplateFields, TemplateFieldDescriptors, DateField
 
 from cards.version import __version__
+
+
+class Template:  # pylint: disable=too-few-public-methods
+    """ Represents a template. """
+
+    def __init__(self, content: str, path: str=None):
+        self.content = content
+        self.path = path
 
 
 class TemplateRenderData:  # pylint: disable=too-few-public-methods
@@ -42,38 +49,38 @@ class TemplateRenderData:  # pylint: disable=too-few-public-methods
         self.referenced_definitions = referenced_definitions
 
 
-def strip_styles(from_template: str, at_template_path: str) -> (str, str):
+def strip_styles(template: Template) -> str:
     """ Strip and return any embedded <style></style> content from a template. """
 
     pattern = r'<style.*?>(.+?)</style>'
-    styles = ''
+    stripped_styles = ''
 
     search = re.compile(pattern, re.DOTALL)
 
     # find all style matches and extract embedded styles
-    for style_match in list(re.finditer(pattern, from_template, re.DOTALL)):
+    for style_match in re.finditer(pattern, template.content, re.DOTALL):
         # note that we strip the entire style- not the inner content
         style = style_match.group(0).strip()
         # separating each style block for good measure
-        styles = styles + '\n' + style if len(styles) > 0 else style
+        stripped_styles = stripped_styles + '\n' + style if len(stripped_styles) > 0 else style
 
     # finally remove all style matches
     # note that this removes the <style></style> tags too
-    template = re.sub(search, '', from_template)
+    template.content = re.sub(search, '', template.content).strip()
 
     # make sure we keep it clean- no unnecessary newlines or excess whitespace
-    styles = styles.strip()
-    template = template.strip()
+    stripped_styles = stripped_styles.strip()
 
-    template_field_names = get_template_field_names(styles)
+    template_field_names = list((field.name for field in fields(stripped_styles)))
 
     if len(template_field_names) > 0:
-        context = at_template_path # os.path.basename(at_template_path)
+        context = template.path
+
         # if there's any fields in the styles, display a warning about it
         WarningDisplay.fields_in_styles(
             WarningContext(context), template_field_names)
 
-    return styles, template
+    return stripped_styles
 
 
 def template_from_path(template_path: str,
@@ -83,7 +90,7 @@ def template_from_path(template_path: str,
         If specified, path is made relative to another path.
     """
 
-    template = None
+    template_content = None
     template_not_found = False
 
     if template_path is not None and len(template_path) > 0:
@@ -96,13 +103,13 @@ def template_from_path(template_path: str,
 
         try:
             with open(template_path) as template_file:
-                template = template_file.read().strip()
+                template_content = template_file.read().strip()
         except IOError:
             template_not_found = True
     else:
         template_not_found = True
 
-    return template, template_not_found, template_path
+    return template_content, template_not_found, template_path
 
 
 def image_size(image_path: str, from_context: str) -> (int, int):
@@ -212,20 +219,21 @@ def fill_image_fields(in_template: str) -> (str, List[str]):
 
         An image field provides a way of transforming an image path into a HTML-compliant image tag.
 
-        An image field should look like this: '{{ my-image.png:16x16 }}'.
+        An image field should look like this: '{{ my-image.png 16x16 }}'.
     """
 
     image_paths = []
 
     supported_images_pattern = '\\' + '|\\'.join(supported_image_types())
 
-    image_fields = get_template_fields(
-        # note that we only need the first match since this function will recurse, so we set limit=1
-        in_template, limit=1, with_name_like=supported_images_pattern)
+    template_content = in_template
 
-    content = in_template
+    def next_image_field():
+        return first_field(template_content, with_name_like=supported_images_pattern)
 
-    for field in image_fields:
+    field = next_image_field()
+
+    while field is not None:
         # at this point we don't know that it's actually an image field - we only know that it's
         # a template field, so we just attempt to create an <img> tag from the field.
         # if it turns out to not be an image, we just ignore the field entirely and proceed
@@ -238,42 +246,40 @@ def fill_image_fields(in_template: str) -> (str, List[str]):
 
         if image_tag is not None:
             # the field was transformed to either an <img> tag, or just the path (for copying only)
-            content = fill_template_field(field, image_tag, content)
+            template_content = fill_single(field, image_tag, template_content)
 
-            # so since the content we're finding matches on has just changed, we can no longer
-            # rely on the match indices, so we have to recursively "start over" again
-            content, filled_image_paths = fill_image_fields(content)
+        field = next_image_field()
 
-            if len(filled_image_paths) > 0:
-                image_paths.extend(filled_image_paths)
-
-    return content, image_paths
+    return template_content, image_paths
 
 
-def fill_template_field(field: TemplateField,
-                        field_value: str,
-                        in_template: str,
-                        indenting: bool=False) -> str:
+def fill_single(field: TemplateField,
+                field_value: str,
+                in_template: str,
+                indenting: bool=False) -> str:
     """ Populate a single template field in the template. """
 
-    if ((field.start_index < 0 or field.start_index > len(in_template)) or
-            (field.end_index < 0 or field.end_index > len(in_template))):
+    if ((field.indices.start < 0 or field.indices.start > len(in_template)) or
+            (field.indices.stop < 0 or field.indices.stop > len(in_template))):
         raise ValueError('Template field \'{0}\' out of range ({1}-{2}).'
-                         .format(field.inner_content, field.start_index, field.end_index))
+                         .format(field.inner_content, field.indices.start, field.indices.stop))
 
     if indenting:
         field_value = get_padded_string(
-            field_value, in_template, field.start_index)
+            field_value, in_template, field.indices.start)
 
-    return in_template[:field.start_index] + field_value + in_template[field.end_index:]
+    return in_template[:field.indices.start] + field_value + in_template[field.indices.stop:]
 
 
-def fill_template_fields(field_inner_content: str,
-                         field_value: str,
-                         in_template: str,
-                         counting_occurences: bool=False,
-                         indenting: bool=False) -> (str, int):
-    """ Populate all template fields with a given name in the template. """
+def filln(field_inner_content: str,
+          field_value: str,
+          in_template: str,
+          indenting: bool=False) -> (str, int):
+    """ Populate all matching template fields in the template.
+
+        Matches are determined by comparing the inner content of each field with
+        the provided content.
+    """
 
     # make sure that we have a sane value
     field_value = field_value if field_value is not None else ''
@@ -300,7 +306,17 @@ def fill_template_fields(field_inner_content: str,
     # finally replace any found occurences of the template field with its value
     content, occurences = search.subn(field_value, in_template)
 
-    return (content, occurences) if counting_occurences else content
+    return content, occurences
+
+
+def fill(field_inner_content: str,
+         field_value: str,
+         in_template: str,
+         indenting: bool=False) -> str:
+    """ Populate all template fields with a given name in the template. """
+
+    return filln(
+        field_inner_content, field_value, in_template, indenting)[0]
 
 
 def fill_date_fields(in_template: str, date: datetime=DateField.TODAY) -> str:
@@ -318,10 +334,9 @@ def fill_date_fields(in_template: str, date: datetime=DateField.TODAY) -> str:
 
     template_content = in_template
 
-    date_fields = get_template_fields(
-        template_content, limit=1, with_name_like='date')
+    field = first_field(template_content, with_name_like='date')
 
-    for field in date_fields:
+    if field is not None:
         # default date format: 07 Oct, 2016
         date_format = '%B %-d, %Y'
 
@@ -336,7 +351,7 @@ def fill_date_fields(in_template: str, date: datetime=DateField.TODAY) -> str:
         formatted_date = date.strftime(date_format)
 
         # populate the include field with the content; or blank if unresolved
-        template_content = fill_template_field(
+        template_content = fill_single(
             field, formatted_date,
             in_template=template_content)
 
@@ -363,70 +378,62 @@ def fill_include_fields(from_base_path: str,
 
     template_content = in_template
 
-    include_fields = get_template_fields(
-        template_content, limit=1, with_name_like='include|inline')
+    field = first_field(template_content, with_name_like='include|inline')
 
-    # find all template fields and go through each, determining whether it's an include field or not
-    for field in include_fields:
-        if field.name is not None:
-            is_include_command = field.name == TemplateFields.INCLUDE
-            is_inline_command = field.name == TemplateFields.INLINE
+    if field is not None:
+        is_include_command = field.name == TemplateFields.INCLUDE
+        is_inline_command = field.name == TemplateFields.INLINE
 
-            if not is_include_command and not is_inline_command:
-                # we're in a situation where we've, somehow, found neither of the type of fields
-                # we're looking for; so just move on
-                continue
+        # default to blank
+        include_content = ''
+        include_path = None
 
-            # default to blank
-            include_content = ''
-            include_path = None
+        if field.context is not None:
+            # the field should contain a path
+            include_path = dequote(field.context).strip()
 
-            if field.context is not None:
-                # the field should contain a path
-                include_path = dequote(field.context).strip()
+        if include_path is not None and len(include_path) > 0:
+            if not os.path.isabs(include_path):
+                # it's not an absolute path, so we should make it a relative path
+                if from_base_path is not None:
+                    # make the path relative to the path of the containing template
+                    include_path = os.path.join(
+                        os.path.dirname(from_base_path), include_path)
 
-            if include_path is not None and len(include_path) > 0:
-                if not os.path.isabs(include_path):
-                    # it's not an absolute path, so we should make it a relative path
-                    if from_base_path is not None:
-                        # make the path relative to the path of the containing template
-                        include_path = os.path.join(
-                            os.path.dirname(from_base_path), include_path)
-
-                if os.path.isfile(include_path):
-                    # we've ended up with a path that can be opened
-                    with open(include_path) as include_file:
-                        if is_include_command:
-                            # open it and read in the entire contents as is
-                            include_content = include_file.read().strip()
-                        elif is_inline_command:
-                            # read each line
-                            for line in include_file.readlines():
-                                # stripping excess whitespace and newline in the process
-                                include_content += line.strip()
-                else:
-                    WarningDisplay.included_file_not_found_error(
-                        WarningContext(os.path.basename(from_base_path)), include_path)
-
-                    include_content = '<strong>&lt;included file not found&gt;</strong>'
+            if os.path.isfile(include_path):
+                # we've ended up with a path that can be opened
+                with open(include_path) as include_file:
+                    if is_include_command:
+                        # open it and read in the entire contents as is
+                        include_content = include_file.read().strip()
+                    elif is_inline_command:
+                        # read each line
+                        for line in include_file.readlines():
+                            # stripping excess whitespace and newline in the process
+                            include_content += line.strip()
             else:
-                WarningDisplay.include_should_specify_file(
-                    WarningContext('{0}:{1}'.format(
-                        os.path.basename(from_base_path),
-                        get_line_number(field.start_index, in_template))),
-                    is_inline=is_inline_command)
+                WarningDisplay.included_file_not_found_error(
+                    WarningContext(os.path.basename(from_base_path)), include_path)
 
-            # populate the include field with the content; or blank if unresolved
-            template_content = fill_template_field(
-                field, include_content, template_content,
-                # inlines should not be indented
-                indenting=is_include_command)
+                include_content = '<strong>&lt;included file not found&gt;</strong>'
+        else:
+            WarningDisplay.include_should_specify_file(
+                WarningContext('{0}:{1}'.format(
+                    os.path.basename(from_base_path),
+                    get_line_number(field.indices.start, in_template))),
+                is_inline=is_inline_command)
 
-            # since we're using fill_template_field, we have to recursively start over,
-            # otherwise the next field objects would have invalid indices and would not be
-            # resolved properly
-            template_content = fill_include_fields(
-                from_base_path, in_template=template_content)
+        # populate the include field with the content; or blank if unresolved
+        template_content = fill_single(
+            field, include_content, template_content,
+            # inlines should not be indented
+            indenting=is_include_command)
+
+        # since we're using fill_template_field, we have to recursively start over,
+        # otherwise the next field objects would have invalid indices and would not be
+        # resolved properly
+        template_content = fill_include_fields(
+            from_base_path, in_template=template_content)
 
     return template_content
 
@@ -456,18 +463,14 @@ def fill_partial_definition(definition: str,
     # in a single field, so e.g. {{ partial partial }} would only match the first
     pattern = r'(?:^|\s|{{)(' + definition + r')(?:$|\s|}})'
 
-    def next_partial_field():
-        """ Return the next matching field, if any. """
-
-        fields = get_template_fields(
-            in_template=template_content, limit=1,
+    def next_partial_definition_field():
+        return first_field(
+            in_template=template_content,
             with_name_like=pattern,
             with_context_like=pattern,
-            strictly_matching=False)
+            strictly_matching=False)  # match either name or context, or both
 
-        return fields[0] if len(fields) > 0 else None
-
-    partial_definition_field = next_partial_field()
+    partial_definition_field = next_partial_definition_field()
 
     while partial_definition_field is not None:
         new_name = partial_definition_field.name
@@ -481,14 +484,14 @@ def fill_partial_definition(definition: str,
 
         # essentially replace the field with a new and transformed field where the
         # partial definition is resolved and populated
-        new_field = '{{ ' + new_name + ' ' + new_context + ' }}'
+        new_field = TemplateField(name=new_name, context=new_context)
 
-        template_content = fill_template_field(
-            partial_definition_field, field_value=new_field, in_template=template_content)
+        template_content = fill_single(
+            partial_definition_field, field_value=str(new_field), in_template=template_content)
 
         partial_definition_occurences += 1
         # keep searching for more matches
-        partial_definition_field = next_partial_field()
+        partial_definition_field = next_partial_definition_field()
 
     return template_content, partial_definition_occurences
 
@@ -509,20 +512,18 @@ def fill_definitions(definitions: dict,
         # that particular definition is not even used- AND it loops again after this one
 
         # recursively resolve the content of the definition
-        resolved_definition_value, resolution_data = get_definition_content(
+        resolved_definition_value, resolution_data = get_definition_contentd(
             definition, in_definitions=definitions,
-            content_resolver=resolve_column_content, field_resolver=resolve_column_field,
-            tracking_references=True)
+            content_resolver=resolve_column_content, field_resolver=resolve_column_field)
 
         # we can save this for the partial pass coming up, to avoid having to resolve again
         resolved_definitions[definition] = resolved_definition_value
 
         # fill any definite occurences of the definition (e.g. '{{ my_definition }}')
-        template_content, definite_occurences = fill_template_fields(
+        template_content, definite_occurences = filln(
             field_inner_content=definition,
             field_value=resolved_definition_value,
-            in_template=template_content,
-            counting_occurences=True)
+            in_template=template_content)
 
         if definite_occurences > 0:
             # the definition was used somewhere, so flag it as referenced
@@ -548,9 +549,9 @@ def fill_definitions(definitions: dict,
 
 def resolve_column_content(content, in_data_path):
     # fill any include fields before doing anything else
-    content = fill_include_fields(in_data_path, in_template=content)
+    content = fill_include_fields(from_base_path=in_data_path, in_template=content)
     # clear out any empty fields
-    content = fill_empty_fields(content)
+    content = fill_empty_fields(in_template=content)
     # then fill any date fields
     content = fill_date_fields(in_template=content)
 
@@ -558,11 +559,10 @@ def resolve_column_content(content, in_data_path):
 
 
 def resolve_column_field(field_name, field_value, in_content):
-    return fill_template_fields(
+    return filln(
         field_inner_content=field_name,
         field_value=field_value,
-        in_template=in_content,
-        counting_occurences=True)
+        in_template=in_content)
 
 
 def fill_index(index: str,
@@ -571,11 +571,12 @@ def fill_index(index: str,
                pages_total: int,
                cards_total: int,
                definitions: dict) -> (str, TemplateRenderData):
-    index = fill_template_fields('_styles', style, index, indenting=True)
-    index = fill_template_fields(TemplateFields.PAGES, pages, index, indenting=True)
-    index = fill_template_fields(TemplateFields.CARDS_TOTAL, str(cards_total), index)
-    index = fill_template_fields(TemplateFields.PAGES_TOTAL, str(pages_total), index)
-    index = fill_template_fields(TemplateFields.PROGRAM_VERSION, __version__, index)
+
+    index = fill('_styles', style, index, indenting=True)
+    index = fill(TemplateFields.PAGES, pages, index, indenting=True)
+    index = fill(TemplateFields.CARDS_TOTAL, str(cards_total), index)
+    index = fill(TemplateFields.PAGES_TOTAL, str(pages_total), index)
+    index = fill(TemplateFields.PROGRAM_VERSION, __version__, index)
 
     # note that most of these fields could potentially be filled already when first getting the
     # page template; however, we instead do it as the very last thing to allow cards
@@ -613,12 +614,12 @@ def fill_index(index: str,
 
     version_identifier = version_identifier if version_identifier is not None else ''
 
-    index = fill_template_fields('__title', index_title, in_template=index)
-    index = fill_template_fields(TemplateFields.TITLE, title, in_template=index)
-    index = fill_template_fields(TemplateFields.DESCRIPTION, description, in_template=index)
-    index = fill_template_fields(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
-    index = fill_template_fields(TemplateFields.AUTHOR, author, in_template=index)
-    index = fill_template_fields(TemplateFields.VERSION, version_identifier, in_template=index)
+    index = fill('__title', index_title, in_template=index)
+    index = fill(TemplateFields.TITLE, title, in_template=index)
+    index = fill(TemplateFields.DESCRIPTION, description, in_template=index)
+    index = fill(TemplateFields.COPYRIGHT, copyright_notice, in_template=index)
+    index = fill(TemplateFields.AUTHOR, author, in_template=index)
+    index = fill(TemplateFields.VERSION, version_identifier, in_template=index)
 
     index = fill_date_fields(in_template=index)
     index, referenced_definitions = fill_definitions(definitions, in_template=index)
@@ -631,10 +632,8 @@ def fill_index(index: str,
         referenced_definitions=referenced_definitions)
 
 
-def fill_template(template: str,
-                  template_path: str,
-                  row: dict,
-                  in_data_path: str,
+def fill_template(template: Template,
+                  row: Row,
                   definitions: dict) -> (str, TemplateRenderData):
     """ Populate all template fields in a template.
 
@@ -655,12 +654,12 @@ def fill_template(template: str,
 
     # first of all, find any include fields and populate those,
     # as they might contribute even more template fields to populate
-    template = fill_include_fields(
-        from_base_path=template_path,
-        in_template=template)
+    template_content = fill_include_fields(
+        from_base_path=template.path,
+        in_template=template.content)
 
     # clear out any empty fields
-    template = fill_empty_fields(in_template=template)
+    template_content = fill_empty_fields(in_template=template_content)
 
     # any field that is in the data, but not found in the template; for example, if there's
     # a 'rank' column in the data, but no '{{ rank }}' field in the template
@@ -670,20 +669,18 @@ def fill_template(template: str,
     discovered_definition_refs = []
 
     # go through each data field for this card (row)
-    for column in row:
+    for column in row.data:
         # fetch the content for the field
-        field_content, resolution_data = get_column_content(
-            column, row, definitions, in_data_path,
+        field_content, resolution_data = get_column_contentd(
+            column, row, definitions,
             content_resolver=resolve_column_content,
-            field_resolver=resolve_column_field,
-            tracking_references=True)
+            field_resolver=resolve_column_field)
 
         # fill content into the provided template
-        template, occurences = fill_template_fields(
+        template_content, occurences = filln(
             field_inner_content=column,
             field_value=field_content,
-            in_template=template,
-            counting_occurences=True)
+            in_template=template_content)
 
         if occurences is 0:
             # this field was not found anywhere in the specified template
@@ -695,21 +692,22 @@ def fill_template(template: str,
             discovered_definition_refs.extend(list(resolution_data.definition_references))
 
     # fill any definition fields
-    template, referenced_definitions = fill_definitions(definitions, in_template=template)
+    template_content, referenced_definitions = fill_definitions(
+        definitions, in_template=template_content)
 
     discovered_definition_refs.extend(referenced_definitions)
 
-    template = fill_date_fields(in_template=template)
+    template_content = fill_date_fields(in_template=template_content)
 
     # replace any image fields with HTML compliant <img> tags
-    template, filled_image_paths = fill_image_fields(in_template=template)
+    template_content, filled_image_paths = fill_image_fields(in_template=template_content)
 
     # any template field visible in the template, but not found in the data; for example, if
     # the template has a {{ rank }} field (or more), but no 'rank' column in the data
     unknown_fields = []
 
     # find any remaining template fields so we can warn that they were not filled
-    remaining_fields = get_template_fields(in_template=template)
+    remaining_fields = fields(in_template=template_content)
 
     for field in remaining_fields:
         if field.inner_content == TemplateFields.CARDS_TOTAL:
@@ -718,21 +716,8 @@ def fill_template(template: str,
             # instead, simply ignore it at this point
             pass
         else:
-            # try to resolve any row references
-            column_reference, reference_row = get_row_reference(
-                field, in_reference_row=row, in_data_path=in_data_path)
-
-            field_content = get_column_content(
-                column_reference, reference_row, definitions, in_data_path)
-
-            if field_content is not None:
-                template = fill_template_fields(
-                    field_inner_content=field.inner_content,
-                    field_value=field_content,
-                    in_template=template)
-            else:
-                # the field was not found in the card data, so make a warning about it
-                unknown_fields.append(field.name)
+            # the field was not found in the card data, so make a warning about it
+            unknown_fields.append(field.name)
 
     # make sure we only have one of each reference
     column_references = set(column_references_in_data)
@@ -741,7 +726,7 @@ def fill_template(template: str,
     # they may not be in the template, but they are not unused/missing, so don't warn about it
     unused_columns = list(set(unused_columns) - column_references)
 
-    return template, TemplateRenderData(
+    return template_content, TemplateRenderData(
         image_paths=set(filled_image_paths),
         unknown_fields=set(unknown_fields),
         unused_fields=set(unused_columns),
@@ -751,48 +736,45 @@ def fill_template(template: str,
 def fill_empty_fields(in_template: str) -> str:
     """ Populate all empty fields in a template (with nothing). """
 
-    return fill_template_fields(
+    return fill(
         field_inner_content='',
         field_value='',
         in_template=in_template)
 
 
-def fill_card(template: str,
-              template_path: str,
-              row: dict,
-              row_index: int,
-              in_data_path: str,
+def fill_card(template: Template,
+              row: Row,
               card_index: int,
               card_copy_index: int,
               definitions: dict) -> (str, TemplateRenderData):
     """ Return the contents of a card using the specified template. """
 
     # attempt to fill all fields discovered in the template using the data for this card
-    template, render_data = fill_template(
-        template, template_path, row, in_data_path, definitions)
+    template_content, render_data = fill_template(
+        template, row, definitions)
 
     # fill all row index fields (usually used for error templates)
-    template = fill_template_fields(
+    template_content = fill(
         field_inner_content=TemplateFields.CARD_ROW_INDEX,
-        field_value=str(row_index),
-        in_template=template)
+        field_value=str(row.row_index),
+        in_template=template_content)
 
     # fill all template path fields (usually used for error templates)
-    template = fill_template_fields(
+    template_content = fill(
         field_inner_content=TemplateFields.CARD_TEMPLATE_PATH,
-        field_value=template_path,
-        in_template=template)
+        field_value=template.path,
+        in_template=template_content)
 
     # fill all card index fields
-    template = fill_template_fields(
+    template_content = fill(
         field_inner_content=TemplateFields.CARD_INDEX,
         field_value=str(card_index),
-        in_template=template)
+        in_template=template_content)
 
-    template = fill_template_fields(
+    template_content = fill(
         field_inner_content=TemplateFields.CARD_COPY_INDEX,
         field_value=str(card_copy_index),
-        in_template=template)
+        in_template=template_content)
 
     # card data might contain the following fields, but they would not have been rendered
     # during fill_template(), so make sure to remove them from the missing list if necessary
@@ -804,46 +786,4 @@ def fill_card(template: str,
     # update the set of unknown fields to not include the exceptions listed above
     render_data.unknown_fields = render_data.unknown_fields - except_fields
 
-    return template, render_data
-
-
-def fill_card_front(
-        template: str,
-        template_path: str,
-        row: dict,
-        row_index: int,
-        in_data_path: str,
-        card_index: int,
-        card_copy_index: int,
-        definitions: dict) -> (str, TemplateRenderData):
-    """ Return the contents of the front of a card using the specified template. """
-
-    return fill_card(template, template_path, get_front_data(row), row_index, in_data_path,
-                     card_index, card_copy_index, definitions)
-
-
-def fill_card_back(
-        template: str,
-        template_path: str,
-        row: dict,
-        row_index: int,
-        in_data_path: str,
-        card_index: int,
-        card_copy_index: int,
-        definitions: dict) -> (str, TemplateRenderData):
-    """ Return the contents of the back of a card using the specified template. """
-
-    return fill_card(template, template_path, get_back_data(row), row_index, in_data_path,
-                     card_index, card_copy_index, definitions)
-
-
-def get_sized_card(card: str,
-                   size_class: str,
-                   content: str) -> str:
-    """ Populate and return a card in a given size with the specified content. """
-
-    card = fill_template_fields(TemplateFields.CARD_SIZE, size_class, in_template=card)
-    card = fill_template_fields(TemplateFields.CARD_CONTENT, content, in_template=card,
-                                indenting=True)
-
-    return card
+    return template_content, render_data

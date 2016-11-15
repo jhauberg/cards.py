@@ -18,13 +18,16 @@ import datetime
 from datetime import timedelta
 
 from cards.template import (
-    fill_index, fill_template_fields, fill_image_fields, fill_card_front, fill_card_back
+    Template, fill, fill_card, fill_index, fill_image_fields, template_from_path, strip_styles
 )
 
-from cards.template import template_from_path, strip_styles, get_sized_card
+from cards.templatefield import TemplateField
+
 from cards.autotemplate import template_from_data
 
-from cards.column import get_invalid_columns, size_identifier_from_columns
+from cards.column import (
+    Row, get_invalid_columns, size_identifier_from_columns
+)
 
 from cards.resource import copy_images_to_output_directory, get_unused_resources, get_resources_path
 
@@ -70,23 +73,30 @@ def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bo
     """ Populate a page with cards. """
 
     page_class = 'page page-backs' if is_card_backs else 'page'
+    page = fill('_page_class', page_class, page_template)
 
-    page = fill_template_fields(
-        '_page_class', page_class, page_template)
+    numbered_page = fill(TemplateFields.PAGE_NUMBER, str(page_number), in_template=page)
+    numbered_page = fill(TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
 
-    numbered_page = fill_template_fields(
-        TemplateFields.PAGE_NUMBER, str(page_number), page)
+    return numbered_page
 
-    return fill_template_fields(
-        TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
+
+def get_sized_card(card: str,
+                   size_class: str,
+                   content: str) -> str:
+    """ Populate and return a card in a given size with the specified content. """
+
+    card = fill(TemplateFields.CARD_SIZE, size_class, in_template=card)
+    card = fill(TemplateFields.CARD_CONTENT, content, in_template=card, indenting=True)
+
+    return card
 
 
 def get_section(name: str, section_index: int, section_template: str) -> str:
     """ Populate a section with datasource name and index. """
 
-    section = fill_template_fields('_datasource_name', name, section_template)
-    section = fill_template_fields('_datasource_id',
-                                   'datasource-{0}'.format(section_index), section)
+    section = fill('_datasource_name', name, section_template)
+    section = fill('_datasource_id', 'datasource-{0}'.format(section_index), section)
 
     return section + '\n'
 
@@ -465,10 +475,10 @@ def make(data_paths: list,
             max_cards_per_page = cards_per_column * cards_per_row
 
             if disable_auto_templating:
-                default_template = None
+                default_template_content = None
             else:
                 # get a fitting template by analyzing the content of the data
-                default_template = template_from_data(data)
+                default_template_content = template_from_data(data)
 
                 # reset the iterator
                 # (note how this is done directly on the file stream; i.e. not on the wrapper)
@@ -483,7 +493,7 @@ def make(data_paths: list,
                 # to be treated as data, so skip it
                 next(data)
 
-            if default_template is None and Columns.TEMPLATE not in data.fieldnames:
+            if default_template_content is None and Columns.TEMPLATE not in data.fieldnames:
                 WarningDisplay.missing_default_template(
                     WarningContext(context))
 
@@ -502,7 +512,8 @@ def make(data_paths: list,
                 # that the layout remains correct
                 # note that we're using a completely empty template, except for the size class field
                 empty_back = get_sized_card(
-                    '<div class="card {{ ' + TemplateFields.CARD_SIZE + '}}"></div>',
+                    '<div class="card {0}"></div>'.format(
+                        str(TemplateField(name=TemplateFields.CARD_SIZE))),
                     size_class=card_size.style, content='')
 
             ambiguous_references = determine_ambiguous_references(
@@ -518,10 +529,12 @@ def make(data_paths: list,
 
             row_index = 1
 
-            for row in data:
+            for row_data in data:
                 # since the column names counts as a row, and most editors
                 # do not use a zero-based row index, the first row == 2
                 row_index += 1
+
+                row = Row(row_data, data_path, row_index)
 
                 if is_line_excluded(data_file.raw_line):
                     WarningDisplay.card_was_skipped_intentionally_info(
@@ -530,7 +543,7 @@ def make(data_paths: list,
                     # this row should be ignored - so skip and continue
                     continue
 
-                count, indeterminable_count = determine_count(row)
+                count, indeterminable_count = determine_count(row_data)
 
                 if indeterminable_count:
                     WarningDisplay.indeterminable_count(
@@ -548,14 +561,14 @@ def make(data_paths: list,
                     count = 1
 
                 # determine which template to use for this card, if any
-                template_path = row.get(Columns.TEMPLATE, None)
+                template_path = row_data.get(Columns.TEMPLATE, None)
                 template_path = previous_or_current_path(
                     template_path, previous_template_path)
 
                 previous_template_path = template_path
 
                 if not disable_backs:
-                    template_path_back = row.get(Columns.TEMPLATE_BACK, None)
+                    template_path_back = row_data.get(Columns.TEMPLATE_BACK, None)
                     template_path_back = previous_or_current_path(
                         template_path_back, previous_template_path_back)
 
@@ -570,66 +583,76 @@ def make(data_paths: list,
                 resolved_template_path = None
 
                 if template_path is not None and len(template_path) > 0:
-                    template, not_found, resolved_template_path = template_from_path(
+                    template_content, not_found, resolved_template_path = template_from_path(
                         template_path, relative_to_path=data_path)
 
                     if not_found:
-                        template = template_not_opened
+                        template_content = template_not_opened
 
                         WarningDisplay.bad_template_path_error(
                             WarningContext(context, row_index),
                             resolved_template_path, cards_affected=count)
-                    elif len(template) == 0:
-                        template = default_template
+                    elif len(template_content) == 0:
+                        template_content = default_template_content
 
                         WarningDisplay.empty_template(
                             WarningContext(context, row_index),
                             resolved_template_path, cards_affected=count)
                 else:
-                    template = default_template
+                    template_content = default_template_content
 
-                    if template is not None:
+                    if template_content is not None:
                         WarningDisplay.using_auto_template(
                             WarningContext(context, row_index), cards_affected=count)
 
-                if template is None:
-                    template = template_not_provided
+                if template_content is None:
+                    template_content = template_not_provided
 
                     WarningDisplay.missing_template_error(
                         WarningContext(context, row_index), cards_affected=count)
 
-                styles, template = strip_styles(from_template=template,
-                                                at_template_path=template_path)
+                # build a template object
+                # note that we apply the path *as is*; i.e. not the resolved path- this is done to
+                # let any warning show the path to the template as it was defined in the data
+                template_front = Template(template_content, template_path)
+
+                styles = strip_styles(template_front)
+
+                # apply the actual path now
+                template_front.path = resolved_template_path
 
                 embedded_styles[template_path] = styles
 
                 resolved_template_path_back = None
 
                 if not disable_backs:
-                    template_back = None
+                    template_back_content = None
 
                     if template_path_back is not None and len(template_path_back) > 0:
-                        template_back, not_found, resolved_template_path_back = template_from_path(
+                        template_back_content, not_found, resolved_template_path_back = template_from_path(
                             template_path_back, relative_to_path=data_path)
 
                         if not_found:
-                            template_back = template_not_opened
+                            template_back_content = template_not_opened
 
                             WarningDisplay.bad_template_path_error(
                                 WarningContext(context, row_index),
-                                resolved_template_path, is_back=True,
+                                resolved_template_path_back, is_back=True,
                                 cards_affected=count)
-                        elif len(template_back) == 0:
+                        elif len(template_back_content) == 0:
                             WarningDisplay.empty_template(
                                 WarningContext(context, row_index),
-                                resolved_template_path, is_back_template=True,
+                                resolved_template_path_back, is_back_template=True,
                                 cards_affected=count)
 
-                    if template_back is None:
-                        template_back = template_back_not_provided
+                    if template_back_content is None:
+                        template_back_content = template_back_not_provided
 
-                    back_styles, template_back = strip_styles(from_template=template_back,
-                                                              at_template_path=template_path_back)
+                    template_back = Template(template_back_content, template_path_back)
+
+                    back_styles = strip_styles(template_back)
+
+                    template_back.path = resolved_template_path_back
 
                     embedded_styles[template_path_back] = back_styles
 
@@ -639,14 +662,14 @@ def make(data_paths: list,
                 for i in range(count):
                     card_index = cards_total + 1
 
-                    card_content, render_data = fill_card_front(
-                        template, resolved_template_path,
-                        row, row_index, data_path,
+                    card_content, render_data = fill_card(
+                        template_front,
+                        row.front_row(),
                         card_index, cards_total_unique,
                         definitions)
 
-                    if (template is not template_not_provided
-                            and template is not template_not_opened):
+                    if (template_front.content is not template_not_provided
+                            and template_front.content is not template_not_opened):
                         if len(render_data.unused_fields) > 0:
                             WarningDisplay.missing_fields_in_template(
                                 WarningContext(context, row_index),
@@ -672,14 +695,14 @@ def make(data_paths: list,
                     cards_total += 1
 
                     if not disable_backs:
-                        back_content, render_data = fill_card_back(
-                            template_back, resolved_template_path_back,
-                            row, row_index, data_path,
+                        back_content, render_data = fill_card(
+                            template_back,
+                            row.back_row(),
                             card_index, cards_total_unique,
                             definitions)
 
-                        if (template_back is not template_back_not_provided
-                                and template_back is not template_not_opened):
+                        if (template_back.content is not template_back_not_provided
+                                and template_back.content is not template_not_opened):
                             if len(render_data.unused_fields) > 0:
                                 WarningDisplay.missing_fields_in_template(
                                     WarningContext(context, row_index),
