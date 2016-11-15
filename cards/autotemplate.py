@@ -2,7 +2,7 @@
 
 import csv
 
-from cards.column import is_special_column, is_excluded_column
+from cards.column import Column
 
 from cards.util import most_common
 
@@ -61,15 +61,17 @@ def template_from_data(data: csv.DictReader) -> str:
     analysis = {}
 
     for row in data:
-        for column in data.fieldnames:
-            if not is_excluded_column(column) and not is_special_column(column):
-                field_type = field_type_from_value(row[column])
+        for column_name in data.fieldnames:
+            column = Column(column_name)
+
+            if not column.is_excluded() and not column.is_special():
+                field_type = field_type_from_value(row[column.name])
 
                 if field_type is not None:
-                    l = analysis.get(column, [])
+                    l = analysis.get(column.name, [])
                     l.append(field_type)
 
-                    analysis[column] = l
+                    analysis[column.name] = l
 
     for field_name, field_types in analysis.items():
         field_type = most_common(field_types)
