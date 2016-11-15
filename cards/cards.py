@@ -18,7 +18,7 @@ import datetime
 from datetime import timedelta
 
 from cards.template import (
-    Template, fill, fill_card, fill_index, fill_image_fields, template_from_path, strip_styles
+    Template, fill_each, fill_card, fill_index, fill_image_fields, template_from_path, strip_styles
 )
 
 from cards.templatefield import TemplateField
@@ -72,40 +72,50 @@ def is_line_excluded(line: str) -> bool:
 def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bool=False) -> str:
     """ Populate a page with cards. """
 
+    template = Template(page_template)
+
     page_class = 'page page-backs' if is_card_backs else 'page'
-    page = fill('_page_class', page_class, page_template)
 
-    numbered_page = fill(TemplateFields.PAGE_NUMBER, str(page_number), in_template=page)
-    numbered_page = fill(TemplateFields.CARDS, cards, in_template=numbered_page, indenting=True)
+    fill_each('_page_class', page_class, template)
+    fill_each(TemplateFields.PAGE_NUMBER, str(page_number), template)
+    fill_each(TemplateFields.CARDS, cards, template, indenting=True)
 
-    return numbered_page
+    return template.content
 
 
-def get_sized_card(card: str,
+def get_sized_card(card_template: str,
                    size_class: str,
                    content: str) -> str:
     """ Populate and return a card in a given size with the specified content. """
 
-    card = fill(TemplateFields.CARD_SIZE, size_class, in_template=card)
-    card = fill(TemplateFields.CARD_CONTENT, content, in_template=card, indenting=True)
+    template = Template(card_template)
 
-    return card
+    fill_each(TemplateFields.CARD_SIZE, size_class, template)
+    fill_each(TemplateFields.CARD_CONTENT, content, template, indenting=True)
+
+    return template.content
 
 
 def get_section(name: str, section_index: int, section_template: str) -> str:
     """ Populate a section with datasource name and index. """
 
-    section = fill('_datasource_name', name, section_template)
-    section = fill('_datasource_id', 'datasource-{0}'.format(section_index), section)
+    template = Template(section_template)
 
-    return section + '\n'
+    fill_each('_datasource_name', name, template)
+    fill_each('_datasource_id', 'datasource-{0}'.format(section_index), template)
+
+    return template.content + '\n'
 
 
 def get_template(template_path: str) -> (str, list):
     with open(template_path) as template_file:
-        template = template_file.read()
+        template_content = template_file.read()
 
-        return fill_image_fields(template)
+        template = Template(template_content, template_path)
+
+        image_paths = fill_image_fields(template)
+
+        return template.content, image_paths
 
 
 def get_base_path() -> str:
@@ -616,12 +626,7 @@ def make(data_paths: list,
                 # let any warning show the path to the template as it was defined in the data
                 template_front = Template(template_content, template_path)
 
-                styles = strip_styles(template_front)
-
-                # apply the actual path now
-                template_front.path = resolved_template_path
-
-                embedded_styles[template_path] = styles
+                embedded_styles[template_front.path] = strip_styles(template_front)
 
                 resolved_template_path_back = None
 
@@ -650,17 +655,16 @@ def make(data_paths: list,
 
                     template_back = Template(template_back_content, template_path_back)
 
-                    back_styles = strip_styles(template_back)
-
-                    template_back.path = resolved_template_path_back
-
-                    embedded_styles[template_path_back] = back_styles
+                    embedded_styles[template_back.path] = strip_styles(template_back)
 
                 # this is also the shared index for any instance of this card
                 cards_total_unique += 1
 
                 for i in range(count):
                     card_index = cards_total + 1
+
+                    # since we're mutating the template for each card, we need to make a new one
+                    template_front = Template(template_content, resolved_template_path)
 
                     card_content, render_data = fill_card(
                         template_front,
@@ -695,6 +699,8 @@ def make(data_paths: list,
                     cards_total += 1
 
                     if not disable_backs:
+                        template_back = Template(template_back_content, resolved_template_path_back)
+
                         back_content, render_data = fill_card(
                             template_back,
                             row.back_row(),
