@@ -1,38 +1,56 @@
 # coding=utf-8
 
+"""
+This module provides functions and structures for template fields.
+"""
+
 import re
 
-from typing import List
+from typing import Iterator
 
 
 class TemplateField:  # pylint: disable=too-few-public-methods
     """ Represents a field in a template. """
 
     def __init__(self,
-                 inner_content: str,
-                 name: str,
-                 context: str,
-                 start_index: int,
-                 end_index: int):
-        self.inner_content = inner_content  # the inner content between the field braces
+                 name: str=None,
+                 context: str=None,
+                 inner_content: str=None,
+                 indices: range=None):
         self.name = name  # the name of the field
         self.context = context  # the context passed to the field name
-        self.start_index = start_index  # the index of the first '{' wrapping brace
-        self.end_index = end_index  # the index of the last '}' wrapping brace
+        self.inner_content = inner_content  # the inner content between the field braces
+        self.indices = indices  # the indices ranging from the first wrapping '{' to the last '}'
+
+        if self.inner_content is None:
+            if self.name is not None:
+                if self.context is not None:
+                    self.inner_content = self.name + ' ' + self.context
+                else:
+                    self.inner_content = self.name
+
+    def __str__(self):
+        return '{{ ' + (self.inner_content or '') + ' }}'
+
+    def has_row_reference(self) -> bool:
+        """ Determine whether a field holds a row reference. """
+
+        return (self.context.startswith('#')
+                if self.context is not None
+                else False)
 
 
-def get_template_fields(in_template: str,
-                        limit: int=None,
-                        with_name_like: str=None,
-                        with_context_like: str=None,
-                        strictly_matching: bool=True) -> List[TemplateField]:
-    """ Return a list of all template fields (e.g. '{{ a_field }}') that occur in a template. """
+def fields(in_template: str,
+           with_name_like: str=None,
+           with_context_like: str=None,
+           strictly_matching: bool=True) -> Iterator[TemplateField]:
+    """ Return an iterator for all template fields (e.g. '{{ a_field }}')
+        that occur in a template.
+    """
 
     pattern = r'{{\s?(([^}}\s]*)\s?(.*?))\s?}}'
 
-    fields = []
-
-    for field_match in list(re.finditer(pattern, in_template)):
+    for field_match in re.finditer(pattern, in_template):
         inner_content = field_match.group(1).strip()
         name = field_match.group(2).strip()
         context = field_match.group(3).strip()
@@ -42,9 +60,8 @@ def get_template_fields(in_template: str,
         context = context if len(context) > 0 else None
 
         field = TemplateField(
-            inner_content, name, context,
-            start_index=field_match.start(),
-            end_index=field_match.end())
+            name, context, inner_content, indices=range(
+                field_match.start(), field_match.end()))
 
         satisfies_name_filter = (with_name_like is None or
                                  (with_name_like is not None and field.name is not None
@@ -59,20 +76,15 @@ def get_template_fields(in_template: str,
                             else satisfies_name_filter or satisfies_context_filter)
 
         if satisfies_filter:
-            fields.append(field)
+            yield field
 
-        if limit is not None and len(fields) == limit:
-            break
-
-    return fields
+    return None
 
 
-def get_template_field_names(in_template: str) -> List[str]:
-    """ Return a list of all template field names that occur in a template. """
+def first_field(in_template: str,
+                with_name_like: str=None,
+                with_context_like: str=None,
+                strictly_matching: bool=True) -> TemplateField:
+    """ Return the first template field found in a template. """
 
-    # get all the fields
-    template_fields = get_template_fields(in_template)
-    # adding each field name to a set ensures we only get unique fields
-    template_field_names = {field.inner_content for field in template_fields}
-
-    return list(template_field_names)
+    return next(fields(in_template, with_name_like, with_context_like, strictly_matching), None)
