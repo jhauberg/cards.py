@@ -34,6 +34,19 @@ class Template:  # pylint: disable=too-few-public-methods
         self.content = content
         self.path = path
 
+    def __str__(self):
+        truncated_content = (('\'' + self.content[:50] + '\'…')
+                             if len(self.content) > 50
+                             else self.content)
+
+        truncated_path = (('…\'' + self.path[-25:] + '\'')
+                          if self.path is not None and len(self.path) > 25
+                          else self.path)
+
+        return ('{0} ({1})'.format(truncated_content, truncated_path)
+                if truncated_path is not None
+                else truncated_content)
+
 
 class TemplateRenderData:  # pylint: disable=too-few-public-methods
     """ Provides additional data about the rendering of a template. """
@@ -349,9 +362,7 @@ def fill_date_fields(template: Template,
         field = next_date_field()
 
 
-# todo: what does base path mean? is it relative to the template? what?
-def fill_include_fields(template: Template,
-                        from_base_path: str) -> None:
+def fill_include_fields(template: Template) -> None:
     """ Populate all include fields in the template.
 
         An 'include' field provides a way of putting re-usable template content into a
@@ -384,10 +395,10 @@ def fill_include_fields(template: Template,
         if include_path is not None and len(include_path) > 0:
             if not os.path.isabs(include_path):
                 # it's not an absolute path, so we should make it a relative path
-                if from_base_path is not None:
+                if template.path is not None:
                     # make the path relative to the path of the containing template
                     include_path = os.path.join(
-                        os.path.dirname(from_base_path), include_path)
+                        os.path.dirname(template.path), include_path)
 
             if os.path.isfile(include_path):
                 # we've ended up with a path that can be opened
@@ -402,15 +413,15 @@ def fill_include_fields(template: Template,
                             include_content += line.strip()
             else:
                 WarningDisplay.included_file_not_found_error(
-                    WarningContext(os.path.basename(from_base_path)), include_path)
+                    WarningContext(os.path.basename(template.path)), include_path)
 
                 include_content = '<strong>&lt;included file not found&gt;</strong>'
         else:
             WarningDisplay.include_should_specify_file(
                 WarningContext('{0}:{1}'.format(
-                    os.path.basename(from_base_path),
+                    os.path.basename(template.path),
                     # todo: the line number could potentially be incorrect, as we might not be going
-                    # through the original template anymore- the line can only serve as a hint
+                    # through the original template anymore- the lineno can only serve as a hint
                     get_line_number(field.indices.start, original_template_content))),
                 is_inline=is_inline_command)
 
@@ -510,7 +521,7 @@ def fill_definitions(definitions: dict,
     for definition in definitions:
         # we need this second loop, because a later definition might resolve to contain a partial
         # definition that the loop already went through; this second loop solves that problem
-        template_content, partial_occurences = fill_partial_definition(
+        partial_occurences = fill_partial_definition(
             definition, resolved_definitions[definition], template)
 
         if partial_occurences > 0:
@@ -520,11 +531,11 @@ def fill_definitions(definitions: dict,
     return set(referenced_definitions)
 
 
-def resolve_column_content(content, in_data_path):
-    template = Template(content)
+def resolve_column_content(content, in_data_path) -> str:
+    template = Template(content, path=in_data_path)
 
     # fill any include fields before doing anything else
-    fill_include_fields(template, from_base_path=in_data_path)
+    fill_include_fields(template)
     # clear out any empty fields
     fill_empty_fields(template)
     # then fill any date fields
@@ -533,7 +544,7 @@ def resolve_column_content(content, in_data_path):
     return template.content
 
 
-def resolve_column_field(field_name, field_value, in_content):
+def resolve_column_field(field_name, field_value, in_content) -> (str, int):
     template = Template(in_content)
 
     occurences = fill_each(field_name, field_value, template)
@@ -633,7 +644,7 @@ def fill_template(template: Template,
 
     # first of all, find any include fields and populate those,
     # as they might contribute even more template fields to populate
-    fill_include_fields(template, from_base_path=template.path)
+    fill_include_fields(template)
 
     # clear out any empty fields
     fill_empty_fields(template)
