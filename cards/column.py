@@ -11,7 +11,7 @@ import itertools
 from cards.templatefield import TemplateField, fields
 from cards.markdown import markdown
 
-from cards.util import lower_first_row
+from cards.util import FileWrapper, lower_first_row
 from cards.warning import WarningDisplay, WarningContext
 from cards.constants import Columns, ColumnDescriptors
 
@@ -48,10 +48,15 @@ class Column:
 class Row:
     """ Represents a row in a datasource. """
 
-    def __init__(self, data: dict, data_path: str=None, row_index: int=None):
+    def __init__(self,
+                 data: dict,
+                 data_path: str=None,
+                 row_index: int=None,
+                 is_excluded: bool=False):
         self.data = data
         self.data_path = data_path
         self.row_index = row_index
+        self.is_excluded = is_excluded
 
     def _usable_columns(self) -> tuple:
         return (column for column in
@@ -84,6 +89,12 @@ class Row:
         return Row(data=self._back_data(),
                    data_path=self.data_path,
                    row_index=self.row_index)
+
+    @staticmethod
+    def is_excluded(row_string: str) -> bool:
+        """ Determine if a line in a file should be excluded. """
+
+        return row_string.strip().startswith('#')
 
 
 class InvalidColumnError:  # pylint: disable=too-few-public-methods
@@ -144,8 +155,51 @@ def size_identifier_from_columns(column_names: list) -> (str, list):
     return size_identifier, parsed_column_names
 
 
+def get_row(row_number: int, referencing_row: Row, referencing_column: Column) -> Row:
+    # when looking at rows in a CSV they are not zero-based, and the first row
+    # is always the headers, which makes the first row of actual data (that
+    # you see) appear visually at row #2, like for example:
+    #   #1 'rank,title'
+    #   #2 '2,My Card'
+    #   #2 '4,My Other Card'
+    # however, of course, when reading from the file, the first row is
+    # actually at index 0, so we have to take this into account
+    # this logic essentially makes '#0' and '#1' invalid row numbers
+    line_number = row_number - 2
+
+    if line_number < 0:
+        return None
+
+    with open(referencing_row.data_path) as data_file_raw:
+        data_file = FileWrapper(data_file_raw)
+        # read data appropriately
+        data = csv.DictReader(lower_first_row(data_file))
+
+        context = os.path.basename(referencing_row.data_path)
+
+        from_row_index = referencing_row.row_index
+        from_column_name = referencing_column.name
+
+        try:
+            # then read rows until reaching the target row_number
+            row_data = next(itertools.islice(data, line_number, None))
+        except StopIteration:
+            WarningDisplay.referencing_row_out_of_bounds(
+                WarningContext(context, row_index=from_row_index, column=from_column_name),
+                referenced_row_number=row_number)
+        else:
+            if Row.is_excluded(data_file.raw_line):
+                WarningDisplay.referencing_excluded_row(
+                    WarningContext(context, row_index=from_row_index, column=from_column_name),
+                    referenced_row_number=row_number)
+            else:
+                # create a new row with the data at the referenced row
+                return Row(row_data, referencing_row.data_path)
+
+
 def get_row_reference(field: TemplateField,
-                      in_reference_row: Row) -> (str, Row):
+                      in_reference_row: Row,
+                      in_reference_column: Column) -> (str, Row, bool):
     """ Return the column and row of data that a template field references.
 
         If a field like 'title #6' is passed, then return 'title' and row number 6.
@@ -156,6 +210,8 @@ def get_row_reference(field: TemplateField,
     # set default field name and row to whatever is passed
     reference_column = None
     reference_row = in_reference_row
+
+    is_invalid_reference = False
 
     if reference_row.data_path is not None and len(reference_row.data_path) > 0:
         # a data path has been supplied, so we can attempt determining whether this
@@ -176,36 +232,24 @@ def get_row_reference(field: TemplateField,
                 if row_number == reference_row.row_index:
                     # the row number would lead to the same row that was passed, so we clean up
                     # the field by removing the number reference, but otherwise leave the row as is
-                    return field.name, reference_row
+                    return field.name, reference_row, is_invalid_reference
 
-                # when looking at rows in a CSV they are not zero-based, and the first row
-                # is always the headers, which makes the first row of actual data (that
-                # you see) appear visually at row #2, like for example:
-                #   #1 'rank,title'
-                #   #2 '2,My Card'
-                #   #2 '4,My Other Card'
-                # however, of course, when reading from the file, the first row is
-                # actually at index 0, so we have to take this into account
-                line_number = row_number - 2
+                reference_row = get_row(row_number, reference_row, in_reference_column)
 
-                # the above logic essentially makes '#0' and '#1' invalid row numbers
-                if line_number >= 0:
-                    # open a new instance of the current data file
-                    with open(reference_row.data_path) as data_file:
-                        # actual field name is only the first part
-                        reference_column = field.name
-                        # read data appropriately
-                        data = csv.DictReader(lower_first_row(data_file))
-                        # then read rows until reaching the target row_number
-                        row_data = next(itertools.islice(data, line_number, None))
-                        # however, we don't want to provide every column found in this row;
-                        # we *only* want the columns also available in the originating row
-                        filtered_row_data = {column: column_content for column, column_content
-                                             in row_data.items() if column in reference_row.data}
-                        # create a new row with the data at the referenced row
-                        reference_row = Row(filtered_row_data, reference_row.data_path, row_number)
+                if reference_row is None:
+                    is_invalid_reference = True
+                else:
+                    reference_row.row_index = row_number
 
-    return reference_column, reference_row
+                    # however, we don't want to provide every column found in this row;
+                    # we *only* want the columns also available in the originating row
+                    reference_row.data = {column: column_content for column, column_content
+                                          in reference_row.data.items()
+                                          if column in in_reference_row.data}
+
+                    reference_column = field.name
+
+    return reference_column, reference_row, is_invalid_reference
 
 
 def resolve_column(column: Column,
@@ -224,8 +268,12 @@ def resolve_column(column: Column,
 
     for reference_field in fields(resolved_column_content):
         # determine whether this field is a row reference
-        reference_column, reference_row = get_row_reference(
-            reference_field, in_reference_row=in_row)
+        reference_column, reference_row, is_invalid_reference = get_row_reference(
+            reference_field, in_reference_row=in_row, in_reference_column=column)
+
+        if is_invalid_reference:
+            # it was a row reference, but the reference was invalid- so we gotta move on
+            continue
 
         if reference_column is None:
             # it was not a row reference

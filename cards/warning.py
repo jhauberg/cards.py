@@ -492,3 +492,17 @@ class WarningDisplay:
     def card_was_skipped_intentionally_info(context: WarningContext) -> None:
         info('The card was skipped (count was 0)',
              in_context=context)
+
+    @staticmethod
+    def referencing_excluded_row(context: WarningContext,
+                                 referenced_row_number: int) -> None:
+        warn('The column contains a field that references an excluded row (#{0})'
+             .format(referenced_row_number),
+             in_context=context)
+
+    @staticmethod
+    def referencing_row_out_of_bounds(context: WarningContext,
+                                      referenced_row_number: int) -> None:
+        warn('The column contains a field that references a row that is out of bounds (#{0})'
+             .format(referenced_row_number),
+             in_context=context)

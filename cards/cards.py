@@ -58,15 +58,9 @@ def get_definitions_from_file(path: str) -> dict:
                 # map all rows into key-value pairs (assume no more than 2 columns are present)
                 # and skipping ignored rows
                 definitions = {k: v for k, v in csv.reader(data_file)
-                               if not is_line_excluded(data_file.raw_line)}
+                               if not Row.is_excluded(data_file.raw_line)}
 
     return definitions
-
-
-def is_line_excluded(line: str) -> bool:
-    """ Determine if a line in a file should be excluded. """
-
-    return line.strip().startswith('#')
 
 
 def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bool=False) -> str:
@@ -545,11 +539,13 @@ def make(data_paths: list,
                 # do not use a zero-based row index, the first row == 2
                 row_index += 1
 
-                row = Row(row_data, data_path, row_index)
-
-                if is_line_excluded(data_file.raw_line):
+                if Row.is_excluded(data_file.raw_line):
                     # this row should be ignored - so skip and continue
+                    # note that we still need to increment the row_index;
+                    # otherwise row references will be offset incorrectly
                     continue
+
+                row = Row(row_data, data_path, row_index)
 
                 count, indeterminable_count = determine_count(row_data)
 

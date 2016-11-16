@@ -720,7 +720,7 @@ def fill_template(template: Template,
             pass
         else:
             # the field was not found in the card data, so make a warning about it
-            unknown_fields.append(field.name)
+            unknown_fields.append(field.inner_content)
 
     # make sure we only have one of each reference
     column_references = set(column_references_in_data)
