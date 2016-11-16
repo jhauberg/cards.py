@@ -34,6 +34,9 @@ class Template:  # pylint: disable=too-few-public-methods
         self.content = content
         self.path = path
 
+    def __iter__(self):
+        return fields(self.content)
+
     def __str__(self):
         truncated_content = (('\'' + self.content[:50] + '\'…')
                              if len(self.content) > 50
@@ -709,9 +712,7 @@ def fill_template(template: Template,
     unknown_fields = []
 
     # find any remaining template fields so we can warn that they were not filled
-    remaining_fields = fields(template.content)
-
-    for field in remaining_fields:
+    for field in template:
         if field.inner_content == TemplateFields.CARDS_TOTAL:
             # this is a special case: this field will not be filled until every card
             # has been generated- so this field should not be treated as if missing;
