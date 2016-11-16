@@ -8,9 +8,8 @@ import os
 import csv
 import itertools
 
-from cards.markdown import markdown
-
 from cards.templatefield import TemplateField, fields
+from cards.markdown import markdown
 
 from cards.util import lower_first_row
 from cards.warning import WarningDisplay, WarningContext
@@ -364,17 +363,6 @@ def get_column_contentd(column: str,
     resolved_column_content = markdown(resolved_column_content)
 
     return resolved_column_content, resolution_data
-
-
-def get_column_content(column: str,
-                       in_row: Row,
-                       definitions: dict,
-                       content_resolver=None,
-                       field_resolver=None) -> str:
-    """ Return the content of a column, recursively resolving any column/definition references. """
-
-    return get_column_contentd(
-        column, in_row, definitions, content_resolver, field_resolver)[0]
 
 
 def get_definition_contentd(definition: str,
