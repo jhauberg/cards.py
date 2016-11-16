@@ -490,5 +490,5 @@ class WarningDisplay:
 
     @staticmethod
     def card_was_skipped_intentionally_info(context: WarningContext) -> None:
-        info('The card was skipped',
+        info('The card was skipped (count was 0)',
              in_context=context)

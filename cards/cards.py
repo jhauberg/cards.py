@@ -183,7 +183,8 @@ def previous_or_current_path(current_path: str, previous_path: str) -> str:
         to the contents of the previous path.
     """
 
-    return (previous_path if (current_path is not None and current_path.strip() == '^')
+    return (previous_path
+            if (current_path is not None and current_path.strip() == '^')
             else current_path)
 
 
@@ -547,9 +548,6 @@ def make(data_paths: list,
                 row = Row(row_data, data_path, row_index)
 
                 if is_line_excluded(data_file.raw_line):
-                    WarningDisplay.card_was_skipped_intentionally_info(
-                        WarningContext(context, row_index))
-
                     # this row should be ignored - so skip and continue
                     continue
 
@@ -557,6 +555,9 @@ def make(data_paths: list,
 
                 if indeterminable_count:
                     WarningDisplay.indeterminable_count(
+                        WarningContext(context, row_index))
+                elif count == 0:
+                    WarningDisplay.card_was_skipped_intentionally_info(
                         WarningContext(context, row_index))
 
                 if count > 100:
