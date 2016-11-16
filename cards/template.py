@@ -239,7 +239,9 @@ def fill_image_fields(template: Template) -> List[str]:
 
     supported_images_pattern = '\\' + '|\\'.join(supported_image_types())
 
-    def next_image_field():
+    def next_image_field() -> TemplateField:
+        """ Return the next probable image field. """
+
         return first_field(template.content, with_name_like=supported_images_pattern)
 
     field = next_image_field()
@@ -338,6 +340,8 @@ def fill_date_fields(template: Template,
     """
 
     def next_date_field():
+        """ Return the next probable date field. """
+
         return first_field(template.content, with_name_like='date')
 
     field = next_date_field()
@@ -376,6 +380,8 @@ def fill_include_fields(template: Template) -> None:
     original_template_content = template.content
 
     def next_include_field():
+        """ Return the next probable include/inline field. """
+
         return first_field(template.content, with_name_like='include|inline')
 
     field = next_include_field()
@@ -455,6 +461,8 @@ def fill_partial_definition(definition: str,
     pattern = r'(?:^|\s|{{)(' + definition + r')(?:$|\s|}})'
 
     def next_partial_definition_field():
+        """ Return the next field likely to contain a partial definition. """
+
         return first_field(
             in_template=template.content,
             with_name_like=pattern,
@@ -464,22 +472,21 @@ def fill_partial_definition(definition: str,
     partial_definition_field = next_partial_definition_field()
 
     while partial_definition_field is not None:
-        new_name = partial_definition_field.name
-        new_context = partial_definition_field.context
+        name = partial_definition_field.name
+        context = partial_definition_field.context
 
-        if partial_definition_field.name is not None:
-            new_name = re.sub(pattern, value, partial_definition_field.name)
+        if name is not None:
+            name = re.sub(pattern, value, name)
 
-        if partial_definition_field.context is not None:
-            new_context = re.sub(pattern, value, partial_definition_field.context)
+        if context is not None:
+            context = re.sub(pattern, value, context)
 
         # essentially replace the field with a new and transformed field where the
         # partial definition is resolved and populated
-        new_field = TemplateField(name=new_name, context=new_context)
-
-        fill(partial_definition_field, str(new_field), template)
+        fill(partial_definition_field, str(TemplateField(name, context)), template)
 
         partial_definition_occurences += 1
+
         # keep searching for more matches
         partial_definition_field = next_partial_definition_field()
 
@@ -532,6 +539,11 @@ def fill_definitions(definitions: dict,
 
 
 def resolve_column_content(content, in_data_path) -> str:
+    """ Return content where any include, empty and date fields have been resolved.
+
+        This resolver function is run when starting the resolution of the content of a column.
+    """
+
     template = Template(content, path=in_data_path)
 
     # fill any include fields before doing anything else
@@ -545,6 +557,12 @@ def resolve_column_content(content, in_data_path) -> str:
 
 
 def resolve_column_field(field_name, field_value, in_content) -> (str, int):
+    """ Return content where any occurence of the provided field has been resolved.
+
+        This resolver function is run when the resolution of the content of a column
+        discovers a field.
+    """
+
     template = Template(in_content)
 
     occurences = fill_each(field_name, field_value, template)
@@ -558,6 +576,7 @@ def fill_index(index: str,
                pages_total: int,
                cards_total: int,
                definitions: dict) -> (str, TemplateRenderData):
+    """ Populate and return index template with all styles and pages. """
 
     template = Template(index)
 
@@ -677,9 +696,8 @@ def fill_template(template: Template,
             discovered_definition_refs.extend(list(resolution_data.definition_references))
 
     # fill any definition fields
-    referenced_definitions = fill_definitions(definitions, template)
-
-    discovered_definition_refs.extend(referenced_definitions)
+    discovered_definition_refs.extend(
+        fill_definitions(definitions, template))
 
     fill_date_fields(template)
 
