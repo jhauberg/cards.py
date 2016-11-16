@@ -1,7 +1,7 @@
 # coding=utf-8
 
 """
-This module provides functions and structures for template fields.
+This module provides functions for working with template fields.
 """
 
 import re
@@ -40,20 +40,18 @@ class TemplateField:  # pylint: disable=too-few-public-methods
                 else False)
 
 
-def fields(in_template: str,
+def fields(content: str,
            with_name_like: str=None,
            with_context_like: str=None,
            strictly_matching: bool=True) -> Iterator[TemplateField]:
-    """ Return an iterator for all template fields (e.g. '{{ a_field }}')
-        that occur in a template.
-    """
+    """ Return an iterator for all fields (e.g. '{{ a_field }}') that occur in a template. """
 
     pattern = r'{{\s?(([^}}\s]*)\s?(.*?))\s?}}'
 
-    for field_match in re.finditer(pattern, in_template):
-        inner_content = field_match.group(1).strip()
-        name = field_match.group(2).strip()
-        context = field_match.group(3).strip()
+    for match in re.finditer(pattern, content):
+        inner_content = match.group(1).strip()
+        name = match.group(2).strip()
+        context = match.group(3).strip()
 
         inner_content = inner_content if len(inner_content) > 0 else None
         name = name if len(name) > 0 else None
@@ -61,7 +59,7 @@ def fields(in_template: str,
 
         field = TemplateField(
             name, context, inner_content, indices=range(
-                field_match.start(), field_match.end()))
+                match.start(), match.end()))
 
         satisfies_name_filter = (with_name_like is None or
                                  (with_name_like is not None and field.name is not None
@@ -77,14 +75,3 @@ def fields(in_template: str,
 
         if satisfies_filter:
             yield field
-
-    return None
-
-
-def first_field(in_template: str,
-                with_name_like: str=None,
-                with_context_like: str=None,
-                strictly_matching: bool=True) -> TemplateField:
-    """ Return the first template field found in a template. """
-
-    return next(fields(in_template, with_name_like, with_context_like, strictly_matching), None)

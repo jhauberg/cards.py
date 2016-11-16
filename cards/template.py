@@ -1,7 +1,7 @@
 # coding=utf-8
 
 """
-This module provides functions for working with and populating templates.
+This module provides functions for working with templates and rendering them.
 """
 
 import os
@@ -11,7 +11,7 @@ import datetime
 
 from typing import List
 
-from cards.templatefield import TemplateField, first_field, fields
+from cards.templatefield import TemplateField, fields
 
 from cards.column import (
     Row, get_column_contentd, get_definition_content, get_definition_contentd
@@ -19,7 +19,7 @@ from cards.column import (
 
 from cards.resource import get_resource_path, is_resource, is_image, supported_image_types
 
-from cards.util import dequote, get_line_number, get_padded_string
+from cards.util import first, dequote, get_line_number, get_padded_string
 from cards.warning import WarningDisplay, WarningContext
 
 from cards.constants import TemplateFields, TemplateFieldDescriptors, DateField
@@ -242,7 +242,7 @@ def fill_image_fields(template: Template) -> List[str]:
     def next_image_field() -> TemplateField:
         """ Return the next probable image field. """
 
-        return first_field(template.content, with_name_like=supported_images_pattern)
+        return first(fields(template.content, with_name_like=supported_images_pattern))
 
     field = next_image_field()
 
@@ -342,7 +342,7 @@ def fill_date_fields(template: Template,
     def next_date_field():
         """ Return the next probable date field. """
 
-        return first_field(template.content, with_name_like='date')
+        return first(fields(template.content, with_name_like='date'))
 
     field = next_date_field()
 
@@ -382,7 +382,7 @@ def fill_include_fields(template: Template) -> None:
     def next_include_field():
         """ Return the next probable include/inline field. """
 
-        return first_field(template.content, with_name_like='include|inline')
+        return first(fields(template.content, with_name_like='include|inline'))
 
     field = next_include_field()
 
@@ -463,11 +463,11 @@ def fill_partial_definition(definition: str,
     def next_partial_definition_field():
         """ Return the next field likely to contain a partial definition. """
 
-        return first_field(
-            in_template=template.content,
+        return first(fields(
+            template.content,
             with_name_like=pattern,
             with_context_like=pattern,
-            strictly_matching=False)  # match either name or context, or both
+            strictly_matching=False))  # match either name or context, or both
 
     partial_definition_field = next_partial_definition_field()
 
@@ -709,7 +709,7 @@ def fill_template(template: Template,
     unknown_fields = []
 
     # find any remaining template fields so we can warn that they were not filled
-    remaining_fields = fields(in_template=template.content)
+    remaining_fields = fields(template.content)
 
     for field in remaining_fields:
         if field.inner_content == TemplateFields.CARDS_TOTAL:

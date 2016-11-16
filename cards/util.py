@@ -71,6 +71,12 @@ def directory_size(directory_path: str) -> int:
     return size_in_bytes
 
 
+def first(iterable):
+    """ Return the first object in an iterable, if any. """
+
+    return next(iterable, None)
+
+
 def most_common(objects: list) -> object:
     """ Return the object that occurs most frequently in a list of objects. """
 
