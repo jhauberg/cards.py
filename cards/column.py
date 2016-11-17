@@ -156,6 +156,13 @@ def size_identifier_from_columns(column_names: list) -> (str, list):
 
 
 def get_row(row_number: int, referencing_row: Row, referencing_column: Column) -> Row:
+    """ Return the row at a row index. """
+
+    context = os.path.basename(referencing_row.data_path)
+
+    from_row_index = referencing_row.row_index
+    from_column_name = referencing_column.name
+
     # when looking at rows in a CSV they are not zero-based, and the first row
     # is always the headers, which makes the first row of actual data (that
     # you see) appear visually at row #2, like for example:
@@ -168,17 +175,21 @@ def get_row(row_number: int, referencing_row: Row, referencing_column: Column) -
     line_number = row_number - 2
 
     if line_number < 0:
+        if row_number == 1:
+            # special case- user probably meant the first data row (which is always #2)
+            WarningDisplay.referencing_row_header(
+                WarningContext(context, row_index=from_row_index, column=from_column_name))
+        else:
+            WarningDisplay.referencing_row_out_of_bounds(
+                WarningContext(context, row_index=from_row_index, column=from_column_name),
+                referenced_row_number=row_number)
+
         return None
 
     with open(referencing_row.data_path) as data_file_raw:
         data_file = FileWrapper(data_file_raw)
         # read data appropriately
         data = csv.DictReader(lower_first_row(data_file))
-
-        context = os.path.basename(referencing_row.data_path)
-
-        from_row_index = referencing_row.row_index
-        from_column_name = referencing_column.name
 
         try:
             # then read rows until reaching the target row_number

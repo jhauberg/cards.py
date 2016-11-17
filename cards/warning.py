@@ -506,3 +506,8 @@ class WarningDisplay:
         warn('The column contains a field that references a row that is out of bounds (#{0})'
              .format(referenced_row_number),
              in_context=context)
+
+    @staticmethod
+    def referencing_row_header(context: WarningContext) -> None:
+        warn('The column contains a field that references the header row (did you mean #2?)',
+             in_context=context)
