@@ -50,6 +50,13 @@ class Template:  # pylint: disable=too-few-public-methods
                 if truncated_path is not None
                 else truncated_content)
 
+    @staticmethod
+    def from_path(path: str, relative_to_path: str=None) -> ('Template', bool):
+        content, not_found, absolute_path = template_from_path(
+            path, relative_to_path)
+
+        return Template(content, absolute_path), not_found
+
 
 class TemplateRenderData:  # pylint: disable=too-few-public-methods
     """ Provides additional data about the rendering of a template. """

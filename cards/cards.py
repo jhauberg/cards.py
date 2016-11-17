@@ -102,14 +102,14 @@ def get_section(name: str, section_index: int, section_template: str) -> str:
 
 
 def get_template(template_path: str) -> (str, list):
-    with open(template_path) as template_file:
-        template_content = template_file.read()
+    template, template_not_found = Template.from_path(template_path)
 
-        template = Template(template_content, template_path)
+    if template_not_found:
+        print('could not open template \'{0}\''.format(template_path))
 
-        image_paths = fill_image_fields(template)
+    image_paths = fill_image_fields(template)
 
-        return template.content, image_paths
+    return template.content, image_paths
 
 
 def get_base_path() -> str:
