@@ -24,7 +24,7 @@ def determine_version_or_exit() -> str:
     if sys.version_info < (3, 5):
         sys.exit('Python 3.5 or newer is required for cards.py')
 
-    with open('cards/version.py', 'rt') as file:
+    with open('cards/version.py') as file:
         version_contents = file.read()
 
         version_match = re.search(VERSION_PATTERN, version_contents, re.M)
