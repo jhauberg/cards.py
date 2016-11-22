@@ -24,21 +24,21 @@ class Column:
         self.content = content
 
     def is_excluded(self) -> bool:
-        """ Determine whether a column should be excluded. """
+        """ Determine whether the column should be excluded. """
 
         return (self.name.startswith('(') and self.name.endswith(')')
                 if self.name is not None
                 else False)
 
     def is_special(self) -> bool:
-        """ Determine whether a column is to be treated as a special column. """
+        """ Determine whether the column is to be treated as a special column. """
 
         return (self.name.startswith('@')
                 if self.name is not None
                 else False)
 
     def is_back_only(self) -> bool:
-        """ Determine whether a column is only intended for the back of a card. """
+        """ Determine whether the column is only intended for the back of a card. """
 
         return (self.name.endswith(ColumnDescriptors.BACK_ONLY)
                 if self.name is not None
@@ -89,6 +89,11 @@ class Row:
         return Row(data=self._back_data(),
                    data_path=self.data_path,
                    row_index=self.row_index)
+
+    def is_prototype(self) -> bool:
+        """ Determine whether the row is a prototype row. """
+
+        return self.data.get(Columns.COUNT, '').strip() == '~'
 
     @staticmethod
     def is_excluded(row_string: str) -> bool:

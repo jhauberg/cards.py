@@ -189,11 +189,11 @@ def determine_count(row: dict) -> (int, bool):
 
     # determine how many instances of this card to generate
     # (defaults to a single instance if not specified)
-    count = row.get(Columns.COUNT, '1')
+    count = row.get(Columns.COUNT, '1').strip()
 
     was_indeterminable = False
 
-    if len(count.strip()) > 0:
+    if len(count) > 0:
         # the count column has content, so attempt to parse it
         try:
             count = int(count)
@@ -550,25 +550,32 @@ def make(data_paths: list,
 
                 row = Row(row_data, data_path, row_index)
 
-                count, indeterminable_count = determine_count(row_data)
+                if row.is_prototype():
+                    # prototype rows should be skipped, but since the skip is intentional,
+                    # we should not warn about it
+                    count = 0
+                else:
+                    count, indeterminable_count = determine_count(row_data)
 
-                if indeterminable_count:
-                    WarningDisplay.indeterminable_count(
-                        WarningContext(context, row_index))
-                elif count == 0:
-                    WarningDisplay.card_was_skipped_intentionally_info(
-                        WarningContext(context, row_index))
+                    if indeterminable_count:
+                        WarningDisplay.indeterminable_count(
+                            WarningContext(context, row_index))
+                    elif count == 0:
+                        # the count was explicitly set to 0, but as this might be a temporary thing,
+                        # we should warn about skipping this card
+                        WarningDisplay.card_was_skipped_intentionally_info(
+                            WarningContext(context, row_index))
 
-                if count > 100:
-                    # the count was unusually high; ask whether it's an error or not
-                    if WarningDisplay.abort_unusually_high_count(
-                            WarningContext(context, row_index), count):
-                        # it was an error, so break out and continue with the next card
-                        continue
+                    if count > 100:
+                        # the count was unusually high; ask whether it's an error or not
+                        if WarningDisplay.abort_unusually_high_count(
+                                WarningContext(context, row_index), count):
+                            # it was an error, so break out and continue with the next card
+                            continue
 
-                if count > 0 and is_preview:
-                    # only render 1 card unless it should be skipped
-                    count = 1
+                    if count > 0 and is_preview:
+                        # only render 1 card unless it should be skipped
+                        count = 1
 
                 # determine which template to use for this card, if any
                 template_path = row_data.get(Columns.TEMPLATE, None)
