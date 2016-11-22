@@ -6,7 +6,7 @@ Generate print-ready cards for your tabletop game
 
 Usage:
   cards make [<datasource>]... [--definitions=<defs>]
-             [--output-path=<path>] [--output-file=<file>]
+             [--output-path=<path>] [--output-file=<file>] [--include-header=<template>]
              [--card-size=<size>] [--force-page-breaks] [--disable-backs]
              [--discover] [--preview] [--verbose]
   cards new  [<name>] [--output-path=<path>] [--verbose]
@@ -25,18 +25,19 @@ Examples:
     Creates an empty project in the current directory.
 
 Options:
-  -h --help                  Show program help
-  -o --output-path=<path>    Specify output directory
-  -f --output-file=<file>    Specify output filename [default: index.html]
-  -d --definitions=<defs>    Specify definitions filename
-  --card-size=<size>         Specify default card size [default: standard]
-                             Other options include: \'domino\', \'jumbo\' or \'token\'
-  --force-page-breaks        Force a page break after each datasource
-  --disable-backs            Do not render card backs
-  --discover                 Automatically find and use datasources in the current directory
-  --preview                  Only render 1 of each card
-  --verbose                  Show more information
-  --version                  Show program version
+  -h --help                         Show program help
+  -o --output-path=<path>           Specify output directory
+  -f --output-file=<file>           Specify output filename [default: index.html]
+  -p --include-header=<template>    Specify a presentation template
+  -d --definitions=<defs>           Specify definitions filename
+  --card-size=<size>                Specify default card size [default: standard]
+                                    Other options include: \'domino\', \'jumbo\' or \'token\'
+  --force-page-breaks               Force a page break after each datasource
+  --disable-backs                   Do not render card backs
+  --discover                        Automatically find and use datasources in the current directory
+  --preview                         Only render 1 of each card
+  --verbose                         Show more information
+  --version                         Show program version
 """
 
 import os
@@ -107,6 +108,7 @@ def main():
         data_paths = arguments['<datasource>']
 
         output_filename = arguments['--output-file']
+        header_path = arguments['--include-header']
         definitions_path = arguments['--definitions']
         default_card_size_identifier = arguments['--card-size']
         force_page_breaks = arguments['--force-page-breaks']
@@ -114,7 +116,7 @@ def main():
         is_preview = arguments['--preview']
         discover = arguments['--discover']
 
-        make(data_paths, definitions_path,
+        make(data_paths, header_path, definitions_path,
              output_path, output_filename,
              force_page_breaks,
              disable_backs,

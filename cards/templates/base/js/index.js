@@ -193,8 +193,8 @@ function revealUI() {
 }
 
 window.onload = function() {
-  updatePageNumbers();
   determineBacksToggleVisibility();
+  updatePageNumbers();
   removeOverlappingCutGuides();
   removeEmptyFooterTags();
 

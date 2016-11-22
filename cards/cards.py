@@ -18,7 +18,8 @@ import datetime
 from datetime import timedelta
 
 from cards.template import (
-    Template, fill_each, fill_card, fill_index, fill_image_fields, template_from_path, strip_styles
+    Template, fill_each, fill_card, fill_index, fill_image_fields,
+    template_from_path, strip_styles
 )
 
 from cards.templatefield import TemplateField
@@ -106,6 +107,7 @@ def get_template(template_path: str) -> (str, list):
 
     if template_not_found:
         print('could not open template \'{0}\''.format(template_path))
+
 
     image_paths = fill_image_fields(template)
 
@@ -243,6 +245,7 @@ def get_data_path_names(data_paths: list) -> (list, int):
 
 
 def make(data_paths: list,
+         header_path: str=None,
          definitions_path: str=None,
          output_path: str=None,
          output_filename: str=None,
@@ -826,11 +829,14 @@ def make(data_paths: list,
         for template_path, style in embedded_styles.items():
             styles = styles + '\n' + style if len(styles) > 0 else style
 
-        if len(styles) == 0:
-            styles = '<style type="text/css">\n  /* no embedded styles */\n</style>'
+        header = ''
+
+        if header_path is not None:
+            with open(header_path) as header_file:
+                header = header_file.read().strip()
 
         index, render_data = fill_index(
-            index, styles, pages, pages_total, cards_total, definitions)
+            index, styles, pages, header, pages_total, cards_total, definitions)
 
         if len(render_data.image_paths) > 0:
             # we assume that any leftover images would have been from a definition

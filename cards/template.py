@@ -583,6 +583,7 @@ def resolve_column_field(field_name, field_value, in_content) -> (str, int):
 def fill_index(index: str,
                style: str,
                pages: str,
+               header: str,
                pages_total: int,
                cards_total: int,
                definitions: dict) -> (str, TemplateRenderData):
@@ -590,7 +591,18 @@ def fill_index(index: str,
 
     template = Template(index)
 
+    if len(style) == 0:
+        style = '<style type="text/css">\n  /* no embedded styles */\n</style>'
+
     fill_each('_styles', style, template, indenting=True)
+
+    if len(header) > 0:
+        header_tag = '<div class="ui-header">\n  {{ _header }}\n</div>'
+
+        fill_each('_header', header_tag, template, indenting=True)
+
+    fill_each('_header', header, template, indenting=True)
+
     fill_each(TemplateFields.PAGES, pages, template, indenting=True)
     fill_each(TemplateFields.CARDS_TOTAL, str(cards_total), template)
     fill_each(TemplateFields.PAGES_TOTAL, str(pages_total), template)

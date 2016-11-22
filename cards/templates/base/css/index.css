@@ -59,6 +59,23 @@ html, body {
   border-bottom: 1px solid #e5e5e5;
 }
 
+.ui-header {
+  margin: 1cm auto;
+  font-size: 1em;
+  padding: .25cm .5cm .25cm .5cm;
+  width: 80%;
+  min-width: 22cm;
+  color: black;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  background-color: rgba(245, 245, 245, 1);
+  box-shadow: 0 2px 1px #e5e5e5;
+}
+
+div.ui-header a {
+  color: #0000ee;
+}
+
 div.ui-toolbar a,
 div.ui-modal-body a,
 div.ui-modal-header a {
@@ -358,7 +375,7 @@ svg:hover .hoverable {
     background-color: #fff;
   }
 
-  .ui-toolbar, .ui-footer, .ui-modal, .ui-section {
+  .ui-toolbar, .ui-footer, .ui-modal, .ui-header, .ui-section {
     /* We don't want to just hide these elements; we want to pretend they aren't even there, so that
        they don't take up any space. Note that hiding cut guides or footer uses `visibility: hidden`
        instead, as those *should* still take up space, but just be invisible. */
