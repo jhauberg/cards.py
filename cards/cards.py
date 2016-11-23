@@ -373,6 +373,8 @@ def make(data_paths: list,
 
     cards_total_unique = 0
 
+    cards_total_per_context = {}
+
     previous_card_size = None
 
     page_size = CardSizes.get_page_size()
@@ -399,6 +401,8 @@ def make(data_paths: list,
             WarningDisplay.bad_data_path_error(WarningContext(context), data_path)
             # and skip this datasource
             continue
+
+        cards_total_per_context[context] = 0
 
         with open(data_path) as data_file_raw:
             # wrap the file stream to retain access to unparsed lines
@@ -705,6 +709,8 @@ def make(data_paths: list,
                     cards_on_page += 1
                     cards_total += 1
 
+                    cards_total_per_context[context] += 1
+
                     if not disable_backs:
                         template_back = Template(template_back_content, resolved_template_path_back)
 
@@ -800,6 +806,16 @@ def make(data_paths: list,
             # reset to prepare for the next page
             cards_on_page = 0
             cards = ''
+
+        # temporary solution involving creating new Template object only used for fill_each,
+        # could be prettier; refactor as part of #34
+        pages_template = Template(pages)
+
+        fill_each(TemplateFields.CARDS_TOTAL_IN_CONTEXT,
+                  str(cards_total_per_context[context]),
+                  pages_template)
+
+        pages = pages_template.content
 
         # store the card size that was just used, so we can determine
         # whether or not the size changes for the next datasource

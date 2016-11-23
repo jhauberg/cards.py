@@ -732,10 +732,11 @@ def fill_template(template: Template,
 
     # find any remaining template fields so we can warn that they were not filled
     for field in template:
-        if field.inner_content == TemplateFields.CARDS_TOTAL:
-            # this is a special case: this field will not be filled until every card
-            # has been generated- so this field should not be treated as if missing;
-            # instead, simply ignore it at this point
+        if (field.inner_content == TemplateFields.CARDS_TOTAL or
+                field.inner_content == TemplateFields.CARDS_TOTAL_IN_CONTEXT):
+            # this is a special case: these fields will not be filled until every card
+            # has been generated- so each field should not be treated as if missing;
+            # instead, simply ignore them at this point
             pass
         else:
             # the field was not found in the card data, so make a warning about it

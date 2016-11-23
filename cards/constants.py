@@ -64,8 +64,10 @@ class TemplateFields:  # pylint: disable=too-few-public-methods
     CARD_ROW_INDEX = '_card_row_index'
     # Populated by the path of the template (if any) used to generate the current card
     CARD_TEMPLATE_PATH = '_card_template_path'
-    # Populated by the total number of cards (duplicates count)
+    # Populated by the total number of cards (including duplicates)
     CARDS_TOTAL = '_cards_total'
+    # Populated by the total number of cards in the current datasource
+    CARDS_TOTAL_IN_CONTEXT = '_cards_total_in_context'
 
     # Used to include the contents of a file (e.g. include 'path/to/file.html')
     INCLUDE = 'include'
