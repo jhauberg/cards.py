@@ -108,7 +108,6 @@ def get_template(template_path: str) -> (str, list):
     if template_not_found:
         print('could not open template \'{0}\''.format(template_path))
 
-
     image_paths = fill_image_fields(template)
 
     return template.content, image_paths
@@ -250,7 +249,7 @@ def make(data_paths: list,
          output_path: str=None,
          output_filename: str=None,
          force_page_breaks: bool=False,
-         disable_backs: bool=False,
+         should_disable_backs: bool=False,
          default_card_size_identifier: str='standard',
          is_preview: bool=False,
          discover_datasources: bool=False):
@@ -439,6 +438,8 @@ def make(data_paths: list,
                     WarningDisplay.bad_card_size(
                         WarningContext(context), size_identifier)
 
+            disable_backs = should_disable_backs
+
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
                 # must be added to a new page at this point
@@ -452,7 +453,6 @@ def make(data_paths: list,
                     if cards_on_last_row is not 0:
                         # less than MAX_CARDS_PER_ROW cards were added to the current line,
                         # so we have to add additional blank filler cards to ensure a correct layout
-
                         remaining_backs = cards_per_row - cards_on_last_row
 
                         while remaining_backs > 0:
@@ -639,6 +639,7 @@ def make(data_paths: list,
 
                 embedded_styles[template_front.path] = strip_styles(template_front)
 
+                stripped_template_content = template_front.content
                 resolved_template_path_back = None
 
                 if not disable_backs:
@@ -668,6 +669,8 @@ def make(data_paths: list,
 
                     embedded_styles[template_back.path] = strip_styles(template_back)
 
+                    stripped_template_back_content = template_back.content
+
                 # this is also the shared index for any instance of this card
                 cards_total_unique += 1
 
@@ -675,7 +678,8 @@ def make(data_paths: list,
                     card_index = cards_total + 1
 
                     # since we're mutating the template for each card, we need to make a new one
-                    template_front = Template(template_content, resolved_template_path)
+                    template_front = Template(
+                        stripped_template_content, resolved_template_path)
 
                     card_content, render_data = fill_card(
                         template_front,
@@ -712,7 +716,8 @@ def make(data_paths: list,
                     cards_total_per_context[context] += 1
 
                     if not disable_backs:
-                        template_back = Template(template_back_content, resolved_template_path_back)
+                        template_back = Template(
+                            stripped_template_back_content, resolved_template_path_back)
 
                         back_content, render_data = fill_card(
                             template_back,
