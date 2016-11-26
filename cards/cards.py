@@ -75,7 +75,7 @@ def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bo
     fill_each(TemplateFields.PAGE_NUMBER, str(page_number), template)
     fill_each(TemplateFields.CARDS, cards, template, indenting=True)
 
-    return template.content
+    return template.content + '\n'
 
 
 def get_sized_card(card_template: str,
@@ -88,7 +88,7 @@ def get_sized_card(card_template: str,
     fill_each(TemplateFields.CARD_SIZE, size_class, template)
     fill_each(TemplateFields.CARD_CONTENT, content, template, indenting=True)
 
-    return template.content
+    return template.content + '\n'
 
 
 def get_section(name: str, section_index: int, section_template: str) -> str:
