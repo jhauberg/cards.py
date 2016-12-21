@@ -64,7 +64,44 @@ def get_definitions_from_file(path: str) -> dict:
     return definitions
 
 
-def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bool=False, is_filler: bool=False) -> str:
+def get_section_name(contexts: list) -> str:
+    section_name = ''
+
+    for context in contexts:
+        if len(section_name) > 0:
+            section_name += ', '
+
+        section_name += os.path.splitext(context)[0]
+
+    return section_name
+
+
+def get_section(name: str,
+                section_template: str,
+                is_card_backs: bool=False,
+                is_filler: bool=False) -> str:
+    """ Populate a section with a name. """
+
+    template = Template(section_template)
+
+    section_class = 'ui-section page-backs' if is_card_backs else 'ui-section'
+
+    if is_filler:
+        section_class = '{0} {1}'.format(section_class, 'filler')
+
+    fill_each('_section_class', section_class, template)
+    fill_each('_datasource_name', name, template)
+
+    return template.content + '\n'
+
+
+def get_page(page_number: int,
+             cards: str,
+             page_template: str,
+             section_template: str,
+             contexts: list,
+             is_card_backs: bool=False,
+             is_filler: bool=False) -> str:
     """ Populate a page with cards. """
 
     template = Template(page_template)
@@ -78,7 +115,19 @@ def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bo
     fill_each(TemplateFields.PAGE_NUMBER, str(page_number), template)
     fill_each(TemplateFields.CARDS, cards, template, indenting=True)
 
-    return template.content + '\n'
+    page = template.content + '\n'
+
+    if contexts is not None:
+        section_name = get_section_name(contexts)
+
+        if is_card_backs:
+            section_name = '{0} — backs'.format(section_name)
+
+        section = get_section(section_name, section_template, is_card_backs, is_filler)
+
+        page = section + page
+
+    return page
 
 
 def get_sized_card(card_template: str,
@@ -90,17 +139,6 @@ def get_sized_card(card_template: str,
 
     fill_each(TemplateFields.CARD_SIZE, size_class, template)
     fill_each(TemplateFields.CARD_CONTENT, content, template, indenting=True)
-
-    return template.content + '\n'
-
-
-def get_section(name: str, section_index: int, section_template: str) -> str:
-    """ Populate a section with datasource name and index. """
-
-    template = Template(section_template)
-
-    fill_each('_datasource_name', name, template)
-    fill_each('_datasource_id', 'datasource-{0}'.format(section_index), template)
 
     return template.content + '\n'
 
@@ -378,9 +416,9 @@ def make(data_paths: list,
     cards_total = 0
     # incremented each time a page is generated
     pages_total = 0
-
+    # incremented for each unique card (i.e. not incremented for copies/duplicates)
     cards_total_unique = 0
-
+    # holds total card counts per datasource
     cards_total_per_context = {}
 
     previous_card_size = None
@@ -412,6 +450,8 @@ def make(data_paths: list,
                     # we don't need to continue; we figured out that at least one datasource
                     # should render card backs
                     break
+
+    contexts_per_page = []
 
     for data_path_index, data_path in enumerate(data_paths):
         # define the context as the base filename of the current data- useful when troubleshooting
@@ -471,7 +511,7 @@ def make(data_paths: list,
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
                 # must be added to a new page at this point
-                pages += get_page(pages_total + 1, cards, page)
+                pages += get_page(pages_total + 1, cards, page, section, contexts_per_page)
                 pages_total += 1
 
                 if not disable_backs:
@@ -494,7 +534,8 @@ def make(data_paths: list,
                     backs_row = ''
 
                     # fill another page with the backs
-                    pages += get_page(pages_total + 1, backs, page, is_card_backs=True)
+                    pages += get_page(pages_total + 1, backs, page, section, contexts_per_page,
+                                      is_card_backs=True)
                     pages_total += 1
 
                     backs = ''
@@ -506,7 +547,7 @@ def make(data_paths: list,
 
                     # the filler page counts as a page full of backs, but contains content
                     # that will not be printed (not even a footer)
-                    pages += get_page(pages_total + 1, '', page_filler,
+                    pages += get_page(pages_total + 1, '', page_filler, section, contexts_per_page,
                                       is_card_backs=True, is_filler=True)
                     pages_total += 1
 
@@ -516,8 +557,9 @@ def make(data_paths: list,
                 cards_on_page = 0
                 cards = ''
 
-            if force_page_breaks:
-                pages += get_section(os.path.splitext(context)[0], data_path_index + 1, section)
+                contexts_per_page = []
+
+            contexts_per_page.append(context)
 
             card_width, card_height = card_size.size_in_inches
             page_width, page_height = page_size.size_in_inches
@@ -804,20 +846,21 @@ def make(data_paths: list,
 
                     if cards_on_page == max_cards_per_page:
                         # add another page full of cards
-                        pages += get_page(pages_total + 1, cards, page)
+                        pages += get_page(pages_total + 1, cards, page, section, contexts_per_page)
                         pages_total += 1
 
                         if not disable_backs:
                             # and one full of backs
-                            pages += get_page(pages_total + 1, backs, page, is_card_backs=True)
+                            pages += get_page(pages_total + 1, backs, page, section,
+                                              contexts_per_page, is_card_backs=True)
                             pages_total += 1
 
                             # reset to prepare for the next page
                             backs = ''
 
                         if pages_contain_backs and disable_backs:
-                            pages += get_page(pages_total + 1, '', page_filler,
-                                              is_card_backs=True, is_filler=True)
+                            pages += get_page(pages_total + 1, '', page_filler, section,
+                                              contexts_per_page, is_card_backs=True, is_filler=True)
                             pages_total += 1
 
                             contains_filler_pages = True
@@ -826,10 +869,12 @@ def make(data_paths: list,
                         cards_on_page = 0
                         cards = ''
 
+                        contexts_per_page = [context]
+
         if (force_page_breaks or data_path is data_paths[-1]) and cards_on_page > 0:
             # in case we're forcing pagebreaks for each datasource, or we're on the last datasource
             # and there's still cards remaining, then do a pagebreak and fill those into a new page
-            pages += get_page(pages_total + 1, cards, page)
+            pages += get_page(pages_total + 1, cards, page, section, contexts_per_page)
             pages_total += 1
 
             if not disable_backs:
@@ -852,13 +897,14 @@ def make(data_paths: list,
                 backs_row = ''
 
                 # fill another page with the backs
-                pages += get_page(pages_total + 1, backs, page, is_card_backs=True)
+                pages += get_page(pages_total + 1, backs, page, section, contexts_per_page,
+                                  is_card_backs=True)
                 pages_total += 1
 
                 backs = ''
 
             if pages_contain_backs and disable_backs:
-                pages += get_page(pages_total + 1, '', page_filler,
+                pages += get_page(pages_total + 1, '', page_filler, section, contexts_per_page,
                                   is_card_backs=True, is_filler=True)
                 pages_total += 1
 
@@ -867,6 +913,8 @@ def make(data_paths: list,
             # reset to prepare for the next page
             cards_on_page = 0
             cards = ''
+
+            contexts_per_page = []
 
         if contains_filler_pages:
             WarningDisplay.datasource_contains_filler_pages(
