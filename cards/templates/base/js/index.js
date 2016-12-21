@@ -59,7 +59,7 @@ function toggleVisibility(className) {
   }
 }
 
-function toggleDisplay(className) {
+function toggleDisplay(className, on) {
   var elements = document.getElementsByClassName(className);
 
   if (elements.length > 0) {
@@ -67,14 +67,23 @@ function toggleDisplay(className) {
       var element = elements[i];
       var previousDisplay = element.style.display;
 
-      element.style.display =
-        (!previousDisplay || previousDisplay == 'block') ?
-          'none' :
-          'block';
+      if (on != undefined) {
+        element.style.display = on ? 'block' : 'none';
+      } else {
+        element.style.display =
+          (!previousDisplay || previousDisplay == 'block') ?
+            'none' :
+            'block';
+      }
     }
 
     return elements[0].style.display;
   }
+}
+
+function toggleEnability(element, on) {
+  element.style.opacity = on ? 1.0 : 0.2;
+  element.style.pointerEvents = on ? 'auto' : 'none';
 }
 
 function toggleButtons(buttonOn, buttonOff, on) {
@@ -96,8 +105,26 @@ function toggleCutGuides() {
 }
 
 function toggleCardBacks() {
+  var toggledOn = toggleDisplay('page-backs') == 'block';
+
   toggleButtons('toggle-card-backs-on', 'toggle-card-backs-off',
-    (toggleDisplay('page-backs') == 'block'));
+    toggledOn);
+
+  // force the two-sided option to follow the backs option (both on and off)
+  toggleTwoSided(toggledOn);
+
+  var toggleTwoSidedButton = document.getElementById('toggle-two-sided');
+
+  if (toggleTwoSidedButton) {
+    toggleEnability(toggleTwoSidedButton, toggledOn);
+  }
+
+  updatePageNumbers();
+}
+
+function toggleTwoSided(on) {
+  toggleButtons('toggle-two-sided-on', 'toggle-two-sided-off',
+    (toggleDisplay('filler', on) == 'block'));
 
   updatePageNumbers();
 }
@@ -118,6 +145,14 @@ function toggleHelp(on) {
       window.onclick = null;
     }
   }
+}
+
+function elementHasClass(element, cls) {
+  if (element) {
+    return element.className.split(" ").indexOf(cls) != -1;
+  }
+
+  return false;
 }
 
 function updatePageNumbers() {
@@ -144,7 +179,7 @@ function updatePageNumbers() {
         var visiblePageElement = visiblePageElements[i];
         var pageNumberElements = visiblePageElement.getElementsByClassName('page-number-tag');
 
-        if (visiblePageElement.className.split(" ").indexOf("page-backs") == -1) {
+        if (!elementHasClass(visiblePageElement, "page-backs")) {
           // pages with backs do not count towards total card count
           var cardElements = visiblePageElement.getElementsByClassName('card');
 
@@ -166,20 +201,30 @@ function updatePageNumbers() {
   var statsElement = document.getElementById('ui-stats');
 
   if (statsElement) {
-    var cardsAndPagesContent = '' + totalCardCount + ' cards' + '<br />' + totalPageCount + ' pages';
+    var cardsStat = '' + totalCardCount + ' cards';
+    var pagesStat = '' + totalPageCount + ' pages';
+
+    var cardsAndPagesContent = cardsStat + '<br />' + pagesStat;
 
     statsElement.innerHTML = cardsAndPagesContent;
   }
 }
 
 function determineBacksToggleVisibility() {
-  var toggleBacksElement = document.getElementById('toggle-card-backs');
+  var backsPageElements = document.getElementsByClassName('page-backs');
 
-  if (toggleBacksElement) {
-    var backsPageElements = document.getElementsByClassName('page-backs');
+  var containsBacksPages = backsPageElements.length > 0
 
-    if (backsPageElements.length === 0) {
+  if (!containsBacksPages) {
+    var toggleBacksElement = document.getElementById('toggle-card-backs');
+    var toggleTwoSidedElement = document.getElementById('toggle-two-sided');
+
+    if (toggleBacksElement) {
       toggleBacksElement.style.display = 'none';
+    }
+
+    if (toggleTwoSidedElement) {
+      toggleTwoSidedElement.style.display = 'none';
     }
   }
 }

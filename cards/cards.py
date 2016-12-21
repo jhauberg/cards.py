@@ -64,12 +64,15 @@ def get_definitions_from_file(path: str) -> dict:
     return definitions
 
 
-def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bool=False) -> str:
+def get_page(page_number: int, cards: str, page_template: str, is_card_backs: bool=False, is_filler: bool=False) -> str:
     """ Populate a page with cards. """
 
     template = Template(page_template)
 
     page_class = 'page page-backs' if is_card_backs else 'page'
+
+    if is_filler:
+        page_class = '{0} {1}'.format(page_class, 'filler')
 
     fill_each('_page_class', page_class, template)
     fill_each(TemplateFields.PAGE_NUMBER, str(page_number), template)
@@ -317,6 +320,12 @@ def make(data_paths: list,
     if len(filled_image_paths) > 0:
         context_image_paths[page_template_path] = list(set(filled_image_paths))
 
+    page_filler_template_path = os.path.join(base_path, 'templates/base/page_filler.html')
+    page_filler, filled_image_paths = get_template(page_filler_template_path)
+
+    if len(filled_image_paths) > 0:
+        context_image_paths[page_filler_template_path] = list(set(filled_image_paths))
+
     section_template_path = os.path.join(base_path, 'templates/base/section.html')
     section, filled_image_paths = get_template(section_template_path)
 
@@ -386,6 +395,24 @@ def make(data_paths: list,
                                   TemplateFields.AUTHOR,
                                   TemplateFields.VERSION}
 
+    pages_contain_backs = False
+
+    if not should_disable_backs:
+        # if pages should render card backs, we need to figure out if any datasources
+        # actually *do* contain specifications for card back templates
+        # if any do, we need to know this beforehand to handle the synchronization issue
+        # with mixing non-back and back datasources for double-sided printing
+        for data_path in data_paths:
+            with open(data_path) as data_file:
+                # read the first line which should contain the column names
+                header_line = data_file.readline()
+
+                if Columns.TEMPLATE_BACK in header_line:
+                    pages_contain_backs = True
+                    # we don't need to continue; we figured out that at least one datasource
+                    # should render card backs
+                    break
+
     for data_path_index, data_path in enumerate(data_paths):
         # define the context as the base filename of the current data- useful when troubleshooting
         context = os.path.basename(data_path)
@@ -439,6 +466,7 @@ def make(data_paths: list,
                         WarningContext(context), size_identifier)
 
             disable_backs = should_disable_backs
+            contains_filler_pages = False
 
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
@@ -470,6 +498,19 @@ def make(data_paths: list,
                     pages_total += 1
 
                     backs = ''
+
+                if pages_contain_backs and disable_backs:
+                    # we know some pages with backs have been added, and we know that this
+                    # datasource does not contain any card backs, so in order to keep
+                    # two-sided printing in sync, we need to add a filler page
+
+                    # the filler page counts as a page full of backs, but contains content
+                    # that will not be printed (not even a footer)
+                    pages += get_page(pages_total + 1, '', page_filler,
+                                      is_card_backs=True, is_filler=True)
+                    pages_total += 1
+
+                    contains_filler_pages = True
 
                 # reset to prepare for the next page
                 cards_on_page = 0
@@ -513,11 +554,12 @@ def make(data_paths: list,
                 WarningDisplay.assume_backs_info(
                     WarningContext(context))
             else:
+                # there's no back templates specified; so we can't render any
                 if not disable_backs:
                     WarningDisplay.no_backs_info(
                         WarningContext(context))
-
-                disable_backs = True
+                    # so disable them completely
+                    disable_backs = True
 
             if not disable_backs:
                 # empty backs may be necessary to fill in empty spots on a page to ensure
@@ -773,6 +815,13 @@ def make(data_paths: list,
                             # reset to prepare for the next page
                             backs = ''
 
+                        if pages_contain_backs and disable_backs:
+                            pages += get_page(pages_total + 1, '', page_filler,
+                                              is_card_backs=True, is_filler=True)
+                            pages_total += 1
+
+                            contains_filler_pages = True
+
                         # reset to prepare for the next page
                         cards_on_page = 0
                         cards = ''
@@ -808,9 +857,20 @@ def make(data_paths: list,
 
                 backs = ''
 
+            if pages_contain_backs and disable_backs:
+                pages += get_page(pages_total + 1, '', page_filler,
+                                  is_card_backs=True, is_filler=True)
+                pages_total += 1
+
+                contains_filler_pages = True
+
             # reset to prepare for the next page
             cards_on_page = 0
             cards = ''
+
+        if contains_filler_pages:
+            WarningDisplay.datasource_contains_filler_pages(
+                WarningContext(context))
 
         # temporary solution involving creating new Template object only used for fill_each,
         # could be prettier; refactor as part of #34

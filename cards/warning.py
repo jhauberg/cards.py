@@ -511,3 +511,9 @@ class WarningDisplay:
     def referencing_row_header(context: WarningContext) -> None:
         warn('The column contains a field that references the header row (did you mean #2?)',
              in_context=context)
+
+    @staticmethod
+    def datasource_contains_filler_pages(context: WarningContext) -> None:
+        warn('Other datasources contain cards backs, but this one does not; filler pages were '
+             'inserted to keep all pages synchronized for two-sided printing',
+             in_context=context)

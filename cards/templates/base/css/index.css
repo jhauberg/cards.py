@@ -173,7 +173,7 @@ div.ui-modal-header a {
 .ui-action {
   float: left;
 
-  margin-right: .4cm;
+  margin-right: .35cm;
 
   font-size: .9em;
 
@@ -259,6 +259,15 @@ svg:hover .hoverable {
 
   /* Center content in case of mismatched page padding */
   margin: auto;
+}
+
+.page-content-hidden {
+  text-align: center;
+
+  opacity: 0.6;
+
+  width: 100%;
+  margin: 10%;
 }
 
 .page-footer {
@@ -375,7 +384,12 @@ svg:hover .hoverable {
     background-color: #fff;
   }
 
-  .ui-toolbar, .ui-footer, .ui-modal, .ui-header, .ui-section {
+  .ui-toolbar,
+  .ui-footer,
+  .ui-modal,
+  .ui-header,
+  .ui-section,
+  .page-content-hidden {
     /* We don't want to just hide these elements; we want to pretend they aren't even there, so that
        they don't take up any space. Note that hiding cut guides or footer uses `visibility: hidden`
        instead, as those *should* still take up space, but just be invisible. */
