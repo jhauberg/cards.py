@@ -1,9 +1,9 @@
 # coding=utf-8
 
 """
-This script manages the version identifier for cards.py.
+This script holds the version identifier for cards.py.
 
-The version is defined by the Semantic Versioning convention (see http://semver.org).
+Versioning follows the Semantic Versioning convention (see http://semver.org).
 """
 
-__version__ = '0.6.3'
+__version__ = '0.6.4'
