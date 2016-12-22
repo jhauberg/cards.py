@@ -451,7 +451,10 @@ def make(data_paths: list,
                     # should render card backs
                     break
 
+    previous_context = None
     contexts_per_page = []
+
+    disable_backs = should_disable_backs
 
     for data_path_index, data_path in enumerate(data_paths):
         # define the context as the base filename of the current data- useful when troubleshooting
@@ -505,9 +508,6 @@ def make(data_paths: list,
                     WarningDisplay.bad_card_size(
                         WarningContext(context), size_identifier)
 
-            disable_backs = should_disable_backs
-            contains_filler_pages = False
-
             if card_size != previous_card_size and cards_on_page > 0:
                 # card sizing is different for this datasource, so any remaining cards
                 # must be added to a new page at this point
@@ -551,7 +551,8 @@ def make(data_paths: list,
                                       is_card_backs=True, is_filler=True)
                     pages_total += 1
 
-                    contains_filler_pages = True
+                    WarningDisplay.datasource_contains_filler_pages(
+                        WarningContext(previous_context))
 
                 # reset to prepare for the next page
                 cards_on_page = 0
@@ -560,6 +561,9 @@ def make(data_paths: list,
                 contexts_per_page = []
 
             contexts_per_page.append(context)
+
+            disable_backs = should_disable_backs
+            contains_filler_pages = False
 
             card_width, card_height = card_size.size_in_inches
             page_width, page_height = page_size.size_in_inches
@@ -937,6 +941,8 @@ def make(data_paths: list,
         # ensure there are no duplicate image paths, since that would just
         # cause unnecessary copy operations
         context_image_paths[data_path] = list(set(image_paths))
+
+        previous_context = context
 
     # determine unused definitions, if any
     unused_definitions = list(set(definitions.keys()) - all_referenced_definitions)
