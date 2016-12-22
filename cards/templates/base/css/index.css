@@ -17,9 +17,14 @@ html, body {
   font-family: monospace;
   font-size: .9em;
 
-  margin: -.5cm;
+  margin: 1.25cm -.5cm -.5cm -.5cm;
 
   text-align: center;
+}
+
+.ui-section ~ .ui-section {
+  /* Selects every .ui-section after the first hit */
+  margin: -.5cm;
 }
 
 .ui-modal {
@@ -60,7 +65,7 @@ html, body {
 }
 
 .ui-header {
-  margin: 1cm auto;
+  margin: 1cm auto -.5cm auto;
   font-size: 1em;
   padding: .25cm .5cm .25cm .5cm;
   width: 80%;
