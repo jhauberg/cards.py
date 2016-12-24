@@ -14,6 +14,28 @@ Install straight from the source:
 
     $ python3 setup.py install
 
+<details>
+  <summary>Troubleshooting</summary>
+
+There's a few things that could go wrong when trying to install. If things didn't go as expected, check the following:
+
+## Your PATH environment variable may be incorrect
+
+When you first installed Python, it should add the `PATH` automatically. However, if it didn't, it should look something like this:
+
+```
+PATH="/Library/Frameworks/Python.framework/Versions/3.6/bin:${PATH}"
+export PATH
+```
+
+You may additionally need to add the `PYTHONPATH` variable and have it point to the `site-packages` directory of your Python version; for example, for a Python 3.6 installation, the variable could look like this:
+
+```
+export PYTHONPATH="${PYTHONPATH}/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages"
+```
+
+</details>
+
 # Usage
 
 When installed, you can run `cards.py` on the command line:
