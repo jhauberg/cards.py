@@ -354,6 +354,10 @@ svg:hover .hoverable {
   bottom: -2.5mm;
 }
 
+.do-not-print {
+  /* intentionally left blank */
+}
+
 @media
 (-webkit-min-device-pixel-ratio: 2),
 (min-resolution: 192dpi) {
@@ -389,12 +393,7 @@ svg:hover .hoverable {
     background-color: #fff;
   }
 
-  .ui-toolbar,
-  .ui-footer,
-  .ui-modal,
-  .ui-header,
-  .ui-section,
-  .page-content-hidden {
+  .do-not-print {
     /* We don't want to just hide these elements; we want to pretend they aren't even there, so that
        they don't take up any space. Note that hiding cut guides or footer uses `visibility: hidden`
        instead, as those *should* still take up space, but just be invisible. */

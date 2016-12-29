@@ -597,7 +597,7 @@ def fill_index(index: str,
     fill_each('_styles', style, template, indenting=True)
 
     if len(header) > 0:
-        header_tag = '<div class="ui-header">\n  {{ _header }}\n</div>'
+        header_tag = '<div class="ui-header do-not-print">\n  {{ _header }}\n</div>'
 
         fill_each('_header', header_tag, template, indenting=True)
 

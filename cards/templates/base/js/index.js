@@ -233,7 +233,7 @@ function revealUI() {
   var toolbar = document.getElementById('toolbar');
 
   if (toolbar) {
-    toolbar.className = 'ui-toolbar ui-toolbar-revealed';
+    toolbar.className = 'ui-toolbar ui-toolbar-revealed do-not-print';
   }
 }
 

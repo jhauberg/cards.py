@@ -84,7 +84,10 @@ def get_section(name: str,
 
     template = Template(section_template)
 
-    section_class = 'ui-section page-backs' if is_card_backs else 'ui-section'
+    section_class = 'ui-section do-not-print'
+
+    if is_card_backs:
+        section_class = '{0} {1}'.format(section_class, 'page-backs')
 
     if is_filler:
         section_class = '{0} {1}'.format(section_class, 'filler')
@@ -106,7 +109,10 @@ def get_page(page_number: int,
 
     template = Template(page_template)
 
-    page_class = 'page page-backs' if is_card_backs else 'page'
+    page_class = 'page'
+
+    if is_card_backs:
+        page_class = '{0} {1}'.format(page_class, 'page-backs')
 
     if is_filler:
         page_class = '{0} {1}'.format(page_class, 'filler')

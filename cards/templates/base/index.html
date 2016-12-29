@@ -21,7 +21,7 @@
     {{ _styles }}
   </head>
   <body>
-    <div id="toolbar" class="ui-toolbar ui-toolbar-hidden">
+    <div id="toolbar" class="ui-toolbar ui-toolbar-hidden do-not-print">
       <!-- SVG icons (report, print, help, toggle on/off) from https://design.google.com/icons/
            Licensed under Apache License Version 2.0 -->
       <div class="ui-action" onclick="window.location='https://github.com/jhauberg/cards.py/issues/new';" title="Find any bugs? Missing a feature? Let me know!">
@@ -90,7 +90,7 @@
       </div>
     </div>
 
-    <div class="ui-modal" id="ui-modal-help">
+    <div class="ui-modal do-not-print" id="ui-modal-help">
       <div class="ui-modal-content">
         <div class="ui-modal-header">
           <span class="ui-modal-close" onclick="toggleHelp(false);">×</span>
@@ -110,7 +110,7 @@
     {{ _header }}
     {{ _pages }}
 
-    <div class="ui-footer">
+    <div class="ui-footer do-not-print">
       <p>Cards generated on {{ date }}</p>
       <p><button onclick="window.scrollTo(0, 0);">Back to top</button></p>
       <a href="https://github.com/jhauberg/cards.py" title="cards.py" target="_blank">
