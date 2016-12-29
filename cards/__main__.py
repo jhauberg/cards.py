@@ -7,7 +7,7 @@ Generate print-ready cards for your tabletop game
 Usage:
   cards make [<datasource>]... [--definitions=<defs>]
              [--output-path=<path>] [--output-file=<file>] [--include-header=<template>]
-             [--card-size=<size>] [--force-page-breaks] [--disable-backs]
+             [--card-size=<size>] [--force-page-breaks] [--disable-backs] [--disable-page-sections]
              [--discover] [--preview] [--verbose]
   cards new  [<name>] [--output-path=<path>] [--verbose]
   cards -h | --help
@@ -34,6 +34,7 @@ Options:
                                     Other options include: \'domino\', \'jumbo\' or \'token\'
   --force-page-breaks               Force a page break after each datasource
   --disable-backs                   Do not render card backs
+  --disable-page-sections           Do not render page sections
   --discover                        Automatically find and use datasources in the current directory
   --preview                         Only render 1 of each card
   --verbose                         Show more information
@@ -113,13 +114,14 @@ def main():
         default_card_size_identifier = arguments['--card-size']
         force_page_breaks = arguments['--force-page-breaks']
         disable_backs = arguments['--disable-backs']
+        disable_sections = arguments['--disable-page-sections']
         is_preview = arguments['--preview']
         discover = arguments['--discover']
 
         make(data_paths, header_path, definitions_path,
              output_path, output_filename,
              force_page_breaks,
-             disable_backs,
+             disable_backs, disable_sections,
              default_card_size_identifier,
              is_preview,
              discover)
