@@ -15,13 +15,29 @@ Install straight from the source:
     $ python3 setup.py install
 
 <details>
-  <summary>Troubleshooting</summary>
+  <summary>**Uninstalling**</summary>
 
-There's a few things that could go wrong when trying to install. If things didn't go as expected, check the following:
+If you want to uninstall `cards.py` and make sure that you get rid of everything, you can run the installation again using the additional **--record** argument to save a list of all installed files:
 
-## Your PATH environment variable may be incorrect
+    $ python3 setup.py install --record installed_files.txt
 
-When you first installed Python, it should add the `PATH` automatically. However, if it didn't, it should look something like this:
+You can then go through all listed files and manually delete each one.
+</details>
+
+# Usage
+
+When installed, you can run `cards.py` on the command line:
+
+    $ cards make cards.csv
+
+<details>
+  <summary>It doesn't work</summary>
+
+There's a few things that could go wrong during an install. If things didn't go as expected, check the following:
+
+**Your PATH environment variable may be incorrect**
+
+When you first installed Python, the installer probably added the `PATH` automatically. However, in case it didn't, it should look something like this:
 
 ```
 PATH="/Library/Frameworks/Python.framework/Versions/3.6/bin:${PATH}"
@@ -33,14 +49,7 @@ You may additionally need to add the `PYTHONPATH` variable and have it point to 
 ```
 export PYTHONPATH="${PYTHONPATH}/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages"
 ```
-
 </details>
-
-# Usage
-
-When installed, you can run `cards.py` on the command line:
-
-    $ cards make cards.csv
 
 <details>
   <summary>**Running without installing**</summary>
@@ -50,16 +59,6 @@ You can also run `cards.py` without installing it. However, in that case, you mu
 Assuming working directory is the root of the project, you go like this:
 
     $ python3 -m cards make cards.csv
-</details>
-
-<details>
-  <summary>**Uninstalling**</summary>
-
-If you wish to uninstall `cards.py` and make sure that you get rid of everything, you can run the installation again using the additional **--record** argument to save a list of all installed files:
-
-    $ python3 setup.py install --record installed_files.txt
-
-You can then go through all listed files and manually delete each one.
 </details>
 
 ## Requirements
