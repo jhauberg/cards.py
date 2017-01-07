@@ -31,7 +31,7 @@ When installed, you can run `cards.py` on the command line:
     $ cards make cards.csv
 
 <details>
-  <summary>It doesn't work</summary>
+  <summary>**It doesn't work**</summary>
 
 There's a few things that could go wrong during an install. If things didn't go as expected, check the following:
 
@@ -65,7 +65,7 @@ Assuming working directory is the root of the project, you go like this:
 
 This project strives to keep dependencies at an absolute minimum.
 
-  * Python 3.5
+  * Python 3.5+
   * [docopt](https://github.com/docopt/docopt) - provides a nicer command-line interface
 
 ## Browser support
@@ -84,8 +84,8 @@ Generate print-ready cards for your tabletop game
 
 Usage:
   cards make [<datasource>]... [--definitions=<defs>]
-             [--output-path=<path>] [--output-file=<file>]
-             [--card-size=<size>] [--force-page-breaks] [--disable-backs]
+             [--output-path=<path>] [--output-file=<file>] [--include-header=<template>]
+             [--card-size=<size>] [--force-page-breaks] [--disable-backs] [--disable-page-sections]
              [--discover] [--preview] [--verbose]
   cards new  [<name>] [--output-path=<path>] [--verbose]
   cards -h | --help
@@ -103,18 +103,20 @@ Examples:
     Creates an empty project in the current directory.
 
 Options:
-  -h --help                  Show program help
-  -o --output-path=<path>    Specify output directory
-  -f --output-file=<file>    Specify output filename [default: index.html]
-  -d --definitions=<defs>    Specify definitions filename
-  --card-size=<size>         Specify default card size [default: standard]
-                             Other options include: 'domino', 'jumbo' or 'token'
-  --force-page-breaks        Force a page break after each datasource
-  --disable-backs            Do not render card backs
-  --discover                 Automatically set CSV-files in the current directory as datasources
-  --preview                  Only render 1 of each card
-  --verbose                  Show more information
-  --version                  Show program version
+  -h --help                         Show program help
+  -o --output-path=<path>           Specify output directory
+  -f --output-file=<file>           Specify output filename [default: index.html]
+  -p --include-header=<template>    Specify a presentation template
+  -d --definitions=<defs>           Specify definitions filename
+  --card-size=<size>                Specify default card size [default: standard]
+                                    Other options include: \'domino\', \'jumbo\' or \'token\'
+  --force-page-breaks               Force a page break after each datasource
+  --disable-backs                   Do not render card backs
+  --disable-page-sections           Do not render page sections
+  --discover                        Automatically find and use datasources in the current directory
+  --preview                         Only render 1 of each card
+  --verbose                         Show more information
+  --version                         Show program version
 ```
 
 # Why make this?
