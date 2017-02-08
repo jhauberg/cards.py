@@ -449,6 +449,9 @@ def make(data_paths: list,
         # if any do, we need to know this beforehand to handle the synchronization issue
         # with mixing non-back and back datasources for double-sided printing
         for data_path in data_paths:
+            if not os.path.isfile(data_path):
+                continue
+
             with open(data_path) as data_file:
                 # read the first line which should contain the column names
                 header_line = data_file.readline()
