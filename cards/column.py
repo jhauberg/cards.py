@@ -58,7 +58,7 @@ class Row:
         self.row_index = row_index
         self.is_excluded = is_excluded
 
-    def _usable_columns(self) -> tuple:
+    def _usable_columns(self):
         return (column for column in
                 (Column(name, content) for name, content in self.data.items())
                 if not column.is_excluded()
