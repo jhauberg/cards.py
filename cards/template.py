@@ -791,6 +791,6 @@ def fill_card(template: Template,
                      TemplateFields.CARD_TEMPLATE_PATH}
 
     # update the set of unknown fields to not include the exceptions listed above
-    render_data.unknown_fields = render_data.unknown_fields - except_fields
+    render_data.unknown_fields -= except_fields
 
     return template.content, render_data
