@@ -17,7 +17,7 @@ from cards.column import (
     Row, get_column_contentd, get_definition_content, get_definition_contentd
 )
 
-from cards.resource import get_resource_path, is_resource, is_image, supported_image_types
+from cards.resource import get_resource_path, is_image, supported_image_types, transformed_image_paths
 
 from cards.util import first, dequote, get_line_number, get_padded_string
 from cards.warning import WarningDisplay, WarningContext
@@ -210,13 +210,11 @@ def image(field: TemplateField) -> (str, str):
 
         return None, None  # no image, no tag
 
-    resource_path = image_path
+    image_name = os.path.basename(image_path)
 
-    if is_resource(image_path):
-        image_name = os.path.basename(image_path)
-        # transform the path so that it is relative within the output directory,
-        # this way we can keep every resource contained
-        resource_path = get_resource_path(image_name)
+    # transform the path so that it is relative within the output directory,
+    # this way we can keep every resource contained
+    resource_path = get_resource_path(image_name)
 
     if no_transform:
         return image_path, resource_path  # image path in resources, no tag
@@ -656,10 +654,10 @@ def fill_index(index: str,
     referenced_definitions = fill_definitions(definitions, template)
 
     # fill any image fields that might have appeared by populating the metadata fields
-    filled_image_paths = fill_image_fields(template)
+    image_paths_from_index = fill_image_fields(template)
 
     return template.content, TemplateRenderData(
-        image_paths=set(filled_image_paths),
+        image_paths=set(image_paths_from_index),
         referenced_definitions=referenced_definitions)
 
 
@@ -690,6 +688,11 @@ def fill_template(template: Template,
     # clear out any empty fields
     fill_empty_fields(template)
 
+    # populate any images found in the template
+    image_paths_from_template = fill_image_fields(template)
+    # transform any discovered image paths to be relative to the template path
+    image_paths_from_template = transformed_image_paths(image_paths_from_template, template.path)
+
     # any field that is in the data, but not found in the template; for example, if there's
     # a 'rank' column in the data, but no '{{ rank }}' field in the template
     unused_columns = []
@@ -717,14 +720,16 @@ def fill_template(template: Template,
             column_references_in_data.extend(list(resolution_data.column_references))
             discovered_definition_refs.extend(list(resolution_data.definition_references))
 
+    # populate any images that may have appeared from any column
+    image_paths_from_datasource = fill_image_fields(template)
+    # transform any discovered image paths to be relative to the datasource path
+    image_paths_from_datasource = transformed_image_paths(image_paths_from_datasource, row.data_path)
+
     # fill any definition fields
     discovered_definition_refs.extend(
         fill_definitions(definitions, template))
 
     fill_date_fields(template)
-
-    # replace any image fields with HTML compliant <img> tags
-    filled_image_paths = fill_image_fields(template)
 
     # any template field visible in the template, but not found in the data; for example, if
     # the template has a {{ rank }} field (or more), but no 'rank' column in the data
@@ -750,7 +755,7 @@ def fill_template(template: Template,
     unused_columns = list(set(unused_columns) - column_references)
 
     return TemplateRenderData(
-        image_paths=set(filled_image_paths),
+        image_paths=set(image_paths_from_template + image_paths_from_datasource),
         unknown_fields=set(unknown_fields),
         unused_fields=set(unused_columns),
         referenced_definitions=set(discovered_definition_refs))

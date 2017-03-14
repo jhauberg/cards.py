@@ -30,7 +30,9 @@ from cards.column import (
     Row, get_invalid_columns, size_identifier_from_columns
 )
 
-from cards.resource import copy_images_to_output_directory, get_unused_resources, get_resources_path
+from cards.resource import (
+    copy_images_to_output_directory, get_unused_resources, get_resources_path, transformed_image_paths
+)
 
 from cards.constants import Columns, TemplateFields, CardSizes
 from cards.warning import WarningDisplay, WarningContext
@@ -157,6 +159,7 @@ def get_template(template_path: str) -> (str, list):
         print('could not open template \'{0}\''.format(template_path))
 
     image_paths = fill_image_fields(template)
+    image_paths = transformed_image_paths(image_paths, template.path)
 
     return template.content, image_paths
 
@@ -1001,8 +1004,9 @@ def make(data_paths: list,
             index, styles, pages, header, pages_total, cards_total, definitions)
 
         if len(render_data.image_paths) > 0:
+            image_paths_from_definitions = transformed_image_paths(render_data.image_paths, definitions_path)
             # we assume that any leftover images would have been from a definition
-            context_image_paths[definitions_path] = list(set(render_data.image_paths))
+            context_image_paths[definitions_path] = list(set(image_paths_from_definitions))
 
         result.write(index)
 
