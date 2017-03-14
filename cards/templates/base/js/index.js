@@ -67,7 +67,7 @@ function toggleDisplay(className, on) {
       var element = elements[i];
       var previousDisplay = element.style.display;
 
-      if (on != undefined) {
+      if (on !== undefined) {
         element.style.display = on ? 'block' : 'none';
       } else {
         element.style.display =
@@ -120,6 +120,23 @@ function toggleCardBacks() {
   }
 
   updatePageNumbers();
+}
+
+function disableActionsIfNecessary() {
+  var pageElements = document.getElementsByClassName('page');
+
+  if (pageElements.length === 0) {
+    // no pages generated- disable actions
+    var innerToolbarElement = document.getElementById('ui-toolbar-inner');
+
+    if (innerToolbarElement) {
+      var actionElements = innerToolbarElement.getElementsByClassName('ui-action');
+
+      for (i = 0; i < actionElements.length; i++) {
+        toggleEnability(actionElements[i], false);
+      }
+    }
+  }
 }
 
 function toggleTwoSided(on) {
@@ -213,7 +230,7 @@ function updatePageNumbers() {
 function determineBacksToggleVisibility() {
   var backsPageElements = document.getElementsByClassName('page-backs');
 
-  var containsBacksPages = backsPageElements.length > 0
+  var containsBacksPages = backsPageElements.length > 0;
 
   if (!containsBacksPages) {
     var toggleBacksElement = document.getElementById('toggle-card-backs');
@@ -238,6 +255,7 @@ function revealUI() {
 }
 
 window.onload = function() {
+  disableActionsIfNecessary();
   determineBacksToggleVisibility();
   updatePageNumbers();
   removeOverlappingCutGuides();
