@@ -257,6 +257,7 @@ function revealUI() {
 window.onload = function() {
   disableActionsIfNecessary();
   determineBacksToggleVisibility();
+  toggleTwoSided();
   updatePageNumbers();
   removeOverlappingCutGuides();
   removeEmptyFooterTags();
