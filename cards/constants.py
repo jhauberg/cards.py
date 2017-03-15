@@ -27,6 +27,8 @@ class ColumnDescriptors:  # pylint: disable=too-few-public-methods
 
     # The content of the column should only be used when generating the back of the card
     BACK_ONLY = '@back-only'
+    # The content of the column should only be used when generating the front of the card
+    FRONT_ONLY = '@front-only'
 
 
 class TemplateFieldDescriptors:  # pylint: disable=too-few-public-methods

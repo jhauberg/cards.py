@@ -44,6 +44,13 @@ class Column:
                 if self.name is not None
                 else False)
 
+    def is_front_only(self) -> bool:
+        """ Determine whether the column is only intended for the front of a card. """
+
+        return (self.name.endswith(ColumnDescriptors.FRONT_ONLY)
+                if self.name is not None
+                else False)
+
 
 class Row:
     """ Represents a row in a datasource. """
@@ -64,17 +71,27 @@ class Row:
                 if not column.is_excluded()
                 and not column.is_special())
 
+    def _both_data(self) -> dict:
+        """ Return a dict containing items fit for both the front- and back of a card. """
+
+        return {column.name: column.content for column in self._usable_columns()
+                if not column.is_back_only() and not column.is_front_only()}
+
     def _front_data(self) -> dict:
         """ Return a dict containing only items fit for the front of a card. """
 
-        return {column.name: column.content for column in self._usable_columns()
-                if not column.is_back_only()}
+        front_only_data = {column.name[:-len(ColumnDescriptors.FRONT_ONLY)]: column.content for column
+                           in self._usable_columns() if column.is_front_only()}
+
+        return {**self._both_data(), **front_only_data}
 
     def _back_data(self) -> dict:
         """ Return a dict containing only items fit for the back of a card. """
 
-        return {column.name[:-len(ColumnDescriptors.BACK_ONLY)]: column.content for column
-                in self._usable_columns() if column.is_back_only()}
+        back_only_data = {column.name[:-len(ColumnDescriptors.BACK_ONLY)]: column.content for column
+                          in self._usable_columns() if column.is_back_only()}
+
+        return {**self._both_data(), **back_only_data}
 
     def front_row(self) -> 'Row':
         """ Return a Row containing only data fit for the front of a card. """
