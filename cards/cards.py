@@ -31,7 +31,8 @@ from cards.column import (
 )
 
 from cards.resource import (
-    copy_images_to_output_directory, get_unused_resources, get_resources_path, transformed_image_paths
+    get_unused_resources, get_resources_path,
+    transformed_image_paths, copy_images_to_output_directory
 )
 
 from cards.constants import Columns, TemplateFields, CardSizes
@@ -585,8 +586,8 @@ def make(data_paths: list,
             card_width, card_height = card_size.size_in_inches
             page_width, page_height = page_size.size_in_inches
 
-            cards_per_column = math.floor(page_width / card_width)
-            cards_per_row = math.floor(page_height / card_height)
+            cards_per_row = math.floor(page_width / card_width)
+            cards_per_column = math.floor(page_height / card_height)
 
             max_cards_per_page = cards_per_column * cards_per_row
 
