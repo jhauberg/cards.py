@@ -175,8 +175,15 @@ class WarningDisplay:
 
     @staticmethod
     def unused_resources(resource_filenames: list, in_resource_dir: str) -> None:
-        warn('Unused resources were found in output directory ({0}): {1}'
-             .format(in_resource_dir, resource_filenames))
+        warn('Unused resources were found (in {0}\'{1}\'{2}): {3}'
+             .format(WarningDisplay.apply_normal_color_underlined, in_resource_dir,
+                     WarningDisplay.apply_normal_color, resource_filenames))
+
+    @staticmethod
+    def unused_resources_were_cleaned(resource_filenames: list, in_resource_dir: str) -> None:
+        warn('Unused resources were found and removed (in {0}\'{1}\'{2}): {3}'
+             .format(WarningDisplay.apply_normal_color_underlined, in_resource_dir,
+                     WarningDisplay.apply_normal_color, resource_filenames))
 
     @staticmethod
     def resource_was_overwritten(context: WarningContext,

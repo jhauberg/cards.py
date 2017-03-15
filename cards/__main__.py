@@ -8,7 +8,7 @@ Usage:
   cards make [<datasource>]... [--definitions=<defs>]
              [--output-path=<path>] [--output-file=<file>] [--include-header=<template>]
              [--card-size=<size>] [--force-page-breaks] [--disable-backs] [--disable-page-sections]
-             [--discover] [--preview] [--verbose]
+             [--discover] [--clean] [--preview] [--verbose]
   cards new  [<name>] [--output-path=<path>] [--verbose]
   cards -h | --help
   cards --version
@@ -36,6 +36,7 @@ Options:
   --disable-backs                   Do not render card backs
   --disable-page-sections           Do not render page sections
   --discover                        Automatically find and use datasources in the current directory
+  --clean                           Automatically remove any unused resources (images)
   --preview                         Only render 1 of each card
   --verbose                         Show more information
   --version                         Show program version
@@ -117,6 +118,7 @@ def main():
         disable_sections = arguments['--disable-page-sections']
         is_preview = arguments['--preview']
         discover = arguments['--discover']
+        clean = arguments['--clean']
 
         make(data_paths, header_path, definitions_path,
              output_path, output_filename,
@@ -124,7 +126,8 @@ def main():
              disable_backs, disable_sections,
              default_card_size_identifier,
              is_preview,
-             discover)
+             discover,
+             clean)
 
     check_for_update()
 

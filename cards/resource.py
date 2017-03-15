@@ -61,7 +61,7 @@ def has_hidden_attribute(path: str) -> bool:
         return False
 
 
-def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list:
+def get_unused_resources(in_directory_path: str, copied_filenames: list) -> (list, list):
     """ Return a list of all files in path that are not one of the copied files. """
 
     existing_resource_filenames = []
@@ -75,12 +75,16 @@ def get_unused_resources(in_directory_path: str, copied_filenames: list) -> list
     except IOError:
         pass
 
-    return list(set(existing_resource_filenames) -
-                set(copied_filenames))
+    unused_resource_names = list(set(existing_resource_filenames) - set(copied_filenames))
+    unused_resource_paths = [os.path.join(resources_path, resource_name)
+                             for resource_name in unused_resource_names]
+
+    return unused_resource_names, unused_resource_paths
 
 
 def transformed_image_paths(image_paths: List[str], relative_to_path: str) -> List[str]:
-    return [os.path.join(os.path.dirname(relative_to_path), image_path) for image_path in image_paths]
+    return [os.path.join(os.path.dirname(relative_to_path), image_path)
+            for image_path in image_paths]
 
 
 def copy_images_to_output_directory(

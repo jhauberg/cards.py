@@ -305,7 +305,8 @@ def make(data_paths: list,
          should_disable_page_sections: bool=False,
          default_card_size_identifier: str='standard',
          is_preview: bool=False,
-         discover_datasources: bool=False):
+         discover_datasources: bool=False,
+         clean_unused_resources: bool=False):
     """ Build cards for all specified datasources. """
 
     time_started_make = datetime.datetime.now()
@@ -1005,7 +1006,8 @@ def make(data_paths: list,
             index, styles, pages, header, pages_total, cards_total, definitions)
 
         if len(render_data.image_paths) > 0:
-            image_paths_from_definitions = transformed_image_paths(render_data.image_paths, definitions_path)
+            image_paths_from_definitions = transformed_image_paths(render_data.image_paths,
+                                                                   definitions_path)
             # we assume that any leftover images would have been from a definition
             context_image_paths[definitions_path] = list(set(image_paths_from_definitions))
 
@@ -1041,11 +1043,19 @@ def make(data_paths: list,
 
         all_copied_image_filenames.extend(image_filenames)
 
-    unused_resources = get_unused_resources(output_path, all_copied_image_filenames)
+    unused_resources, unused_resource_paths = get_unused_resources(
+        output_path, all_copied_image_filenames)
 
     if len(unused_resources) > 0:
-        WarningDisplay.unused_resources(
-            unused_resources, in_resource_dir=get_resources_path())
+        if clean_unused_resources:
+            for unused_resource_path in unused_resource_paths:
+                os.remove(unused_resource_path)
+
+            WarningDisplay.unused_resources_were_cleaned(
+                unused_resources, in_resource_dir=resources_path)
+        else:
+            WarningDisplay.unused_resources(
+                unused_resources, in_resource_dir=resources_path)
 
     output_location_message = (' → \033[4m\'{0}\'\033[0m'.format(output_filepath)
                                if terminal_supports_color() else
