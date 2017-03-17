@@ -17,14 +17,14 @@ html, body {
   font-family: monospace;
   font-size: .9em;
 
-  margin: 1.25cm -.5cm -.5cm -.5cm;
+  margin: 1.25cm auto -.5cm auto;
 
   text-align: center;
 }
 
 .ui-section ~ .ui-section {
   /* Selects every .ui-section after the first hit */
-  margin: -.5cm;
+  margin-top: -.5cm;
 }
 
 .ui-modal {
@@ -66,14 +66,11 @@ html, body {
 
 .ui-header {
   margin: 1cm auto -.5cm auto;
-  font-size: 1em;
+  font-size: .9em;
   padding: .25cm .5cm .25cm .5cm;
-  width: 80%;
-  min-width: 22cm;
   color: black;
   border: 1px solid #e5e5e5;
-  border-radius: 4px;
-  background-color: rgba(245, 245, 245, 1);
+  background-color: lightgoldenrodyellow;
   box-shadow: 0 2px 1px #e5e5e5;
 }
 
