@@ -524,59 +524,62 @@ def make(data_paths: list,
                     WarningDisplay.bad_card_size(
                         WarningContext(context), size_identifier)
 
-            if card_size != previous_card_size and cards_on_page > 0:
-                # card sizing is different for this datasource, so any remaining cards
-                # must be added to a new page at this point
-                pages += get_page(pages_total + 1, cards, page, section, contexts_per_page,
-                                  exclude_section=should_disable_page_sections)
-                pages_total += 1
-
-                if not disable_backs:
-                    # using the last value of cards_per_row
-                    cards_on_last_row = cards_on_page % cards_per_row
-
-                    if cards_on_last_row is not 0:
-                        # less than MAX_CARDS_PER_ROW cards were added to the current line,
-                        # so we have to add additional blank filler cards to ensure a correct layout
-                        remaining_backs = cards_per_row - cards_on_last_row
-
-                        while remaining_backs > 0:
-                            # keep adding empty filler card backs until we've filled a row
-                            backs_row = empty_back + backs_row
-
-                            remaining_backs -= 1
-
-                    backs += backs_row
-
-                    backs_row = ''
-
-                    # fill another page with the backs
-                    pages += get_page(pages_total + 1, backs, page, section, contexts_per_page,
-                                      is_card_backs=True,
+            if card_size != previous_card_size:
+                if cards_on_page > 0:
+                    # card sizing is different for this datasource, so any remaining cards
+                    # must be added to a new page at this point
+                    pages += get_page(pages_total + 1, cards, page, section, contexts_per_page,
                                       exclude_section=should_disable_page_sections)
                     pages_total += 1
 
-                    backs = ''
+                    if not disable_backs:
+                        # using the last value of cards_per_row
+                        cards_on_last_row = cards_on_page % cards_per_row
 
-                if pages_contain_backs and disable_backs:
-                    # we know some pages with backs have been added, and we know that this
-                    # datasource does not contain any card backs, so in order to keep
-                    # two-sided printing in sync, we need to add a filler page
+                        if cards_on_last_row is not 0:
+                            # less than MAX_CARDS_PER_ROW cards were added to the current line,
+                            # so we have to add additional blank filler cards to ensure a correct layout
+                            remaining_backs = cards_per_row - cards_on_last_row
 
-                    # the filler page counts as a page full of backs, but contains content
-                    # that will not be printed (not even a footer)
-                    pages += get_page(pages_total + 1, '', page_filler, section, contexts_per_page,
-                                      is_card_backs=True, is_filler=True,
-                                      exclude_section=should_disable_page_sections)
-                    pages_total += 1
+                            while remaining_backs > 0:
+                                # keep adding empty filler card backs until we've filled a row
+                                backs_row = empty_back + backs_row
 
-                    WarningDisplay.datasource_contains_filler_pages(
-                        WarningContext(previous_context))
+                                remaining_backs -= 1
 
-                # reset to prepare for the next page
-                cards_on_page = 0
-                cards = ''
+                        backs += backs_row
 
+                        backs_row = ''
+
+                        # fill another page with the backs
+                        pages += get_page(pages_total + 1, backs, page, section, contexts_per_page,
+                                          is_card_backs=True,
+                                          exclude_section=should_disable_page_sections)
+                        pages_total += 1
+
+                        backs = ''
+
+                    if pages_contain_backs and disable_backs:
+                        # we know some pages with backs have been added, and we know that this
+                        # datasource does not contain any card backs, so in order to keep
+                        # two-sided printing in sync, we need to add a filler page
+
+                        # the filler page counts as a page full of backs, but contains content
+                        # that will not be printed (not even a footer)
+                        pages += get_page(pages_total + 1, '', page_filler, section, contexts_per_page,
+                                          is_card_backs=True, is_filler=True,
+                                          exclude_section=should_disable_page_sections)
+                        pages_total += 1
+
+                        WarningDisplay.datasource_contains_filler_pages(
+                            WarningContext(previous_context))
+
+                    # reset to prepare for the next page
+                    cards_on_page = 0
+                    cards = ''
+
+                # we're finished with the current datasource, and we'll be starting a new page
+                # so we reset any saved contexts
                 contexts_per_page = []
 
             contexts_per_page.append(context)
@@ -895,6 +898,8 @@ def make(data_paths: list,
                         cards_on_page = 0
                         cards = ''
 
+                        # we're not necesarilly done with the current context, but any other context
+                        # should be cleared at this point
                         contexts_per_page = [context]
 
         if (force_page_breaks or data_path is data_paths[-1]) and cards_on_page > 0:
@@ -943,6 +948,7 @@ def make(data_paths: list,
             cards_on_page = 0
             cards = ''
 
+            # we're finished with this context
             contexts_per_page = []
 
         if contains_filler_pages:
