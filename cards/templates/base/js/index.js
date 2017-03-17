@@ -94,6 +94,16 @@ function toggleButtons(buttonOn, buttonOff, on) {
   toggleButtonOff.style.display = on ? 'none' : 'inline';
 }
 
+function isToggledOn(button) {
+  var buttonElement = document.getElementById(button);
+
+  if (buttonElement) {
+    return buttonElement.style.display != 'none';
+  }
+
+  return false;
+}
+
 function toggleFooter() {
   toggleButtons('toggle-footer-on', 'toggle-footer-off',
     (toggleVisibility('page-footer') == 'visible'));
@@ -104,19 +114,33 @@ function toggleCutGuides() {
     (toggleVisibility('cut-guide') == 'visible'));
 }
 
+function toggleTwoSided(on) {
+  toggleButtons('toggle-two-sided-on', 'toggle-two-sided-off',
+    (toggleDisplay('filler', on) == 'block'));
+
+  updatePageNumbers();
+}
+
 function toggleCardBacks() {
-  var toggledOn = toggleDisplay('page-backs') == 'block';
+  var shouldToggleOn = !isToggledOn('toggle-card-backs-on');
+  // note that this also toggles any filler pages
+  var toggled = toggleDisplay('page-backs', shouldToggleOn) == 'block';
 
   toggleButtons('toggle-card-backs-on', 'toggle-card-backs-off',
-    toggledOn);
+    toggled);
 
-  // force the two-sided option to follow the backs option (both on and off)
-  toggleTwoSided(toggledOn);
+  // determine whether we should hide any filler pages
+  var shouldToggleOffFillerPages = !isToggledOn('toggle-two-sided-on');
 
+  if (shouldToggleOffFillerPages) {
+    toggleTwoSided(false);
+  }
+
+  // enable/disable the two-sided option entirely, depending on whether backs are toggled or not
   var toggleTwoSidedButton = document.getElementById('toggle-two-sided');
 
   if (toggleTwoSidedButton) {
-    toggleEnability(toggleTwoSidedButton, toggledOn);
+    toggleEnability(toggleTwoSidedButton, toggled);
   }
 
   updatePageNumbers();
@@ -137,13 +161,6 @@ function disableActionsIfNecessary() {
       }
     }
   }
-}
-
-function toggleTwoSided(on) {
-  toggleButtons('toggle-two-sided-on', 'toggle-two-sided-off',
-    (toggleDisplay('filler', on) == 'block'));
-
-  updatePageNumbers();
 }
 
 function toggleHelp(on) {
@@ -257,7 +274,7 @@ function revealUI() {
 window.onload = function() {
   disableActionsIfNecessary();
   determineBacksToggleVisibility();
-  toggleTwoSided();
+  toggleTwoSided(false);
   updatePageNumbers();
   removeOverlappingCutGuides();
   removeEmptyFooterTags();
