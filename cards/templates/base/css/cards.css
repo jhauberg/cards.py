@@ -66,3 +66,9 @@
   width:  7.5in;
   height: 10.5in;
 }
+
+.card-size-cover {
+  /* Full page card (special case) */
+  width:  7.5in;
+  height: 10.5in;
+}

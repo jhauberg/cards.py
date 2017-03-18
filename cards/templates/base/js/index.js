@@ -1,3 +1,22 @@
+function removeCutGuidesOnCover() {
+  var coverCardElements = document.getElementsByClassName('card-size-cover');
+
+  if (coverCardElements.length > 0) {
+    for (var i = 0; i < coverCardElements.length; i++) {
+      var coverCardElement = coverCardElements[i];
+      var cutGuideElements = coverCardElement.getElementsByClassName('cut-guide');
+
+      if (cutGuideElements.length > 0) {
+        var cutGuideElement;
+
+        while((cutGuideElement = cutGuideElements[0])) {
+          cutGuideElement.parentNode.removeChild(cutGuideElement);
+        }
+      }
+    }
+  }
+}
+
 function removeOverlappingCutGuides() {
   var elements = document.getElementsByClassName('cut-guide');
 
@@ -272,17 +291,20 @@ function revealUI() {
 }
 
 window.onload = function() {
-  disableActionsIfNecessary();
-  determineBacksToggleVisibility();
-  toggleTwoSided(false);
-  updatePageNumbers();
+  removeCutGuidesOnCover();
   removeOverlappingCutGuides();
   removeEmptyFooterTags();
+  disableActionsIfNecessary();
+  determineBacksToggleVisibility();
+
+  // disable two-sided by default (note that this also has the side-effect of triggering
+  // an update for page numbers and card counts)
+  toggleTwoSided(false);
 
   setTimeout(function() {
     // assuming the toolbar is hidden by default, we'll do all the DOM modifications we need to
     // and then wait a while before revealing it fully- this prevents any potential flickering
     // while we determine e.g. whether or not to show a backs toggle
     revealUI();
-  }, 500);
+  }, 300);
 };

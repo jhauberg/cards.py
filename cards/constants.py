@@ -141,6 +141,8 @@ class CardSizes:
                 return CardSize(identifier, style='card-size-175x35', size_in_inches=(1.75, 3.5))
             elif identifier == 'page':
                 return CardSize(identifier, style='card-size-page', size_in_inches=(7.5, 10.5))
+            elif identifier == 'cover':
+                return CardSize(identifier, style='card-size-cover', size_in_inches=(7.5, 10.5))
 
         return None
 
