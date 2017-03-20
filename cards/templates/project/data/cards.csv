@@ -1,2 +1,2 @@
 @count,@template,name
-1,"templates/card.html","An Empty Card"
+1,"../templates/card.html","An Empty Card"
