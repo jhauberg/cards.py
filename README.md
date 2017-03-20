@@ -12,14 +12,18 @@ Use the print function of your browser to save the pages to a PDF or to print th
 
 Install straight from the source:
 
-    $ python3 setup.py install
+```shell
+$ python3 setup.py install
+```
 
 <details>
-  <summary>**Uninstalling**</summary>
+  <summary><strong>Uninstalling</strong></summary>
 
 If you want to uninstall `cards.py` and make sure that you get rid of everything, you can run the installation again using the additional **--record** argument to save a list of all installed files:
 
-    $ python3 setup.py install --record installed_files.txt
+```shell
+$ python3 setup.py install --record installed_files.txt
+```
 
 You can then go through all listed files and manually delete each one.
 </details>
@@ -28,37 +32,41 @@ You can then go through all listed files and manually delete each one.
 
 When installed, you can run `cards.py` on the command line:
 
-    $ cards make cards.csv
+```shell
+$ cards make cards.csv
+```
 
 <details>
-  <summary>**It doesn't work**</summary>
+  <summary><strong>It doesn't work</strong></summary>
 
 There's a few things that could go wrong during an install. If things didn't go as expected, check the following:
 
 **Your PATH environment variable may be incorrect**
 
-When you first installed Python, the installer probably added the `PATH` automatically. However, in case it didn't, it should look something like this:
+When you first installed Python, the installer probably added the `PATH` automatically to your `~/.profile` or `~/.bash_profile`. However, in case it didn't, it should look something like this:
 
-```
+```bash
 PATH="/Library/Frameworks/Python.framework/Versions/3.6/bin:${PATH}"
 export PATH
 ```
 
 You may additionally need to add the `PYTHONPATH` variable and have it point to the `site-packages` directory of your Python version; for example, for a Python 3.6 installation, the variable could look like this:
 
-```
+```bash
 export PYTHONPATH="${PYTHONPATH}/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages"
 ```
 </details>
 
 <details>
-  <summary>**Running without installing**</summary>
+  <summary><strong>Running without installing</strong></summary>
 
 You can also run `cards.py` without installing it. However, in that case, you must execute the `cards` module as a script.
 
 Assuming working directory is the root of the project, you go like this:
 
-    $ python3 -m cards make cards.csv
+```shell
+$ python3 -m cards make cards.csv
+```
 </details>
 
 ## Requirements
@@ -79,7 +87,7 @@ See [Trickbook](https://github.com/jhauberg/trickbook), or [Dungeon Deck](https:
 
 ## Full usage
 
-```
+```console
 Generate print-ready cards for your tabletop game
 
 Usage:
