@@ -177,15 +177,17 @@ def make_empty_project(in_path: str,
                        name: str=None) -> bool:
     """ Build an empty project that can be used as a starting point. """
 
-    name = name if name is not None else 'empty'
+    destination_path = in_path
 
     if name is not None and len(name) > 0:
         # make sure any whitespace is replaced with dashes
         name_components = name.split(' ')
         name = '-'.join(name_components).lower()
 
+        destination_path = os.path.join(destination_path, name)
+
     empty_project_path = os.path.join(get_base_path(), 'templates/project')
-    destination_path = os.path.join(in_path, '{0}/src'.format(name))
+    destination_path = os.path.join(destination_path, 'src')
 
     if os.path.isdir(destination_path):
         WarningDisplay.could_not_make_new_project_error(
