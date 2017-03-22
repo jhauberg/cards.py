@@ -993,8 +993,11 @@ def make(data_paths: list,
         header = ''
 
         if header_path is not None:
-            with open(header_path) as header_file:
-                header = header_file.read().strip()
+            try:
+                with open(header_path) as header_file:
+                    header = header_file.read().strip()
+            except IOError:
+                WarningDisplay.bad_header_file_error(header_path)
 
         index, render_data = fill_index(
             index, styles, pages, header, pages_total, cards_total, definitions)

@@ -327,6 +327,13 @@ class WarningDisplay:
              as_error=True)
 
     @staticmethod
+    def bad_header_file_error(header_path: str) -> None:
+        warn('No header template was found at: {0}\'{1}\'{2}'
+             .format(WarningDisplay.apply_error_color_underlined, header_path,
+                     WarningDisplay.apply_error_color),
+             as_error=True)
+
+    @staticmethod
     def using_automatically_found_definitions_info(definitions_path: str) -> None:
         info('No definitions have been specified; using definitions automatically found at: '
              '{0}\'{1}\'{2}'
