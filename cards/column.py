@@ -112,6 +112,35 @@ class Row:
 
         return self.data.get(Columns.COUNT, '').strip() == '~'
 
+    def determine_count(self) -> (int, bool):
+        """ Determine and return count value from the @count column in a row. """
+
+        # determine how many instances of this card to generate
+        # (defaults to a single instance if not specified)
+        count = self.data.get(Columns.COUNT, '1').strip()
+
+        was_indeterminable = False
+
+        if len(count) > 0:
+            # the count column has content, so attempt to parse it
+            try:
+                count = int(count)
+            except ValueError:
+                # count could not be determined, so default to skip this card
+                count = 0
+
+                was_indeterminable = True
+        else:
+            # the count column did not have content, so default count to 1
+            count = 1
+
+        if count < 0:
+            count = 0
+
+            was_indeterminable = True
+
+        return count, was_indeterminable
+
     @staticmethod
     def is_excluded(row_string: str) -> bool:
         """ Determine if a line in a file should be excluded. """

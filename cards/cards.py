@@ -237,36 +237,6 @@ def previous_or_current_path(current_path: str, previous_path: str) -> str:
             else current_path)
 
 
-def determine_count(row: dict) -> (int, bool):
-    """ Determine and return count value from the @count column in a row. """
-
-    # determine how many instances of this card to generate
-    # (defaults to a single instance if not specified)
-    count = row.get(Columns.COUNT, '1').strip()
-
-    was_indeterminable = False
-
-    if len(count) > 0:
-        # the count column has content, so attempt to parse it
-        try:
-            count = int(count)
-        except ValueError:
-            # count could not be determined, so default to skip this card
-            count = 0
-
-            was_indeterminable = True
-    else:
-        # the count column did not have content, so default count to 1
-        count = 1
-
-    if count < 0:
-        count = 0
-
-        was_indeterminable = True
-
-    return count, was_indeterminable
-
-
 def get_data_path_names(data_paths: list) -> (list, int):
     """ Return a list of datasource names and total number of duplicates.
 
@@ -671,7 +641,7 @@ def make(data_paths: list,
                     # we should not warn about it
                     count = 0
                 else:
-                    count, indeterminable_count = determine_count(row_data)
+                    count, indeterminable_count = row.determine_count()
 
                     if indeterminable_count:
                         WarningDisplay.indeterminable_count(
