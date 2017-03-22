@@ -480,7 +480,7 @@ def make(data_paths: list,
 
         card_size = default_card_size
 
-        image_paths = []
+        image_paths_from_datasource = []
 
         # determine whether this path leads to anything
         if not os.path.isfile(data_path):
@@ -539,8 +539,8 @@ def make(data_paths: list,
                         cards_on_last_row = cards_on_page % cards_per_row
 
                         if cards_on_last_row is not 0:
-                            # less than MAX_CARDS_PER_ROW cards were added to the current line,
-                            # so we have to add additional blank filler cards to ensure a correct layout
+                            # less than MAX_CARDS_PER_ROW cards were added to the current line, so
+                            # we have to add additional blank filler cards to ensure correct layout
                             remaining_backs = cards_per_row - cards_on_last_row
 
                             while remaining_backs > 0:
@@ -811,11 +811,12 @@ def make(data_paths: list,
                             WarningDisplay.unknown_fields_in_template(
                                 WarningContext(context, row_index),
                                 list(render_data.unknown_fields),
+                                template_path,
                                 cards_affected=count)
 
                     all_referenced_definitions |= render_data.referenced_definitions
 
-                    image_paths.extend(render_data.image_paths)
+                    image_paths_from_datasource.extend(render_data.image_paths)
 
                     current_card = get_sized_card(
                         card, size_class=card_size.style, content=card_content)
@@ -848,12 +849,14 @@ def make(data_paths: list,
                             if len(render_data.unknown_fields) > 0:
                                 WarningDisplay.unknown_fields_in_template(
                                     WarningContext(context, row_index),
-                                    list(render_data.unknown_fields), is_back_template=True,
+                                    list(render_data.unknown_fields),
+                                    template_path_back,
+                                    is_back_template=True,
                                     cards_affected=count)
 
                         all_referenced_definitions |= render_data.referenced_definitions
 
-                        image_paths.extend(render_data.image_paths)
+                        image_paths_from_datasource.extend(render_data.image_paths)
 
                         current_card_back = get_sized_card(
                             card, size_class=card_size.style, content=back_content)
@@ -973,7 +976,7 @@ def make(data_paths: list,
 
         # ensure there are no duplicate image paths, since that would just
         # cause unnecessary copy operations
-        context_image_paths[data_path] = list(set(image_paths))
+        context_image_paths[data_path] = list(set(image_paths_from_datasource))
 
         previous_context = context
 

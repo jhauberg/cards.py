@@ -386,24 +386,25 @@ class WarningDisplay:
     @staticmethod
     def unknown_fields_in_template(context: WarningContext,
                                    unknown_fields: list,
+                                   template_path: str,
                                    cards_affected: int,
                                    is_back_template: bool=False) -> None:
         if len(unknown_fields) > 1:
-            msg = ('The back template contains fields that are not present for this card, '
-                   'or could not be resolved: {0}'
+            msg = ('The back template ({0}) contains fields that are not present for this card, '
+                   'or could not be resolved: {1}'
                    if is_back_template else
-                   'The template contains fields that are not present for this card, '
-                   'or could not be resolved: {0}')
+                   'The template ({0}) contains fields that are not present for this card, '
+                   'or could not be resolved: {1}')
         else:
             unknown_fields = unknown_fields[0]
 
-            msg = ('The back template contains a field that is not present for this card, '
-                   'or could not be resolved: \'{0}\''
+            msg = ('The back template ({0}) contains a field that is not present for this card, '
+                   'or could not be resolved: \'{1}\''
                    if is_back_template else
-                   'The template contains a field that is not present for this card, '
-                   'or could not be resolved: \'{0}\'')
+                   'The template ({0}) contains a field that is not present for this card, '
+                   'or could not be resolved: \'{1}\'')
 
-        warn(msg.format(unknown_fields),
+        warn(msg.format(template_path, unknown_fields),
              in_context=context, cards_affected=cards_affected)
 
     @staticmethod

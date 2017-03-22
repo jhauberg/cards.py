@@ -104,7 +104,8 @@ def copy_images_to_output_directory(
 
             continue
 
-        # if the image path is not an absolute path, assume that it's located relative to where the data is
+        # if the image path is not an absolute path,
+        # assume that it's located relative to where the data is
         relative_source_path = os.path.normpath(image_path)
 
         # only copy if the file actually exists
