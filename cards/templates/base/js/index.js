@@ -238,6 +238,12 @@ function updatePageNumbers() {
 
           if (cardElements.length > 0) {
             totalCardCount += cardElements.length;
+
+            var coverCardElements = visiblePageElement.getElementsByClassName('card-size-cover');
+
+            if (coverCardElements) {
+              totalCardCount -= coverCardElements.length;
+            }
           }
         }
 
