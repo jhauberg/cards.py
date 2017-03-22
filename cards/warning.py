@@ -46,7 +46,10 @@ class WarningContext:  # pylint: disable=too-few-public-methods
         return ''
 
 
-def warn(message: str, in_context: WarningContext=None, cards_affected: int=None, as_error=False) -> None:
+def warn(message: str,
+         in_context: WarningContext=None,
+         cards_affected: int=None,
+         as_error=False) -> None:
     """ Display a command-line warning message, optionally within a context. """
 
     color = (WarningDisplay.apply_error_color if as_error
@@ -172,6 +175,11 @@ class WarningDisplay:
                      .format(WarningDisplay.apply_error_color_underlined, at_destination_path,
                              WarningDisplay.apply_error_color),
                      as_error=True)
+
+    @staticmethod
+    def no_datasources() -> None:
+        warn('Specify at least one datasource (or a directory with datasources)',
+             as_error=True)
 
     @staticmethod
     def unused_resources(resource_filenames: list, in_resource_dir: str) -> None:

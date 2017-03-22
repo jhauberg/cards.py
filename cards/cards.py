@@ -302,10 +302,7 @@ def make(data_paths: list,
             data_path_names))
         print()
     else:
-        print('No datasources.')
-
-    if datasource_count == 0:
-        print('Generated 0 cards.')
+        WarningDisplay.no_datasources()
 
         return
 
