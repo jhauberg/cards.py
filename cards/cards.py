@@ -277,16 +277,10 @@ def make(data_paths: list,
          should_disable_page_sections: bool=False,
          default_card_size_identifier: str='standard',
          is_preview: bool=False,
-         discover_datasources: bool=False,
          clean_unused_resources: bool=False):
     """ Build cards for all specified datasources. """
 
     time_started_make = datetime.datetime.now()
-
-    if discover_datasources:
-        # todo: discover any CSV files in current working directory and append those to data_paths
-        # todo: then clear duplicates by doing data_paths = list(set(data_paths))
-        pass
 
     datasource_count = len(data_paths)
 
@@ -308,7 +302,7 @@ def make(data_paths: list,
 
     disable_auto_templating = False
 
-    if definitions_path is None and discover_datasources:
+    if definitions_path is None:
         # no definitions file has been explicitly specified, so try looking for it automatically
         found, potential_definitions_path = find_file_path('definitions.csv', data_paths)
 
