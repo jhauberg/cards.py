@@ -5,7 +5,7 @@ Generate print-ready cards for your tabletop game
 
 https://github.com/jhauberg/cards.py
 
-Copyright 2015 Jacob Hauberg Hansen.
+Copyright 2015-2017 Jacob Hauberg Hansen.
 License: MIT (see LICENSE)
 """
 
@@ -267,6 +267,13 @@ def get_data_path_names(data_paths: list) -> (list, int):
     return data_path_names, total_duplicates
 
 
+def discover_datasources(in_directory: str) -> list:
+    """ Return a list of paths to any datasources in a directory. """
+
+    return [os.path.join(in_directory, datasource) for datasource in os.listdir(in_directory)
+            if datasource.endswith('.csv')]
+
+
 def make(data_paths: list,
          header_path: str=None,
          definitions_path: str=None,
@@ -284,7 +291,21 @@ def make(data_paths: list,
 
     datasource_count = len(data_paths)
 
+    if datasource_count == 0:
+        # attempt finding any datasources in current working directory
+        data_paths = discover_datasources(in_directory='.')
+
+        datasource_count = len(data_paths)
+
     if datasource_count > 0:
+        # determine whether any datasources point to a directory
+        for i, datasource_path in enumerate(data_paths):
+            if os.path.isdir(datasource_path):
+                # discover any datasources within the specified directory
+                discovered_datasource_paths = discover_datasources(datasource_path)
+                # replace the datasource directory with any datasources discovered within
+                data_paths = data_paths[:i] + discovered_datasource_paths + data_paths[i + 1:]
+
         data_path_names, duplicates_count = get_data_path_names(data_paths)
 
         duplicates = (' ({0} {1})'.format(
@@ -298,6 +319,7 @@ def make(data_paths: list,
     else:
         WarningDisplay.no_datasources()
 
+        # just quit- there's nothing to do
         return
 
     disable_auto_templating = False
