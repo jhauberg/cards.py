@@ -267,11 +267,11 @@ def get_data_path_names(data_paths: list) -> (list, int):
     return data_path_names, total_duplicates
 
 
-def discover_datasources(in_directory: str) -> list:
+def discover_datasources(in_directory: str, except_datasource_name: str) -> list:
     """ Return a list of paths to any datasources in a directory. """
 
     return [os.path.join(in_directory, datasource) for datasource in os.listdir(in_directory)
-            if datasource.endswith('.csv')]
+            if datasource.endswith('.csv') and datasource != except_datasource_name]
 
 
 def make(data_paths: list,
@@ -293,7 +293,8 @@ def make(data_paths: list,
 
     if datasource_count == 0:
         # attempt finding any datasources in current working directory
-        data_paths = discover_datasources(in_directory='.')
+        data_paths = discover_datasources(in_directory='.',
+                                          except_datasource_name=os.path.basename(definitions_path))
 
         datasource_count = len(data_paths)
 

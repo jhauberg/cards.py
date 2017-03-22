@@ -360,7 +360,7 @@ class WarningDisplay:
 
     @staticmethod
     def missing_default_template(context: WarningContext) -> None:
-        warn('A template was not provided and auto-templating is not enabled;'
+        warn('A template was not provided and auto-templating is not enabled; '
              'cards will not be generated correctly',
              in_context=context)
 
