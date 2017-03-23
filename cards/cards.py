@@ -343,6 +343,25 @@ def make(data_paths: list,
     # dict of all image paths discovered for each context during card generation
     context_image_paths = {}
 
+    # resolve any image fields found in definitions
+    image_paths_from_definitions = []
+
+    for definition, content in definitions.items():
+        # build a temporary template with the definition content
+        template = Template(content)
+        # fill any image fields within
+        image_paths_in_definition = fill_image_fields(template)
+        # store every path found
+        image_paths_from_definitions.extend(image_paths_in_definition)
+        # update definition with resolved content (note that we only pre-resolve image fields here
+        # and any complex/partially defined image fields will not be resolved at this point)
+        definitions[definition] = template.content
+
+    image_paths_from_definitions = transformed_image_paths(image_paths_from_definitions,
+                                                           definitions_path)
+    
+    context_image_paths[definitions_path] = list(set(image_paths_from_definitions))
+
     base_path = get_base_path()
 
     card_template_path = os.path.join(base_path, 'templates/base/card.html')
@@ -1004,10 +1023,10 @@ def make(data_paths: list,
             index, styles, pages, header, pages_total, cards_total, definitions)
 
         if len(render_data.image_paths) > 0:
-            image_paths_from_definitions = transformed_image_paths(render_data.image_paths,
-                                                                   definitions_path)
+            image_paths_from_index = transformed_image_paths(render_data.image_paths,
+                                                             index_template_path)
             # we assume that any leftover images would have been from a definition
-            context_image_paths[definitions_path] = list(set(image_paths_from_definitions))
+            context_image_paths[index_template_path] = list(set(image_paths_from_index))
 
         result.write(index)
 
