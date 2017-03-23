@@ -245,6 +245,9 @@ svg:hover .hoverable {
 
   /* Set up a z-index context to allow putting cut guides behind, or on top of content */
   z-index: 0;
+
+  /* Clear any outline */
+  outline: 0;
 }
 
 .page-content {
