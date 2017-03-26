@@ -18,7 +18,7 @@ import datetime
 from datetime import timedelta
 
 from cards.template import (
-    Template, fill_each, fill_card, fill_index, fill_image_fields,
+    Template, fill_each, fill_card, fill_index, fill_image_fields, fill_definitions,
     template_from_path, strip_styles
 )
 
@@ -303,7 +303,8 @@ def make(data_paths: list,
         for i, datasource_path in enumerate(data_paths):
             if os.path.isdir(datasource_path):
                 # discover any datasources within the specified directory
-                discovered_datasource_paths = discover_datasources(datasource_path)
+                discovered_datasource_paths = discover_datasources(
+                    datasource_path, except_datasource_name=os.path.basename(definitions_path))
                 # replace the datasource directory with any datasources discovered within
                 data_paths = data_paths[:i] + discovered_datasource_paths + data_paths[i + 1:]
 
@@ -343,12 +344,22 @@ def make(data_paths: list,
     # dict of all image paths discovered for each context during card generation
     context_image_paths = {}
 
+    # some definitions are always guaranteed to be referenced,
+    # if not by cards, then by the final page output
+    all_referenced_definitions = {TemplateFields.TITLE,
+                                  TemplateFields.DESCRIPTION,
+                                  TemplateFields.COPYRIGHT,
+                                  TemplateFields.AUTHOR,
+                                  TemplateFields.VERSION}
+
     # resolve any image fields found in definitions
     image_paths_from_definitions = []
 
     for definition, content in definitions.items():
         # build a temporary template with the definition content
         template = Template(content)
+        # fill any partial definitions, as this might reveal other stuff
+        all_referenced_definitions |= fill_definitions(definitions, template)
         # fill any image fields within
         image_paths_in_definition = fill_image_fields(template)
         # store every path found
@@ -359,7 +370,7 @@ def make(data_paths: list,
 
     image_paths_from_definitions = transformed_image_paths(image_paths_from_definitions,
                                                            definitions_path)
-    
+
     context_image_paths[definitions_path] = list(set(image_paths_from_definitions))
 
     base_path = get_base_path()
@@ -442,14 +453,6 @@ def make(data_paths: list,
     previous_card_size = None
 
     page_size = CardSizes.get_page_size()
-
-    # some definitions are always guaranteed to be referenced,
-    # if not by cards, then by the final page output
-    all_referenced_definitions = {TemplateFields.TITLE,
-                                  TemplateFields.DESCRIPTION,
-                                  TemplateFields.COPYRIGHT,
-                                  TemplateFields.AUTHOR,
-                                  TemplateFields.VERSION}
 
     pages_contain_backs = False
 
@@ -819,6 +822,8 @@ def make(data_paths: list,
 
                     all_referenced_definitions |= render_data.referenced_definitions
 
+                    embedded_styles.update(render_data.embedded_styles)
+
                     image_paths_from_datasource.extend(render_data.image_paths)
 
                     current_card = get_sized_card(
@@ -858,6 +863,8 @@ def make(data_paths: list,
                                     cards_affected=count)
 
                         all_referenced_definitions |= render_data.referenced_definitions
+
+                        embedded_styles.update(render_data.embedded_styles)
 
                         image_paths_from_datasource.extend(render_data.image_paths)
 

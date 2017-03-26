@@ -65,11 +65,13 @@ class TemplateRenderData:  # pylint: disable=too-few-public-methods
                  image_paths: set=None,
                  unknown_fields: set=None,
                  unused_fields: set=None,
-                 referenced_definitions: set=None):
+                 referenced_definitions: set=None,
+                 embedded_styles: dict=None):
         self.image_paths = image_paths
         self.unknown_fields = unknown_fields
         self.unused_fields = unused_fields
         self.referenced_definitions = referenced_definitions
+        self.embedded_styles = embedded_styles
 
 
 def strip_styles(template: Template) -> str:
@@ -374,7 +376,7 @@ def fill_date_fields(template: Template,
         field = next_date_field()
 
 
-def fill_include_fields(template: Template) -> None:
+def fill_include_fields(template: Template) -> dict:
     """ Populate all include fields in the template.
 
         An 'include' field provides a way of putting re-usable template content into a
@@ -393,6 +395,8 @@ def fill_include_fields(template: Template) -> None:
         return first(fields(template.content, with_name_like='include|inline'))
 
     field = next_include_field()
+
+    stripped_styles = {}
 
     while field is not None:
         is_include_command = field.name == TemplateFields.INCLUDE
@@ -430,6 +434,11 @@ def fill_include_fields(template: Template) -> None:
                     WarningContext(os.path.basename(template.path)), include_path)
 
                 include_content = '<strong>&lt;included file not found&gt;</strong>'
+
+            stripped_template = Template(include_content)
+            stripped_styles[include_path] = strip_styles(stripped_template)
+
+            include_content = stripped_template.content
         else:
             WarningDisplay.include_should_specify_file(
                 WarningContext('{0}:{1}'.format(
@@ -443,6 +452,8 @@ def fill_include_fields(template: Template) -> None:
         fill(field, include_content, template, indenting=is_include_command)
 
         field = next_include_field()
+
+    return stripped_styles
 
 
 def fill_partial_definition(definition: str,
@@ -683,7 +694,7 @@ def fill_template(template: Template,
 
     # first of all, find any include fields and populate those,
     # as they might contribute even more template fields to populate
-    fill_include_fields(template)
+    stripped_styles = fill_include_fields(template)
 
     # clear out any empty fields
     fill_empty_fields(template)
@@ -758,7 +769,8 @@ def fill_template(template: Template,
         image_paths=set(image_paths_from_template + image_paths_from_datasource),
         unknown_fields=set(unknown_fields),
         unused_fields=set(unused_columns),
-        referenced_definitions=set(discovered_definition_refs))
+        referenced_definitions=set(discovered_definition_refs),
+        embedded_styles=stripped_styles)
 
 
 def fill_empty_fields(template: Template) -> None:
