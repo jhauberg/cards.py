@@ -315,10 +315,8 @@ def fill_each(field_inner_content: str,
     # i.e. any leading or trailing whitespace should simply be ignored
     field_search = r'{{\s*' + field_inner_content + r'\s*}}'
 
-    # find any occurences of the field, using a case-insensitive
-    # comparison, to ensure that e.g. {{name}} is populated with the
-    # value from column "Name", even though the casing might differ
-    search = re.compile(field_search, re.IGNORECASE)
+    # find any occurences of the field (case-sensitive)
+    search = re.compile(field_search)
 
     if indenting:
         match = search.search(template.content)
