@@ -93,7 +93,7 @@ def copy_images_to_output_directory(
         output_path: str) -> None:
     """ Copy all images to the output directory. """
 
-    context = os.path.basename(root_path)
+    context = os.path.basename(root_path) if root_path is not None else '???'
 
     for image_path in image_paths:
         # copy each relatively specified image

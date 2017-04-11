@@ -267,11 +267,13 @@ def get_data_path_names(data_paths: list) -> (list, int):
     return data_path_names, total_duplicates
 
 
-def discover_datasources(in_directory: str, except_datasource_name: str) -> list:
+def discover_datasources(in_directory: str, except_datasource_name: str=None) -> list:
     """ Return a list of paths to any datasources in a directory. """
 
     return [os.path.join(in_directory, datasource) for datasource in os.listdir(in_directory)
-            if datasource.endswith('.csv') and datasource != except_datasource_name]
+            if datasource.endswith('.csv') and
+            (except_datasource_name is None or
+             (except_datasource_name is not None and datasource != except_datasource_name))]
 
 
 def make(data_paths: list,
@@ -291,23 +293,29 @@ def make(data_paths: list,
 
     datasource_count = len(data_paths)
 
+    exclude_datasource_named = (os.path.basename(definitions_path)
+                                if definitions_path is not None
+                                else None)
+
     if datasource_count == 0:
         # attempt finding any datasources in current working directory
         data_paths = discover_datasources(in_directory='.',
-                                          except_datasource_name=os.path.basename(definitions_path))
+                                          except_datasource_name=exclude_datasource_named)
 
         datasource_count = len(data_paths)
-
-    if datasource_count > 0:
+    elif datasource_count > 0:
         # determine whether any datasources point to a directory
         for i, datasource_path in enumerate(data_paths):
             if os.path.isdir(datasource_path):
                 # discover any datasources within the specified directory
                 discovered_datasource_paths = discover_datasources(
-                    datasource_path, except_datasource_name=os.path.basename(definitions_path))
+                    datasource_path, except_datasource_name=exclude_datasource_named)
                 # replace the datasource directory with any datasources discovered within
                 data_paths = data_paths[:i] + discovered_datasource_paths + data_paths[i + 1:]
 
+        datasource_count = len(data_paths)
+
+    if datasource_count > 0:
         data_path_names, duplicates_count = get_data_path_names(data_paths)
 
         duplicates = (' ({0} {1})'.format(
@@ -368,10 +376,11 @@ def make(data_paths: list,
         # and any complex/partially defined image fields will not be resolved at this point)
         definitions[definition] = template.content
 
-    image_paths_from_definitions = transformed_image_paths(image_paths_from_definitions,
-                                                           definitions_path)
+    if definitions_path is not None:
+        image_paths_from_definitions = transformed_image_paths(image_paths_from_definitions,
+                                                               definitions_path)
 
-    context_image_paths[definitions_path] = list(set(image_paths_from_definitions))
+        context_image_paths[definitions_path] = list(set(image_paths_from_definitions))
 
     base_path = get_base_path()
 
