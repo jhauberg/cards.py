@@ -131,7 +131,7 @@ def get_page(page_number: int,
         section_name = get_section_name(contexts)
 
         if is_card_backs:
-            section_name = '{0} — backs'.format(section_name)
+            section_name = '{0} - backs'.format(section_name)
 
         section = get_section(section_name, section_template, is_card_backs, is_filler)
 
@@ -198,7 +198,7 @@ def make_empty_project(in_path: str,
     try:
         shutil.copytree(empty_project_path, destination_path)
 
-        print('Made new project\n → {0}\'{1}\'{2}'.format(
+        print('Made new project\n -> {0}\'{1}\'{2}'.format(
             WarningDisplay.apply_normal_color_underlined, destination_path,
             WarningDisplay.apply_normal_color))
 
