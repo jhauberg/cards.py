@@ -101,7 +101,12 @@ def dequote(string: str) -> str:
 def is_url(string: str) -> bool:
     """ Determine whether a string is an url or not. """
 
-    return urlparse(string).scheme != ""
+    try:
+        result = urlparse(string)
+
+        return result.scheme and result.netloc and result.path
+    except:
+        return False
 
 
 def terminal_supports_color() -> bool:
