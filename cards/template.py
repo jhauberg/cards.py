@@ -355,8 +355,10 @@ def fill_date_fields(template: Template,
     field = next_date_field()
 
     while field is not None:
-        # default date format: 07 Oct, 2016
-        date_format = '%B %-d, %Y'
+        # default date format: January 04, 2018
+        # note that supported format specifiers may be different depending on platform (e.g. Windows or MacOS),
+        # and, as such, neat formatting like using %-d instead of %d to remove zero-padding is not viable
+        date_format = '%B %d, %Y'
 
         if field.context is not None:
             # a date field can have a custom format
