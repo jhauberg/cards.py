@@ -1090,9 +1090,9 @@ def make(data_paths: list,
             WarningDisplay.unused_resources(
                 unused_resources, in_resource_dir=resources_path)
 
-    output_location_message = (' → \033[4m\'{0}\'\033[0m'.format(output_filepath)
+    output_location_message = (' -> \033[4m\'{0}\'\033[0m'.format(output_filepath)
                                if terminal_supports_color() else
-                               ' → \'{0}\''.format(output_filepath))
+                               ' -> \'{0}\''.format(output_filepath))
 
     # get the grammar right
     errors_or_error = 'error' if WarningDisplay.error_count == 1 else 'errors'
@@ -1117,7 +1117,7 @@ def make(data_paths: list,
         print()
 
     print('[{0}] Finished in {1:.3f} seconds{2}'.format(
-        '✔' if not WarningDisplay.has_encountered_errors() else '✖',
+        '-' if not WarningDisplay.has_encountered_errors() else '!',
         time_difference_in_seconds, warnings_and_errors_message))
     print()
 
