@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>cards.py: Operations Manual</title>
+
+  <link rel="stylesheet" type="text/css" href="index.css">
+  <link rel="stylesheet" type="text/css" href="../cards/templates/base/css/cards.css">
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="cards.py operations manual">
+</head>
+
+<body>
+  <article>
+    <img width="90" src="https://cdn.rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/cards.svg" alt="cards.py">
+    <h1><strong>cards.py</strong></h1>
+    <p class="subtitle">Operations Manual</p>
+    <section>
+      <p>
+        This document provides an entry point for using <strong>cards.py</strong> to build printable cards for your games.
+      </p>
+      <p>
+        It assumes that you already have <strong>cards.py</strong> installed and ready for use.
+        <br/> If you don't, please look <a href="https://github.com/jhauberg/cards.py">here</a> for installation instructions.
+      </p>
+      <footer>
+        <p>This document is based on <strong><a href="https://github.com/jhauberg/cards.py/releases/tag/0.5.6"><img width="15" src="https://cdn.rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/cards.svg" alt="cards.py"> cards.py 0.5.6</a></strong>          and was last edited on <strong>September 2nd 2016</strong></p>
+      </footer>
+    </section>
+
+    <hr>
+
+    <div class="example">
+      <div class="card card-size-25x35" style="margin-right: .25cm;">
+        <div class="card-content">
+          <div style="height: 100%; background-color: #ca422d; font-family: Garamond;">
+            <div style="background-image: url(); background-size: contain; position: absolute; left: 1mm; right: 1mm; top: 2mm; height: 50%; border: 1px solid black; background-color: white;">
+              <div style="text-align: center; position: relative; top: 70%; color: rgba(0, 0, 0, 0.3); font-size: 9pt;"></div>
+            </div>
+
+            <div style="position: absolute; width: 100%; top: 9mm; border-top: 1px solid black; border-bottom: 1px solid black; background-color: white; color: black; text-align: center; padding-top: 2mm; padding-bottom: 1mm; font-size: 16pt;">
+              <b>Zombie</b>
+              <div style="font-size: 10pt;">
+                <i>Monster — Undead</i>
+              </div>
+            </div>
+
+            <div style="position: absolute; left: 50%; top: .24in;">
+              <div style="position: relative; transform: translate(-50%, -50%);">
+                <div style="width: .45in; height: .45in; padding-top: .5mm; text-align: center; border-radius: 50%; border: 1px solid black; background-color: white; font-size: 24pt;">
+                  <b>4</b>
+                </div>
+              </div>
+            </div>
+
+            <div style="position: absolute; left: 1mm; right: 1mm; bottom: 5mm; height: 45%; border: 1px solid black; background-color: white; text-align: left; overflow: hidden;">
+              <div style="padding: 1mm; background-color: black; color: white; font-size: 9pt;">
+                <b>EFFECTS ➲</b>
+              </div>
+              <div style="padding: 2mm; font-size: 10pt;">
+                <b>⟳</b>: If the Zombie is at (<i>or would go to</i>) the top of the graveyard, it becomes undefeated; shuffle the Zombie into the <img src="https://cdn.rawgit.com/jhauberg/dungeon-deck/master/src/icons/dungeon.svg" width="10" height="10">
+                <br/><br/>
+                <i>"Usually it just takes a good blow to the head..."</i>
+              </div>
+            </div>
+
+            <div style="position: absolute; bottom: 1.25mm; right: 2mm; text-align: right; font-size: 7pt;">
+              CC-BY 4.0 Jacob Hauberg Hansen &nbsp;&nbsp; <img src="https://cdn.rawgit.com/jhauberg/dungeon-deck/master/src/icons/artifact.svg" width="7" height="7"> 32
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-size-25x35">
+        <div class="card-content">
+          <div style="height: 100%; background-color: #efefef; font-family: Garamond;">
+
+            <div style="background-image: url(); background-size: contain; position: absolute; left: 1mm; right: 1mm; top: 2mm; height: 60%; border: 1px solid black; background-color: white;">
+              <div style="text-align: center; position: relative; top: 70%; color: rgba(0, 0, 0, 0.3); font-size: 9pt;">
+
+              </div>
+            </div>
+
+            <div style="position: absolute; width: 100%; top: 9mm; border-top: 1px solid black; border-bottom: 1px solid black; background-color: white; color: black; text-align: center; padding-top: 1mm; padding-bottom: 3mm; font-size: 16pt;">
+              <b>Dagger</b>
+              <div style="font-size: 10pt;">
+                <i>Basic — Weapon — Light — Beneficial</i>
+              </div>
+            </div>
+
+            <div style="position: absolute; left: 50%; top: 1.07in;">
+              <div style="position: relative; transform: translate(-50%, -50%);">
+                <div style="width: .8in; height: .45in;">
+                  <div style="position: absolute; width: 0; height: 0; border-left: .4in solid transparent; border-right: .4in solid transparent; border-top: .5in solid black;">
+                  </div>
+                  <div style="position: absolute; width: 100%; text-align: center; font-size: 24pt; color: white;"><b>2</b></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="position: absolute; left: 1mm; right: 1mm; bottom: 5mm; height: 35%; border: 1px solid black; background-color: white; text-align: left; overflow: hidden;">
+              <div style="padding: 1mm; background-color: black; color: white; font-size: 9pt;">
+                <b>EFFECTS</b>
+              </div>
+              <div style="padding: 2mm; font-size: 10pt;">
+                <b>⟳</b>: If there are no defeated <img src="https://cdn.rawgit.com/jhauberg/dungeon-deck/master/src/icons/monster.svg" width="10" height="10"> on the weapon, you may discard it to the stash.
+                <br/>
+                <br/>
+                <i>"A trusty dagger"</i>
+              </div>
+
+            </div>
+
+            <div style="position: absolute; bottom: 1.25mm; right: 2mm; text-align: right; font-size: 7pt;">
+              CC-BY 4.0 Jacob Hauberg Hansen &nbsp;&nbsp; <img src="https://cdn.rawgit.com/jhauberg/dungeon-deck/master/src/icons/artifact.svg" width="7" height="7"> 1
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h2>Introduction</h2>
+    <section>
+      <p>
+        With <strong>cards.py</strong> you get a small, focused, card-making machine using a specialized templating engine that allows you to iterate on your data without worry and use your web skills to create nice-looking cards for your game.
+      </p>
+      <p>See those cards on the right? That's what you can get it to do.</p>
+      <br/>
+      <p>That's the introduction; now let's make some cards!</p>
+      <p>
+        To start building your own cards, you only need two things:
+      </p>
+      <ul class="indent" style="margin-bottom: 0;">
+        <li><b>A cards datasource</b></li>
+        <li><b>A card template</b></li>
+      </ul>
+    </section>
+    <h3>Project Structure</h3>
+    <section>
+      <p>First of all, however, <strong>cards.py</strong> works off your local files, so you should settle on an organizational structure for your game files.</p>
+      <p>You can have your project structured any way you want, but here's a suggestion:</p>
+      <p class="tip">
+        <b>Tip:</b> take a look at the <a href="https://github.com/jhauberg/dungeon-deck/tree/master/src">source</a> for the game <strong>Dungeon Deck</strong> to see an example of project structure<br/>
+      </p>
+      <div class="example" style="margin-top: 1cm;">
+        <div class="card card-size-35x25">
+          <div class="card-content">
+            <div style="text-align: center; font-family: Garamond;">
+              todo
+            </div>
+          </div>
+        </div>
+      </div>
+      <pre class="indent">
+<b>my-game/</b>
+  <b>resources/</b>        <!--<i>- images/icons go here</i>-->
+  <b>data/</b>             <!--<i>- datasources go here</i>-->
+    cards.csv              <!--<i>- this is your card data</i>-->
+  <b>templates/</b>
+    <b>template-fragments/</b>
+      footer.html          <!--<i>- template file that is included in another template</i>-->
+    card.html              <!--<i>- template file that defines the visual layout of a card</i>-->
+  definitions.csv          <!--<i>- contains project specific data and commonly used values</i>-->
+      </pre>
+      <p>With that out of the way; <i>now</i> let's make some cards!</p>
+    </section>
+
+    <h3>Cards</h3>
+    <section>
+      <h4>Datasource</h4>
+      <p>
+        Your cards datasource must be a <abbr title="Comma-Separated Values">CSV</abbr> file, and should look something like this:
+      </p>
+      <p class="tip">
+        <b>Tip:</b> take a look at the <a href="https://raw.githubusercontent.com/jhauberg/cards.py/master/example/love-letter/cards.csv">included example</a> for a full datasource<br/>
+      </p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>rank</th>
+            <th>text</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1st</td>
+            <td>My first prototype card!</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Note that the table above is just a visually pleasing representation of data that <i>actually</i> looks like this:</p>
+      <p class="tip">
+        <b>Tip:</b> you can export a Google Sheets document as a CSV file<br/>
+      </p>
+      <pre>
+  <b>cards.csv</b>
+        <code>
+rank,text
+1st,My first prototype card!
+        </code>
+      </pre>
+      <p>At this point you can actually already make your cards, but they won't look great without your personal touch!</p>
+      <p>To add that personal touch, you use templates.</p>
+    </section>
+
+    <h3>Templates</h3>
+    <section>
+      <h4>Layout</h4>
+      <p>To define the layout and look of your cards, you use a template file.</p>
+      <p>A template file is just a plain-text file that uses HTML/CSS to create a visual layout, and can contain any number of <a href="#template-fields">template fields</a> that becomes populated by content from your datasource.</p>
+      <div class="example">
+        <div class="card card-size-25x35">
+          <div class="card-content">
+            <div style="text-align: center; font-family: Garamond;">
+              <h1>1st</h1> My first prototype card!
+            </div>
+          </div>
+        </div>
+      </div>
+      <p>To start using templates for your cards, you just extend your datasource with a <a href="#template-column">new column</a>:</p>
+      <p class="tip">
+        <b>Tip:</b> the order of columns does not matter; you can have any order you prefer!<br/>
+      </p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th><a href="#template-column">@template</a></th>
+            <th style="color: lightgray;">text</th>
+            <th style="color: lightgray;">rank</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>templates/card.html</td>
+            <td style="color: lightgray;">My first prototype card!</td>
+            <td style="color: lightgray;">1st</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>This tells <strong>cards.py</strong> that the card on that row should be rendered using that specific template.</p>
+      <p>As an example, using this datasource with the template below, you get the card shown to the right.</p>
+      <pre>
+  <b>templates/card.html</b>
+        <code>
+&lt;div style="text-align: center; font-family: Garamond;"&gt;
+  &lt;h1&gt;<b>{{ rank }}</b>&lt;/h1&gt;
+  &lt;div&gt;<b>{{ text }}</b>&lt;/div&gt;
+&lt;/div&gt;
+        </code>
+      </pre>
+      <p>It's as simple as that!</p>
+      <h4>Images</h4>
+      <p>Of course, you'd often want more complicated designs. Luckily, that's not a problem.</p>
+      <p>Keep in mind that templates are really just tiny little webpages, so any valid HTML goes. That gives you a ton of options, and if you ever get stuck, help from the <i>entire Internet</i> is just a search away.</p>
+      <div class="example">
+        <div class="card card-size-25x35">
+          <div class="card-content">
+            <div style="text-align: center; font-family: Garamond;">
+              <h1>1st</h1>
+              <div style="margin-bottom: 10mm;">My first prototype card!</div>
+              <img src="https://cdn.rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/cards.svg" width="100" height="100">
+            </div>
+          </div>
+        </div>
+      </div>
+      <p>Let's try adding an image, and place it slightly below the text:</p>
+      <p class="tip">
+        <b>Tip:</b> use the Developer Tools from your favorite browser to tweak and edit your templates until they look <i>just right!</i><br/>
+      </p>
+      <pre>
+  <b>templates/card.html</b>
+        <code>
+&lt;div style="text-align: center; font-family: Garamond;"&gt;
+  &lt;h1&gt;{{ rank }}&lt;/h1&gt;
+  &lt;div <b>style="margin-bottom: 10mm;"</b>&gt;{{ text }}&lt;/div&gt;
+  <b>{{ resources/cards-icon.svg:100x100 }}</b>
+&lt;/div&gt;
+        </code>
+      </pre>
+      <p>Images are important and useful components to any great looking cards. Just by adding that one image, suddenly our card became much more interesting.</p>
+      <h4>Icons</h4>
+      <p>Many card games also use images as icons inline with the card text. This is a clever way to reduce larger amounts of text and make cards more succinct. Let's try adding an inline icon to our card text.</p>
+      <div class="example">
+        <div class="card card-size-25x35">
+          <div class="card-content">
+            <div style="text-align: center; font-family: Garamond;">
+              <h1>1st</h1>
+              <div style="margin-bottom: 10mm;">My first <img src="https://cdn.rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/cards.svg" width="16" height="16"> prototype card!</div>
+              <img src="https://cdn.rawgit.com/jhauberg/cards.py/master/cards/templates/base/resources/cards.svg" width="100" height="100">
+            </div>
+          </div>
+        </div>
+      </div>
+      <p>Since we're only going to be editing the text, we can keep using the same template and only update the datasource:</p>
+      <p class="tip">
+        <b>Tip:</b> use <abbr title="Scalable Vector Graphics">SVG</abbr> for icons so you can scale to any size; alternatively, use <a href="https://www.google.dk/search?q=useful+unicode+symbols">unicode symbols</a> instead of images<br/>
+      </p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th style="color: lightgray;">@template</th>
+            <th>text</th>
+            <th style="color: lightgray;">rank</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color: lightgray;">templates/card.html</td>
+            <td>My first {{ resources/cards-icon.svg:16x16 }} prototype card!</td>
+            <td style="color: lightgray;">1st</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Pretty easy, right?</p>
+      <p>Though, sometimes you might have several cards that need to use the same icon, or maybe the icon just appears more than once in the text, and having to put down the entire image reference again and again starts to seem unnecessary. That's because
+        it is!</p>
+      <h4>Definitions</h4>
+      <p>There's a feature called <a href="#definitions"><i>definitions</i></a>, which acts like a shared datasource. In this datasource, you can store commonly used content; for example, icons that you use in more than one place.</p>
+      <p>So, let's say that our <b>definitions.csv</b> file looks like this:</p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>@definition</th>
+            <th>@value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>cards_icon</td>
+            <td>{{ resources/cards-icon.svg:16x16 }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>That would allow us to update our datasource to just reference the icon definition and still get the same result:</p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th style="color: lightgray;">@template</th>
+            <th>text</th>
+            <th style="color: lightgray;">rank</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color: lightgray;">templates/card.html</td>
+            <td>My first {{ cards_icon }} prototype card!</td>
+            <td style="color: lightgray;">1st</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Looks better, doesn't it?</p>
+      <p>This also has the added benefit that, should you ever want to use a different image, you only have to change the image path in one place.</p>
+      <p>Taking it even further, you could create definitions for different icon sizes so icon sizing becomes consistent across your cards:</p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>@definition</th>
+            <th>@value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>small</td>
+            <td>16x16</td>
+          </tr>
+          <tr>
+            <td>large</td>
+            <td>100x100</td>
+          </tr>
+          <tr>
+            <td>cards_icon</td>
+            <td>{{ resources/cards-icon.svg:small }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Definitions even work inside templates:</p>
+      <pre>
+    <b>templates/card.html</b>
+        <code>
+  &lt;div style="text-align: center; font-family: Garamond;"&gt;
+    &lt;h1&gt;{{ rank }}&lt;/h1&gt;
+    &lt;div style="margin-bottom: 10mm;"&gt;{{ text }}&lt;/div&gt;
+    <b>{{ resources/cards-icon.svg:large }}</b>
+  &lt;/div&gt;
+        </code>
+      </pre>
+    </section>
+    <h3>Conclusion</h3>
+    <section>
+      <p>By now, I hope you have a better understanding of what <strong>cards.py</strong> can do for you and your card game.</p>
+      <p>There's plenty more useful features available, but what you've read so far is the gist of it. If you're looking for more information, following is a detailed overview of the various features and how you can use them.</p>
+    </section>
+
+    <hr>
+    <h2 id="columns">Columns</h2>
+    <p>
+      This section covers the <b>three special columns</b> you can extend your datasource with to get the most out of <strong>cards.py</strong>.
+    </p>
+    <h3 id="count-column"><strong>1) Count</strong></h3>
+    <section>
+      <p>Use the <code>@count</code> column to specify how many copies of a card should be generated.</p>
+      <p><i>Defaults to 1 copy of each card if the column is left out.</i></p>
+      <p class="tip">
+        <b>Tip:</b> you can set a count of 0 to skip the card<br/>
+      </p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>@count</th>
+            <th>text</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Make 1 copy of this card</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Make 2 copies of this card</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <h3 id="template-column"><strong>2) Template</strong></h3>
+    <section>
+      <p>
+        Use the <code>@template</code> column to specify a path to the template file that should be used when generating the front of a card.
+      </p>
+      <p><i>Note that the path is relative to the path of the datasource. You can also specify an absolute path.</i></p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>@template</th>
+            <th>text</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>templates/card.html</td>
+            <td>A templated card</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Additionally, this column can be used to specify the size of the card. If a size is specified, that size will override the default card size (but only for this datasource).</p>
+      <div class="example">
+        <div class="card card-size-075x075">
+          <div class="card-content">
+            <div style="text-align: center; font-family: Garamond; padding-top: 2mm;">
+              <b>token</b>
+            </div>
+          </div>
+        </div>
+        <div class="card card-size-25x25">
+          <div class="card-content">
+            <div style="text-align: center; font-family: Garamond; padding-top: 2mm;">
+              <b>square</b>
+            </div>
+          </div>
+        </div>
+        <div class="card card-size-175x35">
+          <div class="card-content">
+            <div style="text-align: center; font-family: Garamond; padding-top: 2mm;">
+              <b>domino</b>
+            </div>
+          </div>
+        </div>
+      </div>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>@template:domino</th>
+            <th>text</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>templates/card.html</td>
+            <td>A templated domino-sized card</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Available sizes (ordered by smaller to larger):</p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>Size Name</th>
+            <th>Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>token</td>
+            <td>0.75x0.75 inches</td>
+          </tr>
+          <tr>
+            <td>domino</td>
+            <td>1.75x3.5 inches</td>
+          </tr>
+          <tr>
+            <td>standard</td>
+            <td>2.5x3.5 inches <i>(default)</i></td>
+          </tr>
+          <tr>
+            <td>standard-landscape</td>
+            <td>3.5x2.5 inches</td>
+          </tr>
+          <tr>
+            <td>jumbo</td>
+            <td>3.5x5.5 inches</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <h3 id="template-back-column"><strong>3) Template-back</strong></h3>
+    <section>
+      <p>
+        Use the <code>@template-back</code> column to specify a path to the template file that should be used when generating the back of a card.
+      </p>
+      <p>
+        This column works exactly like the <code>@template</code> column, except that it
+        <i>cannot be sized</i>; a card back is always the same size as its front.
+      </p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th>@template</th>
+            <th>@template-back</th>
+            <th>text</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>templates/card.html</td>
+            <td>templates/card-back.html</td>
+            <td>A card with a custom back</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>A back template does not have access to any columns except those suffixed by the <code>@back-only</code> descriptor.</p>
+      <p>Similarly, a front template does not have access to <code>@back-only</code> columns.</p>
+      <table class="indent">
+        <thead>
+          <tr>
+            <th style="color: lightgray;">@template</th>
+            <th style="color: lightgray;">@template-back</th>
+            <th style="color: lightgray;">text</th>
+            <th>back-text@back-only</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color: lightgray;">templates/card.html</td>
+            <td style="color: lightgray;">templates/card-back.html</td>
+            <td style="color: lightgray;">A card with a custom back</td>
+            <td>This goes on the backside!</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr>
+    <h2 id="template-fields">Template Fields</h2>
+    <p>This section covers all the <b>template fields</b> you can use in your templates or data to reference content.</p>
+    <h3 id="todo"><strong>Column Field</strong></h3>
+    <section>
+      <p><strong>Column fields can reference content from any column in the datasource</strong></p>
+      <p>A column field typically looks like this: <code>{{ my_column }}</code>, and can be resolved in both templates and data.</p>
+      <p>A column field can even reference the content of a column in a different row. For example, if you wanted to reference the content of <code>my_column</code>, but from the card at row number seven, you just add the row number at the end. Like this:
+        <code>{{ my_column #7 }}</code></p>
+    </section>
+
+    <h3 id="todo"><strong>Image Field</strong></h3>
+    <section>
+      <p><strong>Image fields transform image paths into images</strong></p>
+      todo: {{ image.png }} and @copy-only
+    </section>
+
+    <h3 id="todo"><strong>Include Field</strong></h3>
+    <section>
+      <p><strong>Include fields allow you to embed re-usable content (<i>template fragments</i>) into any template</strong></p>
+      <p>An include field takes a path to a file, and puts the contents of that file into place of the field.</p>
+      <p>It looks like this: <code>{{ include 'template-fragment.html' }}</code>, and it can be used in any template. It will be resolved automatically, and follows the same rules as any other template.</p>
+      <p><i>Note that paths should be relative to the template that the fragment is embedded within.</i></p>
+      <h4>Typical example</h4>
+      <p>Your project has many different templates, but each of those templates has the same copyright notice at the bottom.</p>
+      <p>Sometimes you may want to slightly tweak how it appears, or change the text. This quickly becomes annoying, because you have to go through each and every template with this notice at the bottom.</p>
+      <p>You could avoid this annoyance by pulling it out into a template fragment.</p>
+      <p>Consider this template:</p>
+      <pre>
+    <b>templates/card.html</b>
+        <code>
+  &lt;div style="text-align: center; font-family: Garamond;"&gt;
+    &lt;h1&gt;{{ rank }}&lt;/h1&gt;
+    &lt;div style="margin-bottom: 10mm;"&gt;{{ text }}&lt;/div&gt;
+    <b>&lt;div style="position: absolute; bottom: 1.25mm; right: 2mm; text-align: right; font-size: 7pt;"&gt;
+      Copyright 2016, Great Games Incorporated &nbsp;&nbsp; {{ icon_set }} {{ _card_index }}
+    &lt;/div&gt;</b>
+  &lt;/div&gt;
+        </code>
+      </pre>
+      <p>Here, the bit with the copyright could easily become a template fragment, so that content is only editable <i>in one place</i>.</p>
+      <pre>
+    <b>templates/template-fragments/copyright.html</b>
+        <code>
+  &lt;div style="position: absolute; bottom: 1.25mm; right: 2mm; text-align: right; font-size: 7pt;"&gt;
+    Copyright 2016, Great Games Incorporated &nbsp;&nbsp; {{ icon_set }} {{ _card_index }}
+  &lt;/div&gt;
+        </code>
+      </pre>
+      <p>With this fragment, it can be embedded like so:</p>
+      </p>
+      <pre>
+    <b>templates/card.html</b>
+        <code>
+  &lt;div style="text-align: center; font-family: Garamond;"&gt;
+    &lt;h1&gt;{{ rank }}&lt;/h1&gt;
+    &lt;div style="margin-bottom: 10mm;"&gt;{{ text }}&lt;/div&gt;
+    <b>{{ include 'template-fragments/copyright.html' }}</b>
+  &lt;/div&gt;
+        </code>
+      </pre>
+      <p></p>
+    </section>
+
+    <h3 id="todo"><strong>Definition Field</strong></h3>
+    <section>
+      todo: {{ definition }} in template and in content (and built-in defs?)
+    </section>
+
+    <hr>
+
+    <h2 id="definitions">Definitions</h2>
+    <section>
+      <p>This section covers the concept of <i>definitions</i>.</p>
+      <p>A <i>definition</i> is content that is commonly used in your project, and may even be used across several datasources.</p>
+    </section>
+
+    <hr>
+
+    <h2>FAQ</h2>
+    <section>
+      <p>A collection of frequently asked questions.</p>
+      <p>Feel free to <a href="https://github.com/jhauberg">contact me</a> if you can't find your question answered here.</p>
+      <details>
+        <summary><strong>Why shouldn't I just use nanDECK?</strong></summary>
+        <p>
+          You should! It has a visual interface and has helped a lot of people get their games ready. This program is simply an alternative.
+        </p>
+      </details>
+    </section>
+  </article>
+</body>
+
+</html>
